@@ -7,14 +7,14 @@ import { auth } from '../firebase/firebase-config';
 const baseLiClass = 'hover:underline underline-offset-8';
 
 const AuthButtons = () => (
-  <div className='hidden justify-between w-56 lg:flex xl:w-80'>
+  <div className='justify-between hidden w-56 lg:flex xl:w-80'>
     <Link to='/login'>
-      <button className='w-24 h-12 text-white rounded-lg shadow-md duration-300 xl:w-36 xl:h-14 hover:shadow-2xl hover:bg-bright-turquoise-500 bg-bright-turquoise-300'>
+      <button className='w-24 h-12 text-white duration-300 rounded-lg shadow-md xl:w-36 xl:h-14 hover:shadow-2xl hover:bg-bright-turquoise-500 bg-bright-turquoise-300'>
         Login
       </button>
     </Link>
     <Link to='/register'>
-      <button className='w-24 h-12 text-white rounded-lg shadow-md duration-300 xl:w-36 xl:h-14 hover:shadow-2xl hover:bg-torch-red-700 bg-torch-red-500'>
+      <button className='w-24 h-12 text-white duration-300 rounded-lg shadow-md xl:w-36 xl:h-14 hover:shadow-2xl hover:bg-torch-red-700 bg-torch-red-500'>
         Sign Up
       </button>
     </Link>
@@ -36,8 +36,6 @@ export const Header = (props: { main: boolean; backUrl?: string }) => {
           <h2 className={`hidden lg:block ${baseLiClass}`}>Profile</h2>
         </Link>
       );
-    } else if (user == null) {
-      return null;
     } else {
       return <AuthButtons />;
     }
@@ -60,16 +58,16 @@ export const Header = (props: { main: boolean; backUrl?: string }) => {
             onClick={() => {
               setIsOpen((prevState: boolean) => !prevState);
             }}
-            className='block w-10 h-8 bg-no-repeat bg-contain invert cursor-pointer lg:hidden'
+            className='block w-10 h-8 bg-no-repeat bg-contain cursor-pointer invert lg:hidden'
             style={{ backgroundImage: `url(${burger_bar})` }}
           />
         </div>
         <div
           className={` ${
             isOpen ? 'block' : 'hidden'
-          } absolute top-24 w-full h-56 bg-white`}
+          } fixed top-24 z-10 w-full h-56 bg-white`}
         >
-          <ul className='flex flex-col justify-evenly h-full'>
+          <ul className='flex flex-col h-full justify-evenly'>
             <li
               className={`font-mono text-2xl font-medium text-center ${baseLiClass}`}
             >
@@ -132,7 +130,7 @@ export const Header = (props: { main: boolean; backUrl?: string }) => {
             </Link>
           </div>
           {props.backUrl ? (
-            <div className='flex fixed top-6 left-8 z-10 items-center'>
+            <div className='fixed z-10 flex items-center top-6 left-8'>
               <Link to={props.backUrl}>
                 <div
                   className='bg-cover size-12'

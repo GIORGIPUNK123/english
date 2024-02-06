@@ -4,15 +4,27 @@ import { User, onAuthStateChanged } from 'firebase/auth';
 import profileImg from '../../assets/profile.svg';
 import { useEffect, useState } from 'react';
 import { auth } from '../../firebase/firebase-config';
-const ProgressBlock = (props: { topic: string; time: string }) => {
+const ProgressBlock = (props: { topic: string; date: Date }) => {
+  const myDate = props.date;
+  const options: any = {
+    timeZone: 'UTC',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  };
+
   return (
-    <div className='flex py-6 w-32 bg-white rounded-md'>
-      <div className='flex flex-col mx-4 w-full h-24 text-center bg-purple-800 rounded-md'>
-        <span className='mt-4 text-lg font-medium text-white'>
-          {props.topic}
+    <div className='h-24 mx-4 my-4 rounded-md bg-indigo-950 w-44'>
+      <div className='flex flex-col w-full h-full text-center'>
+        <span className='mt-6 text-lg font-medium text-white'>
+          {myDate.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
         </span>
-        {/* <div className='mt-4 text-lg text-white'>{props.time}</div> */}
-        <div></div>
+        <span className='mt-2 text-xs font-medium text-white '>
+          {myDate.toLocaleDateString('en-US', options)}
+        </span>
       </div>
     </div>
   );
@@ -32,27 +44,28 @@ export const StudentProgressMain = () => {
   const totalClasses = countClasses.remaining + countClasses.spent;
   const TopPart = () => {
     return (
-      <div className='flex mb-10 ml-4 w-full'>
+      <div className='flex w-full mb-10 text-white rounded-md shadow-lg bg-indigo-950'>
         <div className='flex items-center w-1/2'>
           <div
             style={{
               backgroundImage: `url(${profileImg})`,
             }}
-            className='w-32 h-32 bg-center bg-no-repeat bg-contain rounded-full'
+            className='w-32 h-32 bg-center bg-no-repeat bg-contain rounded-full '
           />
-          <span className='ml-4 text-2xl'>{user?.displayName}</span>
+
+          <span className='ml-4 text-2xl '>{user?.displayName}</span>
         </div>
-        <div className='flex flex-col justify-center px-10 w-1/2'>
+        <div className='flex flex-col justify-center w-1/2 px-10'>
           <span className='text-xl text-center'>Class Tokens</span>
-          <div className='overflow-hidden relative mt-4 h-5 bg-white rounded-full'>
+          <div className='relative h-5 mt-4 overflow-hidden bg-white rounded-full'>
             <div
               style={{
                 width: `calc(${countClasses.spent / totalClasses} * 100%)`,
               }}
-              className={`absolute top-0 bottom-0 left-0 bg-gradient-to-r rounded-full bg-torch-red-500`}
+              className={`absolute top-0 bottom-0 left-0 bg-gradient-to-r rounded-full bg-indigo-700`}
             />
           </div>
-          <div className='flex justify-between px-2 mt-2 w-full text-lg'>
+          <div className='flex justify-between w-full px-2 mt-2 text-lg'>
             <span
               style={{
                 width: `${(countClasses.spent / totalClasses) * 100}%`,
@@ -74,48 +87,42 @@ export const StudentProgressMain = () => {
       </div>
     );
   };
+  const oldDate = new Date();
   const BottomPart = () => {
     return (
-      <div className='w-full'>
-        <div className='w-1/2'>
-          <div className='px-4 py-2 mb-6 w-full text-xl text-center bg-white rounded-md'>
+      <div className='flex justify-between w-full gap-8 text-white h-fit'>
+        <div className='w-1/2 h-full pt-10'>
+          <div className='w-full px-4 py-6 mb-6 text-xl text-center rounded-md bg-indigo-950'>
             <span>Finished Classes</span>
           </div>
-          <div className='flex justify-center items-center w-full'>
-            <div className='flex flex-wrap items-center py-6 bg-white rounded-md w-fit'>
-              <ProgressBlock topic='Freedom' time='12:40' />
-              <ProgressBlock topic='Freedom' time='12:40' />
-              <ProgressBlock topic='Freedom' time='12:40' />
-              <ProgressBlock topic='Freedom' time='12:40' />
-              <ProgressBlock topic='Freedom' time='12:40' />
-              <ProgressBlock topic='Freedom' time='12:40' />
+          <div className='flex items-center justify-center w-full h-full '>
+            <div className=' shadow-lg flex flex-wrap items-center justify-center w-full h-full py-6 bg-[#C0C5C7] rounded-md'>
+              <ProgressBlock date={oldDate} topic='test' />
+              <ProgressBlock date={oldDate} topic='test' />
+              <ProgressBlock date={oldDate} topic='test' />
+              <ProgressBlock date={oldDate} topic='test' />
+              <ProgressBlock date={oldDate} topic='test' />
+              <ProgressBlock date={oldDate} topic='test' />
             </div>
           </div>
         </div>
-        <div className='w-1/2'></div>
+        <div className='w-1/2 h-full pt-10'>
+          <div className='w-full px-4 py-6 mb-6 text-xl text-center rounded-md bg-indigo-950'>
+            <span>Scheduled Classes</span>
+          </div>
+          <div className='flex items-center justify-center w-full h-full'>
+            <div className=' shadow-lg flex flex-wrap items-center justify-center w-full h-full py-6 bg-[#C0C5C7] rounded-md'>
+              <ProgressBlock date={oldDate} topic='test' />
+              <ProgressBlock date={oldDate} topic='test' />
+              <ProgressBlock date={oldDate} topic='test' />
+            </div>
+          </div>
+        </div>
       </div>
-
-      // <div className='flex gap-5 justify-between w-full h-full rounded-sm'>
-      //   <span className='px-4 py-2 mb-6 w-1/2 text-xl bg-white rounded-md'>
-      //     Finished Classes
-      //   </span>
-      //   <div className='w-44 text-center rounded-sm'>
-      //     <div className='flex flex-col justify-between'>
-      //       {/* <ProgressBlock heading='F' topic='Freedom' time='12:40' /> */}
-      //     </div>
-      //   </div>
-      //   <div className='w-1/2 text-center rounded-sm'>
-      //     <ProgressBlock
-      //       heading='Scheduled Classes'
-      //       topic='Freedom'
-      //       time='12:40'
-      //     />
-      //   </div>
-      // </div>
     );
   };
   return (
-    <div className='p-8 mx-10 w-full bg-gray-200 rounded-sm'>
+    <div className='w-full p-8 mx-10 bg-white rounded-sm'>
       <TopPart />
       <BottomPart />
     </div>
