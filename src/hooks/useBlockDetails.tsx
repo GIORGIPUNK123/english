@@ -1,4 +1,4 @@
-import { BlockDetailsType, LessonType } from '../types';
+import { BlockDetailsT, LessonT } from '../types';
 
 export const useBlockDetails = (
   blockTime: number,
@@ -6,8 +6,8 @@ export const useBlockDetails = (
   blockMonth: number,
   blockYear: number,
   currDate: Date,
-  lessons: LessonType[]
-): BlockDetailsType => {
+  lessons: LessonT[]
+): BlockDetailsT => {
   const d = new Date(blockYear, blockMonth, blockDay);
   const localTimezoneOffset = d.getTimezoneOffset() / 60;
   d.setHours(blockTime + localTimezoneOffset, 0, 0, 0);

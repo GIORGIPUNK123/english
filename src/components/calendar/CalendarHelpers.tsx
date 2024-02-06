@@ -1,3 +1,5 @@
+import { BlockT } from '../../types';
+
 export const Lesson = (props: { name: string; time: string }) => {
   return (
     <div className='p-1 mb-1 text-sm text-white bg-purple-400 rounded event'>
@@ -6,15 +8,7 @@ export const Lesson = (props: { name: string; time: string }) => {
     </div>
   );
 };
-export const Block = (props: {
-  name?: string;
-  time?: number;
-  blockTime: number;
-  blockDay: number;
-  blockMonth: number;
-  blockYear: number;
-  disabled?: boolean;
-}) => {
+export const Block = (props: BlockT) => {
   return (
     <td
       className={`w-20 h-full   ${
@@ -23,14 +17,27 @@ export const Block = (props: {
           : ' bg-slate-200 hover:bg-gray-300 cursor-pointer'
       } `}
     >
-      <div className='flex justify-center items-center w-full h-full'>
+      <div
+        className='flex justify-center items-center w-full h-full'
+        onClick={() => {
+          !props.disabled &&
+            props.setIsModalOn(true) &&
+            console.log('clicked on button');
+        }}
+      >
         {props.disabled ? <span className='text-sm'>disabled</span> : null}
 
         {props.name && (
-          <div className='inset-0 flex-col justify-center items-center w-[90%] h-[80%] text-white bg-purple-400 rounded text-md text-center'>
+          <button
+            data-modal-target='default-modal'
+            data-modal-toggle='default-modal'
+            className={`inset-0 flex-col justify-center items-center w-[90%] h-[80%] text-white ${
+              props.disabled ? 'bg-purple-950' : 'bg-purple-400'
+            }  rounded text-md text-center`}
+          >
             <span className='text-sm'>{props.name}</span>
             <span className='text-sm'>{props.time}</span>
-          </div>
+          </button>
         )}
       </div>
     </td>
@@ -48,6 +55,6 @@ export const TimeBlock = (props: { time: string; disabled: boolean }) => {
   );
 };
 export const RenderTimeBlocks = (props: { arr: string[] }) =>
-  props.arr.map((time, i) => (
-    <TimeBlock key={time} disabled={i < 9} time={time} />
+  props.arr.map((time) => (
+    <TimeBlock key={time} disabled={false} time={time} />
   ));

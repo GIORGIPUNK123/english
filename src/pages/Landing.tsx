@@ -3,9 +3,6 @@ import students_talking from '../assets/students_talking.webp';
 import students_girl from '../assets/student_girl.png';
 import calendar from '../assets/calendar.svg';
 import { Link } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase/firebase-config';
-import { useEffect, useState } from 'react';
 const Container = (props: { img: any; name: string; text: string }) => (
   <div className='flex relative flex-col items-center mx-6 mt-8 w-96 h-96 bg-white rounded-xl'>
     <div
@@ -18,17 +15,10 @@ const Container = (props: { img: any; name: string; text: string }) => (
   </div>
 );
 export const Landing = () => {
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      setLoggedIn(!!user);
-    });
-  }, []);
   return (
     <>
       <div className='flex flex-col items-center w-full bg-black-pearl-950'>
-        <Header loggedIn={loggedIn} main={true} />
+        <Header main={true} />
         <body>
           <div className='flex flex-col items-center mt-44 w-full md:flex-row'>
             <div className='flex justify-center items-center w-full md:w-1/2'>

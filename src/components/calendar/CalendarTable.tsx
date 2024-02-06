@@ -1,7 +1,7 @@
 import { useBlockDetails } from '../../hooks/useBlockDetails';
-import { LessonType } from '../../types';
+import { LessonT } from '../../types';
 import { daysInMonth, isCurrentDay } from '../../utils/calendarUtils';
-import { Block } from '../CalendarHelpers';
+import { Block } from './CalendarHelpers';
 
 const TableHeadBlock = (props: {
   weekDay: number;
@@ -52,7 +52,11 @@ const THead = (props: { monday: Date }) => {
     });
 };
 
-const TBody = (props: { monday: Date; lessons: LessonType[] }) => (
+const TBody = (props: {
+  monday: Date;
+  lessons: LessonT[];
+  setIsModalOn: any;
+}) => (
   <thead>
     {Array(24)
       .fill(0)
@@ -82,6 +86,7 @@ const TBody = (props: { monday: Date; lessons: LessonType[] }) => (
                   time={currLesson?.time}
                   name={currLesson?.topic}
                   disabled={isDisabled}
+                  setIsModalOn={props.setIsModalOn}
                 />
               );
             })}
@@ -92,11 +97,13 @@ const TBody = (props: { monday: Date; lessons: LessonType[] }) => (
 
 interface CalendarTableProps {
   monday: Date;
-  lessons: LessonType[];
+  lessons: LessonT[];
+  setIsModalOn: any;
 }
 export const CalendarTable: React.FC<CalendarTableProps> = ({
   monday,
   lessons,
+  setIsModalOn,
 }) => {
   return (
     <table className='w-full h-96'>
@@ -105,7 +112,7 @@ export const CalendarTable: React.FC<CalendarTableProps> = ({
           <THead monday={monday} />
         </tr>
       </thead>
-      <TBody monday={monday} lessons={lessons} />
+      <TBody setIsModalOn={setIsModalOn} monday={monday} lessons={lessons} />
     </table>
   );
 };

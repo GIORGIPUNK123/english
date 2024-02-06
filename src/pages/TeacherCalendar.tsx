@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { RenderTimeBlocks } from '../components/CalendarHelpers';
+import { RenderTimeBlocks } from '../components/calendar/CalendarHelpers';
 import { CalendarControls } from '../components/calendar/CalendarControls';
 import { CalendarTable } from '../components/calendar/CalendarTable';
+import { CalendarAddLessonModal } from '../components/calendar/CalendarAddLessonModal';
 
 const monthNames = [
   'January',
@@ -36,6 +37,7 @@ export const TeacherCalendar = () => {
     { year: 2024, day: 19, month: 0, time: 11, topic: 'Freedom' },
     // Add other lesson entries as needed
   ];
+  const [isModalOn, setIsModalOn] = useState(false);
   return (
     <div className='mx-10 w-full bg-gray-200 rounded-sm'>
       <div className='container flex justify-center items-center p-5 2xl:max-w-full 2xl:px-6'>
@@ -51,8 +53,13 @@ export const TeacherCalendar = () => {
               <div className='h-14' />
               <RenderTimeBlocks arr={timeArr} />
             </div>
-            <div className='w-[90%]'>
-              <CalendarTable monday={monday} lessons={lessons} />
+            <div className='w-[90%] '>
+              <CalendarAddLessonModal isOn={isModalOn} setIsOn={setIsModalOn} />
+              <CalendarTable
+                setIsModalOn={setIsModalOn}
+                monday={monday}
+                lessons={lessons}
+              />
             </div>
           </div>
         </div>

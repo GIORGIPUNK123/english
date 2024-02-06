@@ -1,11 +1,6 @@
-export const FormInput = (props: {
-  onChange: any;
-  onBlur: any;
-  value: string | number;
-  placeholder: string;
-  name: string;
-  error?: string;
-}) => {
+import { FormInputT } from '../types';
+
+export const FormInput = (props: FormInputT) => {
   return (
     <div>
       <input

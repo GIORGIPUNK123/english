@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import burger_bar from '../assets/burger_bar.svg';
 import back from '../assets/back.svg';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { User, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase/firebase-config';
 const baseLiClass = 'hover:underline underline-offset-8';
 
 const AuthButtons = () => (
@@ -19,13 +21,27 @@ const AuthButtons = () => (
   </div>
 );
 
-export const Header = (props: {
-  loggedIn: boolean;
-  main: boolean;
-  backUrl?: string;
-}) => {
-  const { loggedIn } = props;
+export const Header = (props: { main: boolean; backUrl?: string }) => {
+  const [user, setUser] = useState<null | User>(null);
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      setUser(user);
+    });
+  }, []);
   const [isOpen, setIsOpen] = useState(false);
+  const RightPart = () => {
+    if (user) {
+      return (
+        <Link to='/profile'>
+          <h2 className={`hidden lg:block ${baseLiClass}`}>Profile</h2>
+        </Link>
+      );
+    } else if (user == null) {
+      return null;
+    } else {
+      return <AuthButtons />;
+    }
+  };
   if (props.main) {
     return (
       <>
@@ -39,13 +55,7 @@ export const Header = (props: {
             <li className={`mx-4 xl:mx-6 ${baseLiClass}`}>Pricing</li>
             <li className={`ml-4 xl:ml-6 ${baseLiClass}`}>About Us</li>
           </ul>
-          {loggedIn ? (
-            <Link to='/profile'>
-              <h2 className={`hidden lg:block ${baseLiClass}`}>Profile</h2>
-            </Link>
-          ) : (
-            <AuthButtons />
-          )}
+          <RightPart />
           <div
             onClick={() => {
               setIsOpen((prevState: boolean) => !prevState);
@@ -80,7 +90,7 @@ export const Header = (props: {
             >
               About Us
             </li>
-            {loggedIn ? (
+            {user ? (
               <Link to='/profile'>
                 <li
                   className={`font-mono text-2xl font-medium text-center ${baseLiClass}`}
