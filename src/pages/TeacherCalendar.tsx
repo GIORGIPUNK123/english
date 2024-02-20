@@ -3,6 +3,7 @@ import { RenderTimeBlocks } from '../components/calendar/CalendarHelpers';
 import { CalendarControls } from '../components/calendar/CalendarControls';
 import { CalendarTable } from '../components/calendar/CalendarTable';
 import { CalendarAddLessonModal } from '../components/calendar/CalendarAddLessonModal';
+import { TopicT } from '../types';
 
 const monthNames = [
   'January',
@@ -38,9 +39,37 @@ export const TeacherCalendar = () => {
     // Add other lesson entries as needed
   ];
   const [isModalOn, setIsModalOn] = useState(false);
+  const topicsArr: TopicT[] = [
+    {
+      text: 'General',
+      value: 'general',
+      id: 0,
+    },
+    {
+      text: 'Freedom',
+      value: 'freedom',
+      id: 1,
+    },
+    {
+      text: 'Globalization',
+      value: 'globalization',
+      id: 2,
+    },
+    {
+      text: 'Global Warming',
+      value: 'global_warming',
+      id: 3,
+    },
+    {
+      text: 'Nature',
+      value: 'nature',
+      id: 4,
+    },
+  ];
+  const [clickedBlockDate, setClickedBlockDate] = useState<null | Date>(null);
   return (
-    <div className='mx-10 w-full bg-gray-200 rounded-sm'>
-      <div className='container flex justify-center items-center p-5 2xl:max-w-full 2xl:px-6'>
+    <div className='w-full bg-gray-200 rounded-sm '>
+      <div className='container flex items-center justify-center p-5 2xl:max-w-full 2xl:px-6'>
         <div className='w-full bg-white rounded shadow wrapper'>
           <div className='flex justify-between p-2 border-b header'>
             <span className='text-lg font-bold'>
@@ -54,8 +83,14 @@ export const TeacherCalendar = () => {
               <RenderTimeBlocks arr={timeArr} />
             </div>
             <div className='w-[90%] '>
-              <CalendarAddLessonModal isOn={isModalOn} setIsOn={setIsModalOn} />
+              <CalendarAddLessonModal
+                defaultDate={clickedBlockDate}
+                topicsArr={topicsArr}
+                isOn={isModalOn}
+                setIsOn={setIsModalOn}
+              />
               <CalendarTable
+                setClickedBlockDate={setClickedBlockDate}
                 setIsModalOn={setIsModalOn}
                 monday={monday}
                 lessons={lessons}

@@ -10,23 +10,24 @@ export const Lesson = (props: { name: string; time: string }) => {
 };
 export const Block = (props: BlockT) => {
   return (
-    <td
-      className={`w-20 h-full   ${
+    <div
+      className={`w-full h-10 hour-block ${
         props.disabled
-          ? ' bg-slate-300 '
+          ? ' bg-slate-300 disabled'
           : ' bg-slate-200 hover:bg-gray-300 cursor-pointer'
       } `}
     >
       <div
-        className='flex justify-center items-center w-full h-full'
+        className='flex items-center justify-center w-full h-full'
         onClick={() => {
-          !props.disabled &&
-            props.setIsModalOn(true) &&
-            console.log('clicked on button');
+          if (!props.disabled) {
+            console.log('block date: ', props.date);
+
+            props.setClickedBlockDate(props.date);
+            props.setIsModalOn(true);
+          }
         }}
       >
-        {props.disabled ? <span className='text-sm'>disabled</span> : null}
-
         {props.name && (
           <button
             data-modal-target='default-modal'
@@ -40,7 +41,7 @@ export const Block = (props: BlockT) => {
           </button>
         )}
       </div>
-    </td>
+    </div>
   );
 };
 export const TimeBlock = (props: { time: string; disabled: boolean }) => {
@@ -54,7 +55,10 @@ export const TimeBlock = (props: { time: string; disabled: boolean }) => {
     </div>
   );
 };
-export const RenderTimeBlocks = (props: { arr: string[] }) =>
-  props.arr.map((time) => (
-    <TimeBlock key={time} disabled={false} time={time} />
-  ));
+export const RenderTimeBlocks = () =>
+  Array(24)
+    .fill(0)
+    .map((_, hour) => {
+      const time = `${hour}:00`;
+      return <TimeBlock key={time} disabled={false} time={time} />;
+    });

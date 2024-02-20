@@ -1,24 +1,19 @@
 export interface LessonT {
-  day: number;
-  time: number;
-  month: number;
+  date: number;
   topic: string;
 }
-
 export interface BlockDetailsT {
-  date: Date | null;
+  date: Date;
   isDisabled: boolean;
   currLesson: LessonT | null;
 }
 export interface BlockT {
   name?: string;
   time?: number;
-  blockTime: number;
-  blockDay: number;
-  blockMonth: number;
-  blockYear: number;
+  date: Date;
   disabled?: boolean;
-  setIsModalOn: any;
+  setIsModalOn: (x: boolean) => void;
+  setClickedBlockDate: (d: Date) => void;
 }
 export interface FormInputT {
   onChange: any;
@@ -27,4 +22,9 @@ export interface FormInputT {
   placeholder: string;
   name: string;
   error?: string;
+}
+export interface TopicT {
+  id: number;
+  text: string;
+  value: string | undefined;
 }
