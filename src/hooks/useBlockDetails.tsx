@@ -1,4 +1,5 @@
 import { BlockDetailsT, LessonT } from '../types';
+import { convertLocalDateToUTC } from '../utils/calendarUtils';
 
 export const useBlockDetails = (
   blockMinutes: number,
@@ -8,46 +9,47 @@ export const useBlockDetails = (
   blockYear: number,
   lessons: LessonT[]
 ): BlockDetailsT => {
-  const currDate = new Date();
-  const localBlockDate = new Date(
+  // Create block date object
+  const blockDate = new Date(
     blockYear,
     blockMonth,
     blockDay,
-    Math.floor(blockHours),
-    (blockHours % 1) * 60
+    blockHours,
+    blockMinutes
   );
 
-  // Convert localBlockDate to UTC
-  const localToUTC = new Date(
-    localBlockDate.getTime() + localBlockDate.getTimezoneOffset() * 60000
-  );
-  const currLesson = lessons.find((lesson) => {
-    // Compare lesson.date timestamp with localBlockDate timestamp converted to UTC
-    lesson.date === localToUTC.getTime()
-      ? console.log('current Lesson Yay')
-      : null;
+  // Convert to UTC
+  const blockUTC = convertLocalDateToUTC(blockDate);
 
-    // console.log('localToUTC.getTime(): ', localToUTC.getTime())
-    return lesson.date === localToUTC.getTime();
-  });
+  // Find matching lesson
+  const lesson = lessons.find((l) => l.date === blockUTC.getTime());
 
-  const isAfter20UTC = localBlockDate.getUTCHours() >= 20;
-  const isBefore5UTC = localBlockDate.getUTCHours() <= 5;
+  // Check if within 12 hours
+  const nowUTC = convertLocalDateToUTC(new Date());
+  const diffHours = (blockUTC.getTime() - nowUTC.getTime()) / (1000 * 60 * 60);
+  const isWithin12Hours = diffHours <= 12;
 
-  const timeDifference = localBlockDate.getTime() - currDate.getTime();
-  // Calculate the difference in hours
-  const hoursDifference = timeDifference / (1000 * 3600);
-  // Check if date2 is after date1 or if it's within 12 hours from date1
-  const isWithin12Hours = hoursDifference <= 12;
-  // localBlockDate.getTime() - currUTCDate.getTime() < 12 * 60 * 60 * 1000;
-  // Disable block if it is after 20:00 UTC and before 05:00 UTC, or within 12 hours of the current UTC date
-  const isDisabled = isWithin12Hours || isAfter20UTC || isBefore5UTC;
-  currLesson ? console.log('current Lesson Yay') : null;
-  const blockDetails = {
-    date: localBlockDate,
-    isDisabled,
-    currLesson: currLesson || null,
+  // Check time range
+  const isAfter8pmUTC = blockUTC.getHours() >= 20;
+  const isBefore5amUTC = blockUTC.getHours() <= 5;
+  const checkMinutes = () => {
+    if (blockUTC.getHours() === 20 || blockUTC.getHours() === 5) {
+      if (blockUTC.getMinutes() === 0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return true;
+    }
   };
+  // Determine if disabled
+  const isDisabled =
+    isWithin12Hours || isAfter8pmUTC || isBefore5amUTC || !checkMinutes();
 
-  return blockDetails;
+  return {
+    date: blockDate,
+    isDisabled,
+    currLesson: lesson || null,
+  };
 };

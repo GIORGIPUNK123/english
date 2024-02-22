@@ -21,12 +21,13 @@ export const StudentDashboard = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       setUser(user);
+      if (user === null) {
+        navigate('/login');
+      }
     });
     return () => unsubscribe();
   }, []);
-  if (user === null) {
-    navigate('/');
-  } else if (user === 'loading') {
+  if (user === 'loading') {
     return null;
   } else {
     return (
@@ -52,7 +53,7 @@ export const StudentDashboard = () => {
                         }
                       }}
                       key={i}
-                      className={` h-14 rounded-l-md w-full bg-cover items-center justify-center flex duration-300  text-white ${
+                      className={` h-14 rounded-l-md text-lg w-full bg-cover items-center justify-center flex duration-300  text-white ${
                         currPg === i
                           ? 'bg-black-pearl-950'
                           : 'hover:bg-black-pearl-950 cursor-pointer'

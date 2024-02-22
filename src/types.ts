@@ -13,7 +13,7 @@ export interface BlockT {
   date: Date;
   disabled?: boolean;
   setIsModalOn: (x: boolean) => void;
-  setClickedBlockDate: (d: Date) => void;
+  setDefaultBlockDate: (d: Date) => void;
 }
 export interface FormInputT {
   onChange: any;
@@ -27,4 +27,12 @@ export interface TopicT {
   id: number;
   text: string;
   value: string | undefined;
+}
+export interface optionT {
+  label: string;
+  id: number;
+}
+export interface selectSmallObjectT {
+  defaultId: number;
+  options: optionT[];
 }

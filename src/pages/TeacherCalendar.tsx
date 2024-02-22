@@ -3,7 +3,8 @@ import { RenderTimeBlocks } from '../components/calendar/CalendarHelpers';
 import { CalendarControls } from '../components/calendar/CalendarControls';
 import { CalendarTable } from '../components/calendar/CalendarTable';
 import { CalendarAddLessonModal } from '../components/calendar/CalendarAddLessonModal';
-import { TopicT } from '../types';
+import { TopicT, selectSmallObjectT } from '../types';
+import { generateHoursArr } from '../utils/calendarUtils';
 
 const monthNames = [
   'January',
@@ -28,14 +29,17 @@ export const TeacherCalendar = () => {
     return new Date(d.setDate(diff));
   };
 
-  const timeArr = Array(24)
-    .fill('')
-    .map((_, i) => `${i < 10 ? `0${i}` : i}:00`);
-
   const now = new Date();
   const [monday, setMonday] = useState(getMonday(now));
   const lessons = [
-    { year: 2024, day: 19, month: 0, time: 11, topic: 'Freedom' },
+    {
+      year: 2024,
+      day: 19,
+      month: 0,
+      time: 11,
+      topic: 'Freedom',
+      date: 512512512,
+    },
     // Add other lesson entries as needed
   ];
   const [isModalOn, setIsModalOn] = useState(false);
@@ -66,7 +70,26 @@ export const TeacherCalendar = () => {
       id: 4,
     },
   ];
-  const [clickedBlockDate, setClickedBlockDate] = useState<null | Date>(null);
+  const [defaultBlockDate, setDefaultBlockDate] = useState<Date>(new Date());
+  const availableHours = generateHoursArr();
+  const selectObjects: {
+    hoursObj: selectSmallObjectT;
+    topicsObj: selectSmallObjectT;
+  } = {
+    hoursObj: {
+      defaultId: defaultBlockDate.getHours(),
+      options: availableHours.map((x) => {
+        return { id: x, label: x.toString() };
+      }),
+    },
+    topicsObj: {
+      defaultId: 0,
+      options: availableHours.map((x) => {
+        return { id: x, label: x.toString() };
+      }),
+    },
+  };
+
   return (
     <div className='w-full bg-gray-200 rounded-sm '>
       <div className='container flex items-center justify-center p-5 2xl:max-w-full 2xl:px-6'>
@@ -80,17 +103,19 @@ export const TeacherCalendar = () => {
           <div className='flex w-full'>
             <div className='w-[10%] flex flex-col'>
               <div className='h-14' />
-              <RenderTimeBlocks arr={timeArr} />
+              <RenderTimeBlocks />
             </div>
             <div className='w-[90%] '>
               <CalendarAddLessonModal
-                defaultDate={clickedBlockDate}
+                defaultDate={defaultBlockDate}
+                setDefaultBlockDate={setDefaultBlockDate}
                 topicsArr={topicsArr}
                 isOn={isModalOn}
                 setIsOn={setIsModalOn}
+                selectObjects={selectObjects}
               />
               <CalendarTable
-                setClickedBlockDate={setClickedBlockDate}
+                setDefaultBlockDate={setDefaultBlockDate}
                 setIsModalOn={setIsModalOn}
                 monday={monday}
                 lessons={lessons}

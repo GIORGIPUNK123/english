@@ -1,15 +1,25 @@
-import { useState } from 'react';
 import { SelectInput } from '../../atoms/SelectInput';
-import { TopicT } from '../../types';
+import { TopicT, selectSmallObjectT } from '../../types';
+import { useSelectInput } from '../../hooks/useSelectInput';
 
 export const CalendarAddLessonModal = (props: {
   isOn: boolean;
   setIsOn: any;
   topicsArr: TopicT[];
-  defaultDate: null | Date;
+  defaultDate: Date;
+  selectObjects: {
+    hoursObj: selectSmallObjectT;
+    topicsObj: selectSmallObjectT;
+  };
+  setDefaultBlockDate: (date: Date) => void;
 }) => {
+  console.log('selectObjects: ', props.selectObjects);
+
+  const { value: hour, handleChange: handleHourChange } = useSelectInput(
+    props.selectObjects.hoursObj.defaultId,
+    props.selectObjects.hoursObj.options
+  );
   console.log('defaultDate: ', props.defaultDate);
-  const [selectedTopicId, setSelectedTopicId] = useState(props.topicsArr[0].id);
   return (
     <div
       className={` relative w-[90%] right-0 top-60  ${
@@ -53,14 +63,39 @@ export const CalendarAddLessonModal = (props: {
                 <h3 className='text-xl leading-relaxed text-white '>
                   Choose Topic
                 </h3>
-                <SelectInput
+
+                <p>Selected value: {hour}</p>
+                {/* <SelectInput
                   inputId='topicInput'
                   selectArr={props.topicsArr}
                   selectedTopicId={selectedTopicId}
                   setSelectedTopicId={setSelectedTopicId}
-                />
+                  isTopic={true}
+                /> */}
                 <h3 className='text-xl leading-relaxed text-white '>
                   Choose Date
+                </h3>
+
+                <h3 className='text-xl leading-relaxed text-white '>
+                  Choose Hour
+                </h3>
+                <SelectInput
+                  value={hour}
+                  onChange={handleHourChange}
+                  options={props.selectObjects.hoursObj.options}
+                />
+                {/* <SelectInput
+                  defaultValue={14}
+                  inputId='hoursInput'
+                  selectArr={generateHoursArr()}
+                  selectedTopicId={selectedTopicId}
+                  setSelectedTopicId={setSelectedTopicId}
+                /> */}
+                <h3 className='text-xl leading-relaxed text-white '>
+                  default hour + minutes: {props.defaultDate?.getHours()}:
+                  {props.defaultDate?.getMinutes().toString().length == 1
+                    ? `0${props.defaultDate?.getMinutes()}`
+                    : props.defaultDate?.getMinutes()}
                 </h3>
                 <h3 className='text-xl leading-relaxed text-white '>
                   {props.defaultDate?.toString()}

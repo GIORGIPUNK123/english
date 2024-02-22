@@ -1,4 +1,5 @@
 import { BlockT } from '../../types';
+import { convertLocalDateToUTC } from '../../utils/calendarUtils';
 
 export const Lesson = (props: { name: string; time: string }) => {
   return (
@@ -21,9 +22,9 @@ export const Block = (props: BlockT) => {
         className='flex items-center justify-center w-full h-full'
         onClick={() => {
           if (!props.disabled) {
-            console.log('block date: ', props.date);
+            console.log('block UTC date: ', convertLocalDateToUTC(props.date));
 
-            props.setClickedBlockDate(props.date);
+            props.setDefaultBlockDate(props.date);
             props.setIsModalOn(true);
           }
         }}

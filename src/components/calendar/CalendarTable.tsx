@@ -1,6 +1,10 @@
 import { useBlockDetails } from '../../hooks/useBlockDetails';
 import { LessonT } from '../../types';
-import { daysInMonth, isCurrentDay } from '../../utils/calendarUtils';
+import {
+  daysInMonth,
+  isCurrentDay,
+  myGetHourCorrectly,
+} from '../../utils/calendarUtils';
 import { Block } from './CalendarHelpers';
 const THead = (props: { monday: Date }) => {
   const numOfDays = daysInMonth(
@@ -44,7 +48,7 @@ const TBody = (props: {
   monday: Date;
   lessons: LessonT[];
   setIsModalOn: (x: boolean) => void;
-  setClickedBlockDate: (d: Date) => void;
+  setDefaultBlockDate: (d: Date) => void;
 }) => {
   const weekdays = [
     'Monday',
@@ -55,30 +59,32 @@ const TBody = (props: {
     'Saturday',
     'Sunday',
   ];
+
   // Generating hours
-  const hours = Array(48).fill(0);
+  const availableHours = Array(48).fill(0);
+
   return (
     <div className='flex'>
       {weekdays.map((_, dayIndex) => (
-        <div className='flex flex-col items-center w-full '>
-          {hours.map((_, hour) => {
+        <div className='flex flex-col items-center w-full' key={dayIndex}>
+          {availableHours.map((_, hour) => {
+            const [myHour, myMinute] = myGetHourCorrectly(hour / 2);
             const { date, isDisabled, currLesson } = useBlockDetails(
-              0,
-              hour / 2,
+              myMinute,
+              myHour,
               props.monday.getDate() + dayIndex,
               props.monday.getMonth(),
               props.monday.getFullYear(),
               props.lessons
             );
             return (
-              //<span className='h-20' >Test</span>
               <Block
                 date={date}
                 key={`${hour}-${dayIndex}-${date}`}
                 name={currLesson?.topic}
                 disabled={isDisabled}
                 setIsModalOn={props.setIsModalOn}
-                setClickedBlockDate={props.setClickedBlockDate}
+                setDefaultBlockDate={props.setDefaultBlockDate}
               />
             );
           })}
@@ -91,20 +97,20 @@ interface CalendarTableProps {
   monday: Date;
   lessons: LessonT[];
   setIsModalOn: (x: boolean) => void;
-  setClickedBlockDate: (d: Date) => void;
+  setDefaultBlockDate: (d: Date) => void;
 }
 
 export const CalendarTable: React.FC<CalendarTableProps> = ({
   monday,
   lessons,
   setIsModalOn,
-  setClickedBlockDate,
+  setDefaultBlockDate,
 }) => {
   return (
     <div className='flex-col w-full h-96'>
       <THead monday={monday} />
       <TBody
-        setClickedBlockDate={setClickedBlockDate}
+        setDefaultBlockDate={setDefaultBlockDate}
         setIsModalOn={setIsModalOn}
         monday={monday}
         lessons={lessons}
