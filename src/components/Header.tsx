@@ -4,7 +4,7 @@ import back from '../assets/back.svg';
 import { useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/firebase-config';
-const baseLiClass = 'hover:underline underline-offset-8';
+const baseLiClass = 'hover:underline underline-offset-8 cursor-pointer';
 
 const AuthButtons = () => (
   <div className='justify-between hidden w-56 lg:flex xl:w-80'>
@@ -21,8 +21,12 @@ const AuthButtons = () => (
   </div>
 );
 
-export const Header = (props: { main: boolean; backUrl?: string }) => {
-  const [user, setUser] = useState<null | User>(null);
+export const Header = (props: {
+  main: boolean;
+  backUrl?: string;
+  loggedIn: boolean;
+}) => {
+  const [user, setUser] = useState<null | User | 'loading'>('loading');
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       setUser(user);
@@ -30,12 +34,14 @@ export const Header = (props: { main: boolean; backUrl?: string }) => {
   }, []);
   const [isOpen, setIsOpen] = useState(false);
   const RightPart = () => {
-    if (user) {
+    if (user && user !== 'loading') {
       return (
         <Link to='/profile'>
           <h2 className={`hidden lg:block ${baseLiClass}`}>Profile</h2>
         </Link>
       );
+    } else if (user === 'loading') {
+      return <h2 className='hidden w-20 lg:block '></h2>;
     } else {
       return <AuthButtons />;
     }
@@ -124,22 +130,22 @@ export const Header = (props: { main: boolean; backUrl?: string }) => {
     return (
       <>
         <div className='relative'>
-          <div className='fixed z-10 flex justify-center items-center px-12 w-full h-24 font-mono text-xl font-medium bg-[#FDFFFC]'>
+          <div className='fixed z-10 flex justify-center items-center px-12 w-full h-16 sm:h-24 font-mono text-xl font-medium bg-[#FDFFFC]'>
             <Link to='/'>
               <h3 className='text-2xl'>British World</h3>
             </Link>
           </div>
           {props.backUrl ? (
-            <div className='fixed z-10 flex items-center top-6 left-8'>
+            <div className='fixed z-10 flex items-center top-3 left-3 sm:top-6 sm:left-8'>
               <Link to={props.backUrl}>
                 <div
-                  className='bg-cover size-12'
+                  className='bg-cover size-10 sm:size-12'
                   style={{ backgroundImage: `url(${back})` }}
                 />
               </Link>
             </div>
           ) : null}
-          <div className='mb-24' />
+          <div className='mb-16 sm:mb-24' />
         </div>
       </>
     );

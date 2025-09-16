@@ -1,13 +1,16 @@
 import { User, onAuthStateChanged } from 'firebase/auth';
 // import leftImg from '../../assets/left-arrow.svg';
-// import rightImg from '../../assets/right-arrow.svg';
+// import rightImg from '../../assets/right-arrow.svg?url';
 import profileImg from '../../assets/profile.svg';
 import { useEffect, useState } from 'react';
 import { auth } from '../../firebase/firebase-config';
+import { ViewLessonModal } from './ViewLessonModal';
+import { userDataT } from '../../types';
 const ProgressBlock = (props: {
   topic: string;
   date: Date;
-  finished?: boolean;
+  status: string;
+  onClick: (lessonData: any) => void;
 }) => {
   const myDate = props.date;
   const options: any = {
@@ -19,9 +22,17 @@ const ProgressBlock = (props: {
 
   return (
     <div
-      className={`h-24 mx-4 my-4 ${
-        props.finished ? 'bg-[#1f5492]' : 'bg-[#1f5492]'
-      }  rounded-md w-44`}
+      onClick={() =>
+        props.onClick({
+          topic: props.topic,
+          teacher: 'Mr. Smith',
+          date: myDate,
+          status: props.status,
+          description:
+            'It is very important to attend this lesson. Please be on time. We will cover the topic in detail. Make sure to review the materials beforehand. If you have any questions, feel free to ask during the lesson. Looking forward to seeing you there! Thank you for your attention.',
+        })
+      }
+      className={`h-24 mx-4 my-4 cursor-pointer ${'bg-black-pearl-800'} rounded-md w-44 hover:bg-black-pearl-700 duration-150 hover:scale-105 shadow-lg`}
     >
       <div className='flex flex-col w-full h-full text-center'>
         <span className='mt-6 text-lg font-medium text-white'>
@@ -38,31 +49,46 @@ const ProgressBlock = (props: {
   );
 };
 
-export const StudentProgressMain = () => {
+export const StudentProgressMain = (props: {
+  userData: userDataT | null;
+  capitalNames: string[];
+}) => {
+  console.log('profileImg: ', profileImg);
   const [user, setUser] = useState<User | null>(null);
+  const userData = props.userData;
+  const classes = userData?.classes || [];
   useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
     });
+    return () => unsubscribe();
   }, []);
+
   const countClasses = {
     remaining: 2,
     spent: 3,
   };
   const totalClasses = countClasses.remaining + countClasses.spent;
+  console.log('user: ', user);
+  classes.forEach((x) => {
+    console.log('Lesson:', x.topic, 'Date:', new Date(x.date * 1000));
+  });
   const TopPart = () => {
     return (
       <div className='flex w-full mb-10 bg-white rounded-md shadow-lg'>
         <div className='flex items-center w-1/2'>
           <div
             style={{
-              backgroundImage: `url(${profileImg})`,
+              backgroundImage: `url(${
+                user?.photoURL ? user.photoURL : profileImg
+              })`,
             }}
             className='w-32 h-32 m-4 bg-center bg-no-repeat bg-contain rounded-full shadow-md '
           />
-          <span className='ml-4 text-2xl '>John Doe</span>
 
-          {/* <span className='ml-4 text-2xl '>{user?.displayName}</span> */}
+          <span className='ml-4 text-2xl '>
+            {props.capitalNames[0]} {props.capitalNames[1]}
+          </span>
         </div>
         <div className='flex flex-col justify-center w-1/2 px-10 font-medium'>
           <span className='text-xl text-center'>Class Tokens</span>
@@ -96,8 +122,11 @@ export const StudentProgressMain = () => {
       </div>
     );
   };
-  const oldDate = new Date();
-  const BottomPart = () => {
+  const BottomPart = ({
+    handleBlockClick,
+  }: {
+    handleBlockClick: (lessonData: any) => void;
+  }) => {
     return (
       <div className='flex justify-between w-full gap-8 h-fit'>
         <div className='w-1/2 h-full pt-10'>
@@ -106,12 +135,20 @@ export const StudentProgressMain = () => {
           </div>
           <div className='flex items-center justify-center w-full h-full '>
             <div className='flex flex-wrap items-center justify-center w-full h-full py-6 bg-white rounded-md shadow-lg '>
-              <ProgressBlock date={oldDate} finished={true} topic='test' />
-              <ProgressBlock date={oldDate} finished={true} topic='test' />
-              <ProgressBlock date={oldDate} finished={true} topic='test' />
-              <ProgressBlock date={oldDate} finished={true} topic='test' />
-              <ProgressBlock date={oldDate} finished={true} topic='test' />
-              <ProgressBlock date={oldDate} finished={true} topic='test' />
+              {classes.map((lesson, index) => {
+                if (lesson.date < Date.now() / 1000) {
+                  return (
+                    <ProgressBlock
+                      key={index}
+                      date={new Date(lesson.date * 1000)}
+                      status={lesson.status}
+                      topic={lesson.topic}
+                      onClick={handleBlockClick}
+                    />
+                  );
+                }
+                return null;
+              })}
             </div>
           </div>
         </div>
@@ -121,19 +158,51 @@ export const StudentProgressMain = () => {
           </div>
           <div className='flex items-center justify-center w-full h-full'>
             <div className='flex flex-wrap items-center justify-center w-full h-full py-6 bg-white rounded-md shadow-lg '>
-              <ProgressBlock date={oldDate} topic='test' />
-              <ProgressBlock date={oldDate} topic='test' />
-              <ProgressBlock date={oldDate} topic='test' />
+              {classes.map((lesson, index) => {
+                if (lesson.date > Date.now() / 1000) {
+                  return (
+                    <ProgressBlock
+                      key={index}
+                      date={new Date(lesson.date * 1000)}
+                      status={lesson.status}
+                      topic={lesson.topic}
+                      onClick={handleBlockClick}
+                    />
+                  );
+                }
+                return null;
+              })}
             </div>
           </div>
         </div>
       </div>
     );
   };
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+
+  const handleBlockClick = (lessonData: any) => {
+    setSelectedLesson(lessonData);
+    setModalOpen(true);
+  };
+
   return (
-    <div className='w-full p-8bg-[#CCCCCC] rounded-sm '>
+    <div className='w-full p-8 bg-[#CCCCCC] rounded-sm'>
       <TopPart />
-      <BottomPart />
+      <BottomPart handleBlockClick={handleBlockClick} />
+      <ViewLessonModal
+        isOn={modalOpen}
+        setIsOn={setModalOpen}
+        lesson={
+          selectedLesson || {
+            topic: '',
+            teacher: '',
+            date: new Date(),
+            status: 'scheduled',
+            description: '',
+          }
+        }
+      />
     </div>
   );
 };

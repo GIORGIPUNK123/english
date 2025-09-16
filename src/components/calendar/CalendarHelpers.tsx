@@ -16,7 +16,7 @@ export const Block = (props: BlockT) => {
         props.disabled
           ? ' bg-slate-300 disabled'
           : ' bg-slate-200 hover:bg-gray-300 cursor-pointer'
-      } `}
+      } ${props.border ? 'border-2 border-solid border-torch-red-700' : ''} `}
     >
       <div
         className='flex items-center justify-center w-full h-full'

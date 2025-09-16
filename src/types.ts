@@ -1,5 +1,13 @@
 export interface LessonT {
   date: number;
+  status:
+    | 'finished'
+    | 'scheduled'
+    | 'in-progress'
+    | 'missed_student'
+    | 'missed_teacher'
+    | 'cancelled_student'
+    | 'cancelled_teacher';
   topic: string;
 }
 export interface BlockDetailsT {
@@ -8,6 +16,7 @@ export interface BlockDetailsT {
   currLesson: LessonT | null;
 }
 export interface BlockT {
+  border: boolean;
   name?: string;
   time?: number;
   date: Date;
@@ -24,15 +33,20 @@ export interface FormInputT {
   error?: string;
 }
 export interface TopicT {
-  id: number;
-  text: string;
-  value: string | undefined;
+  id: string;
+  heading: string;
 }
 export interface optionT {
   label: string;
-  id: number;
+  id: number | string;
 }
 export interface selectSmallObjectT {
   defaultId: number;
   options: optionT[];
+}
+export interface userDataT {
+  classes: LessonT[];
+  first_name: string;
+  last_name: string;
+  role: 'student' | 'teacher';
 }

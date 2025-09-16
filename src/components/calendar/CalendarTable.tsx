@@ -50,25 +50,18 @@ const TBody = (props: {
   setIsModalOn: (x: boolean) => void;
   setDefaultBlockDate: (d: Date) => void;
 }) => {
-  const weekdays = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
-
-  // Generating hours
-  const availableHours = Array(48).fill(0);
+  const availableHours = Array(48).fill(0); // 48 half-hour blocks
+  const weekdays = [0, 1, 2, 3, 4, 5, 6];
 
   return (
-    <div className='flex'>
-      {weekdays.map((_, dayIndex) => (
-        <div className='flex flex-col items-center w-full' key={dayIndex}>
-          {availableHours.map((_, hour) => {
-            const [myHour, myMinute] = myGetHourCorrectly(hour / 2);
+    <div className='flex flex-col w-full'>
+      {availableHours.map((_, hourIdx) => (
+        <div
+          key={hourIdx}
+          className={`flex w-full  ${hourIdx % 2 === 0 ? '' : ''} `}
+        >
+          {weekdays.map((dayIndex) => {
+            const [myHour, myMinute] = myGetHourCorrectly(hourIdx / 2);
             const { date, isDisabled, currLesson } = useBlockDetails(
               myMinute,
               myHour,
@@ -78,14 +71,16 @@ const TBody = (props: {
               props.lessons
             );
             return (
-              <Block
-                date={date}
-                key={`${hour}-${dayIndex}-${date}`}
-                name={currLesson?.topic}
-                disabled={isDisabled}
-                setIsModalOn={props.setIsModalOn}
-                setDefaultBlockDate={props.setDefaultBlockDate}
-              />
+              <div className='w-full' key={`${hourIdx}-${dayIndex}`}>
+                <Block
+                  border={false}
+                  date={date}
+                  name={currLesson?.topic}
+                  disabled={isDisabled}
+                  setIsModalOn={props.setIsModalOn}
+                  setDefaultBlockDate={props.setDefaultBlockDate}
+                />
+              </div>
             );
           })}
         </div>
@@ -107,8 +102,20 @@ export const CalendarTable: React.FC<CalendarTableProps> = ({
   setDefaultBlockDate,
 }) => {
   return (
-    <div className='flex-col w-full h-96'>
+    <div className='relative w-full'>
       <THead monday={monday} />
+      {/* Hour lines overlay */}
+      <div className='absolute top-14 left-0 w-full h-[calc(100%-3.5rem)] pointer-events-none z-10'>
+        {Array.from({ length: 23 }).map((_, i) => (
+          <div
+            key={i}
+            className='absolute left-0 w-full border-t border-gray-400'
+            style={{
+              top: `${((i + 1) * 100) / 48}%`, // Corrected: every 2 blocks (1 hour)
+            }}
+          />
+        ))}
+      </div>
       <TBody
         setDefaultBlockDate={setDefaultBlockDate}
         setIsModalOn={setIsModalOn}

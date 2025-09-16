@@ -7,8 +7,7 @@ import booksImg from '../assets/books.svg';
 import { Header } from '../components/Header';
 import { RegisterSchema } from '../schemas/registerSchema';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../firebase/firebase-config';
-import { doc, setDoc } from 'firebase/firestore';
+import { auth } from '../firebase/firebase-config';
 import { useNavigate } from 'react-router-dom';
 import { useFirebaseLogins } from '../hooks/useFirebaseLogins';
 export const Register = () => {
@@ -17,7 +16,7 @@ export const Register = () => {
   return (
     <>
       <div className='flex flex-col'>
-        <Header main={false} backUrl='../' />
+        <Header loggedIn={false} main={false} backUrl='../' />
         <div
           className='bg-black-pearl-950'
           style={{ minHeight: 'calc(100vh - 96px)' }}
@@ -48,30 +47,14 @@ export const Register = () => {
                   onSubmit={(values, { setSubmitting }) => {
                     // alert(JSON.stringify(values, null, 2));
                     console.log('email: ', values.email);
+                    logins.registerWithEmail(values.email, values.password);
                     createUserWithEmailAndPassword(
                       auth,
                       values.email,
                       values.password
-                    )
-                      .then(async (res) => {
-                        const docRef = doc(db, 'userData', res.user.uid);
-                        await setDoc(
-                          docRef,
-                          {
-                            first_name: values.name.toLowerCase(),
-                            last_name: values.surname.toLowerCase(),
-                          },
-                          { merge: true }
-                        );
-                        console.log('res user: ', res.user);
-                        console.log('docRef: ', docRef);
-                        setSubmitting(false);
-                        navigate('/');
-                      })
-                      .catch((err) => {
-                        alert(JSON.stringify(err.message, null, 2));
-                        setSubmitting(false);
-                      });
+                    ).then(async (res) => {
+                      setSubmitting(false);
+                    });
                   }}
                 >
                   {({
@@ -167,9 +150,7 @@ export const Register = () => {
                           <div className='flex mb-5 justify-evenly'>
                             <button
                               onClick={() => {
-                                logins.loginWithFacebook().then(() => {
-                                  navigate('/');
-                                });
+                                logins.loginWithFacebook();
                               }}
                               className='flex items-center h-12 px-6 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg shadow-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
                             >
@@ -181,9 +162,7 @@ export const Register = () => {
                             </button>
                             <button
                               onClick={() => {
-                                logins.loginWithGoogle().then(() => {
-                                  navigate('/');
-                                });
+                                logins.loginWithGoogle();
                               }}
                               className='flex items-center h-12 px-6 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg shadow-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
                             >
@@ -195,9 +174,7 @@ export const Register = () => {
                             </button>
                             <button
                               onClick={() => {
-                                logins.loginWithTwitter().then(() => {
-                                  navigate('/');
-                                });
+                                logins.loginWithTwitter();
                               }}
                               className='flex items-center h-12 px-6 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg shadow-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
                             >

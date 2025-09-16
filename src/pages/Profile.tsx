@@ -40,7 +40,7 @@ export const Profile = () => {
       <h1 className='text-4xl text-torch-red-600'>Email: {email}</h1>
       <h1 className='text-4xl text-torch-red-600'>Uid: {uid}</h1>
       <button
-        className='px-2 py-1 text-white bg-cyan-500 rounded-md'
+        className='px-2 py-1 text-white rounded-md bg-cyan-500'
         onClick={() => {
           signOut(auth).then(() => {
             navigate('/');
