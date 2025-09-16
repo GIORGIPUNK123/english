@@ -49,7 +49,7 @@ export const Header = (props: {
   if (props.main) {
     return (
       <>
-        <div className='fixed z-10 flex justify-between items-center px-12 w-full h-24 font-mono text-xl font-medium bg-[#FDFFFC]'>
+        <div className='fixed z-10 flex justify-between items-center px-12 w-full h-16 sm:h-24 font-mono text-xl font-medium bg-[#FDFFFC]'>
           <Link to='/'>
             <h3 className='text-2xl'>British World</h3>
           </Link>
@@ -71,7 +71,7 @@ export const Header = (props: {
         <div
           className={` ${
             isOpen ? 'block' : 'hidden'
-          } fixed top-24 z-10 w-full h-56 bg-white`}
+          } fixed top-16 sm:top-24 z-10 w-full h-56 bg-white`}
         >
           <ul className='flex flex-col h-full justify-evenly'>
             <li
@@ -123,7 +123,7 @@ export const Header = (props: {
             )}
           </ul>
         </div>
-        <div className={`${isOpen ? 'mb-[320px]' : 'mb-24'} `} />
+        <div className={`${isOpen ? 'mb-[320px]' : 'mb-16 sm:mb-24'} `} />
       </>
     );
   } else {

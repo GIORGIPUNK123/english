@@ -1,24 +1,13 @@
 import { Header } from '../components/Header';
-import students_talking from '../assets/students_talking.webp';
-import students_girl from '../assets/student_girl.png';
-import calendar from '../assets/calendar.svg';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '../firebase/firebase-config';
 import { Helix } from 'ldrs/react';
 import 'ldrs/react/Helix.css';
-
-const Container = (props: { img: any; name: string; text: string }) => (
-  <div className='relative flex flex-col items-center mx-6 mt-8 bg-white w-96 h-96 rounded-xl'>
-    <div
-      className='p-10 bg-[length:45px_45px]  bg-no-repeat bg-center absolute -top-8 w-8 bg-black-pearl-950 rounded-full aspect-square'
-      style={{ backgroundImage: `url(${props.img})` }}
-    />
-    <h1 className='mt-16 text-2xl'>{props.name}</h1>
-    <p className='px-4 mt-6 text-lg text-gray-800'>{props.text}</p>
-  </div>
-);
+import { FirstLandingPart } from '../components/landing/FirstLandingPart';
+import { SecondLandingPart } from '../components/landing/SecondLandingPart';
+import { ThirdLandingPart } from '../components/landing/ThirdLandingPart';
 
 export const Landing = () => {
   const navigate = useNavigate();
@@ -57,70 +46,11 @@ export const Landing = () => {
     <div className='flex flex-col items-center w-full bg-black-pearl-950'>
       {headerPart()}
       <section>
-        <div className='flex flex-col items-center w-full mt-44 md:flex-row'>
-          <div className='flex items-center justify-center w-full md:w-1/2'>
-            <div
-              className=' mt-12 ml-12 w-full max-w-[600px] h-96  bg-center bg-cover rounded-lg -rotate-6 mr-6'
-              style={{ backgroundImage: `url(${students_talking})` }}
-            />
-          </div>
-          <div className='flex flex-col items-center justify-center w-full text-3xl text-center text-white h-96 md:w-1/2'>
-            <h1>
-              Improve your English with proffesional teachers gasgjal slghalskgh
-              aslkgh lkashg laksg hlkashg lkahlk
-            </h1>
-            <Link to='/register'>
-              <button className='h-20 mt-10 duration-300 rounded-lg shadow-md w-52 bg-torch-red-500 hover:shadow-2xl hover:bg-torch-red-700'>
-                Sign Up
-              </button>
-            </Link>
-          </div>
-        </div>
+        <FirstLandingPart />
 
         <div className='w-full h-12 bg-torch-red-600'></div>
-
-        <div className='w-full text-center text-white bg-black-pearl-950'>
-          <h1 className='mt-10 text-4xl font-medium'>
-            Why should you choose us?
-          </h1>
-          <div className='mt-20 mx-10 justify-evenly flex flex-wrap min-h-[600px] text-black'>
-            <Container
-              name='Easy Scheduling & Attendance Tracking'
-              img={calendar}
-              text=' Schedule and reserve classrooms at one campus or multiple campuses. Keep detailed records of student attendance'
-            />
-            <Container
-              name='Easy Scheduling & Attendance Tracking'
-              img={calendar}
-              text=' Schedule and reserve classrooms at one campus or multiple campuses. Keep detailed records of student attendance'
-            />
-            <Container
-              name='Easy Scheduling & Attendance Tracking'
-              img={calendar}
-              text=' Schedule and reserve classrooms at one campus or multiple campuses. Keep detailed records of student attendance'
-            />
-          </div>
-        </div>
-
-        <div className='w-full text-center text-white bg-black-pearl-950'>
-          <h1 className='mt-10 text-4xl font-medium'>E learning</h1>
-          <div className='flex flex-col items-center w-full mt-14 md:flex-row'>
-            <div className='w-full md:w-1/2'>
-              <p className='mt-10 text-3xl'>
-                Lorem, ipsum dolor sit amet consectetur adipisicing elit. Illo
-                debitis, error consequatur, delectus labore eveniet vel mollitia
-                vitae dolores perferendis reprehenderit maiores tenetur corporis
-                sunt qui? At id eum obcaecati.
-              </p>
-            </div>
-            <div className='flex justify-center w-full mx-10 md:w-1/2'>
-              <div
-                className='w-full max-w-[600px] bg-top bg-no-repeat bg-cover rounded-lg  aspect-square'
-                style={{ backgroundImage: `url(${students_girl})` }}
-              />
-            </div>
-          </div>
-        </div>
+        <SecondLandingPart />
+        <ThirdLandingPart />
       </section>
 
       <footer className='w-full mt-40 bg-white dark:bg-gray-900'>
