@@ -54,10 +54,18 @@ export const Header = (props: {
             <h3 className='text-2xl'>British World</h3>
           </Link>
           <ul className='hidden lg:flex'>
-            <li className={`mr-4 xl:mr-6 ${baseLiClass}`}>Home</li>
-            <li className={`mx-4 xl:mx-6 ${baseLiClass}`}>Our Features</li>
-            <li className={`mx-4 xl:mx-6 ${baseLiClass}`}>Pricing</li>
-            <li className={`ml-4 xl:ml-6 ${baseLiClass}`}>About Us</li>
+            <a className={`mr-4 xl:mr-6 ${baseLiClass}`} href='#'>
+              Home
+            </a>
+            <a className={`mr-4 xl:mr-6 ${baseLiClass}`} href='#features'>
+              Our Features
+            </a>
+            <a className={`mx-4 xl:mx-6 ${baseLiClass}`} href='#pricing'>
+              Pricing
+            </a>
+            <a className={`ml-4 xl:ml-6 ${baseLiClass}`} href='#about'>
+              About Us
+            </a>
           </ul>
           <RightPart />
           <div

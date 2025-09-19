@@ -11,3 +11,6 @@
 .hour-block:not(.disabled):hover + .hour-block {
   background-color: #c3c3c3;
 }
+html {
+  scroll-behavior: smooth;
+}

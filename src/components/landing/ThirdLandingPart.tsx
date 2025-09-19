@@ -1,7 +1,10 @@
 import students_girl from '../../assets/student_girl.png';
 export const ThirdLandingPart = () => {
   return (
-    <div className='w-full text-center text-white bg-black-pearl-950'>
+    <div
+      className='w-full text-center text-white bg-black-pearl-950'
+      id='about'
+    >
       <h1 className='mt-10 text-4xl font-medium'>E learning</h1>
       <div className='flex flex-col items-center w-full mt-14 md:flex-row'>
         <div className='w-full md:w-1/2'>
