@@ -1,4 +1,4 @@
-import { TopicT, optionT } from '../types';
+import { optionT } from '../types';
 
 export const SelectInput: React.FC<{
   value: string | number;

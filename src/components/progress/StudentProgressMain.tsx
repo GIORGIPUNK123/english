@@ -50,10 +50,10 @@ const ProgressBlock = (props: {
 };
 
 export const StudentProgressMain = (props: {
-  userData: userDataT | null;
+  userData: userDataT;
   capitalNames: string[];
 }) => {
-  console.log('profileImg: ', profileImg);
+  // console.log('profileImg: ', profileImg);
   const [user, setUser] = useState<User | null>(null);
   const userData = props.userData;
   const classes = userData?.classes || [];
@@ -63,16 +63,12 @@ export const StudentProgressMain = (props: {
     });
     return () => unsubscribe();
   }, []);
-
-  const countClasses = {
-    remaining: 2,
-    spent: 3,
-  };
-  const totalClasses = countClasses.remaining + countClasses.spent;
-  console.log('user: ', user);
-  classes.forEach((x) => {
-    console.log('Lesson:', x.topic, 'Date:', new Date(x.date * 1000));
-  });
+  console.log('userData in ProgressMain: ', userData);
+  const totalClasses = userData.tokens + userData.used_tokens;
+  // console.log('user: ', user);
+  // classes.forEach((x) => {
+  //   console.log('Lesson:', x.topic, 'Date:', new Date(x.date * 1000));
+  // });
   const TopPart = () => {
     return (
       <div className='flex w-full mb-10 bg-white rounded-md shadow-lg'>
@@ -95,7 +91,7 @@ export const StudentProgressMain = (props: {
           <div className='relative h-5 mt-4 overflow-hidden bg-[#CCCCCC] rounded-full'>
             <div
               style={{
-                width: `calc(${countClasses.spent / totalClasses} * 100%)`,
+                width: `calc(${userData.used_tokens / totalClasses} * 100%)`,
               }}
               className={`absolute top-0 bottom-0 left-0 bg-gradient-to-r rounded-full bg-torch-red-500`}
             />
@@ -103,19 +99,19 @@ export const StudentProgressMain = (props: {
           <div className='flex justify-between w-full px-2 mt-2 text-lg'>
             <span
               style={{
-                width: `${(countClasses.spent / totalClasses) * 100}%`,
+                width: `${(userData.used_tokens / totalClasses) * 100}%`,
               }}
               className='text-center'
             >
-              Spent: {countClasses.spent}
+              Spent: {userData.used_tokens}
             </span>
             <span
               style={{
-                width: `${(countClasses.remaining / totalClasses) * 100}%`,
+                width: `${(userData.tokens / totalClasses) * 100}%`,
               }}
               className='text-center'
             >
-              Remaining: {countClasses.remaining}
+              Remaining: {userData.tokens}
             </span>
           </div>
         </div>

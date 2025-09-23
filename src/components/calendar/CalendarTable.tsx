@@ -7,24 +7,18 @@ import {
 } from '../../utils/calendarUtils';
 import { Block } from './CalendarHelpers';
 const THead = (props: { monday: Date }) => {
-  const numOfDays = daysInMonth(
-    props.monday.getMonth(),
-    props.monday.getFullYear()
-  );
   const weekDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   return (
     <div className='flex'>
       {Array(7)
         .fill(0)
         .map((_, i) => {
-          const dayNumber = props.monday.getDate() + i;
-          const adjustedDay =
-            dayNumber > numOfDays ? dayNumber - numOfDays : dayNumber;
-          const localIsCurrent = isCurrentDay(
-            adjustedDay,
-            props.monday.getMonth(),
-            props.monday.getFullYear()
-          );
+          const date = new Date(props.monday);
+          date.setDate(props.monday.getDate() + i);
+          const dayNumber = date.getDate();
+          const month = date.getMonth();
+          const year = date.getFullYear();
+          const localIsCurrent = isCurrentDay(dayNumber, month, year);
           return (
             <div
               key={i}
@@ -35,7 +29,7 @@ const THead = (props: { monday: Date }) => {
               } p-2 h-14 text-sm border-r w-full xl:text-sm`}
             >
               <div className='flex flex-col items-center justify-center w-full'>
-                <span>{adjustedDay}</span>
+                <span>{dayNumber}</span>
                 <span>{weekDays[i]}</span>
               </div>
             </div>

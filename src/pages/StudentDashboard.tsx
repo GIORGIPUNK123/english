@@ -8,68 +8,70 @@ import { User, onAuthStateChanged } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import profileImg from '../assets/profile.svg';
 import { StudentSettings } from '../components/progress/StudentSettings';
-import { ViewLessonModal } from '../components/progress/ViewLessonModal';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { userDataT } from '../types';
 
 export const StudentDashboard = () => {
-  const [modalOpen, setModalOpen] = useState(false);
   const [currPg, setCurrPg] = useState(0);
-  const [user, setUser] = useState<User | null | 'loading'>('loading');
+  const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<userDataT | null>(null);
-  const capitalNames = [
-    userData?.first_name?.charAt(0).toUpperCase() +
-      userData?.first_name?.slice(1)!,
-    userData?.last_name?.charAt(0).toUpperCase() +
-      userData?.last_name?.slice(1)!,
-  ];
+  const [loading, setLoading] = useState(true);
 
-  const myObj = [
+  const navigate = useNavigate();
+
+  const menuItems = [
     { img: homeImg, text: 'Dashboard' },
     { img: calendarImg, text: 'Calendar' },
     { img: calendarImg, text: 'Assignments' },
     { img: calendarImg, text: 'Messages' },
     { img: calendarImg, text: 'Settings' },
   ];
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
-      setUser(user);
-      if (user === null) {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser) {
         navigate('/login');
+        return;
       }
+      setUser(firebaseUser);
     });
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (!user) return;
 
-    if (user && user !== 'loading') {
-      console.log('Listening for classes of user:', user.uid);
+    const userDocRef = doc(db, 'userData', user.uid);
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setUserData(docSnap.data() as userDataT);
+      } else {
+        console.warn('No data found for this user');
+        setUserData(null);
+      }
+      setLoading(false);
+    });
 
-      const userDocRef = doc(db, 'userData', user.uid);
-
-      const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setUserData(docSnap.data() as userDataT);
-        } else {
-          console.log('No data found for this user');
-        }
-      });
-
-      return () => unsubscribe();
-    }
+    return () => unsubscribe();
   }, [user]);
-  console.log('userData: ', userData);
-  if (user === 'loading') {
+
+  if (loading) {
     return (
       <div className='flex items-center justify-center h-screen bg-black-pearl-950'>
         <span className='text-xl text-white'>Loading...</span>
       </div>
     );
   }
+
+  if (!userData) {
+    navigate('/login');
+    return null;
+  }
+
+  const capitalNames = [
+    userData.first_name.charAt(0).toUpperCase() + userData.first_name.slice(1),
+    userData.last_name.charAt(0).toUpperCase() + userData.last_name.slice(1),
+  ];
 
   return (
     <>
@@ -88,10 +90,11 @@ export const StudentDashboard = () => {
               </span>
             </div>
           </header>
+
           <div className='flex gap-12 mx-auto mt-14 max-w-[1600px] px-8'>
             {/* Sidebar */}
             <nav className='flex flex-col w-64 gap-3 px-6 py-10 shadow-xl bg-slate-800 rounded-2xl min-h-[700px]'>
-              {myObj.map((item, i) => (
+              {menuItems.map((item, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrPg(i)}
@@ -108,6 +111,7 @@ export const StudentDashboard = () => {
                 </button>
               ))}
             </nav>
+
             {/* Main Content */}
             <main className='flex-1 bg-white rounded-2xl shadow-xl px-14 py-12 min-h-[700px]'>
               {currPg === 0 && (
@@ -116,7 +120,9 @@ export const StudentDashboard = () => {
                   capitalNames={capitalNames}
                 />
               )}
-              {currPg === 1 && <TeacherCalendar />}
+              {currPg === 1 && user && (
+                <TeacherCalendar user={user} userData={userData} />
+              )}
               {currPg === 2 && (
                 <div className='py-32 text-2xl text-center text-gray-600'>
                   Assignments coming soon!

@@ -3,10 +3,11 @@ import { RenderTimeBlocks } from '../components/calendar/CalendarHelpers';
 import { CalendarControls } from '../components/calendar/CalendarControls';
 import { CalendarTable } from '../components/calendar/CalendarTable';
 import { CalendarAddLessonModal } from '../components/calendar/CalendarAddLessonModal';
-import { LessonT, TopicT, selectSmallObjectT } from '../types';
+import { LessonT, TopicT, userDataT } from '../types';
 import { generateHoursArr } from '../utils/calendarUtils';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config';
+import { User } from 'firebase/auth';
 
 const monthNames = [
   'January',
@@ -23,7 +24,7 @@ const monthNames = [
   'December',
 ];
 
-export const TeacherCalendar = () => {
+export const TeacherCalendar = (props: { user: User; userData: userDataT }) => {
   // Helper functions and constants
   const getMonday = (d: Date) => {
     const day = d.getDay();
@@ -78,21 +79,28 @@ export const TeacherCalendar = () => {
   // ];
   const [defaultBlockDate, setDefaultBlockDate] = useState<Date>(new Date());
   const availableHours = generateHoursArr();
-  const selectObjects: {
-    hoursObj: selectSmallObjectT;
-    topicsObj: selectSmallObjectT;
-  } = {
+  const daysOptions = Array.from({ length: 31 }).map((_, idx) => ({
+    id: idx + 1,
+    label: (idx + 1).toString(),
+    value: idx + 1,
+  }));
+  console.log('daysOptions: ', daysOptions);
+  const selectObjects = {
     hoursObj: {
       defaultId: defaultBlockDate.getHours(),
-      options: availableHours.map((x) => {
-        return { id: x, label: x.toString() };
-      }),
+      options: availableHours.map((x) => ({ id: x, label: x.toString() })),
     },
     topicsObj: {
-      defaultId: 0,
-      options: availableHours.map((x) => {
-        return { id: x, label: x.toString() };
-      }),
+      defaultId: defaultBlockDate.getDay(),
+      options: availableHours.map((x) => ({ id: x, label: x.toString() })),
+    },
+    daysObj: {
+      defaultId: defaultBlockDate.getDay(),
+      options: daysOptions,
+    },
+    monthsObj: {
+      defaultId: defaultBlockDate.getMonth(),
+      options: monthNames.map((name, idx) => ({ id: idx, label: name })),
     },
   };
 
@@ -139,6 +147,8 @@ export const TeacherCalendar = () => {
                   isOn={isModalOn}
                   setIsOn={setIsModalOn}
                   selectObjects={selectObjects}
+                  user={props.user}
+                  userData={props.userData}
                 />
                 <CalendarTable
                   setDefaultBlockDate={setDefaultBlockDate}

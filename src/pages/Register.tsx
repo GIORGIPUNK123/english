@@ -86,7 +86,7 @@ export const Register = () => {
                               onBlur={handleBlur}
                               value={values.surname}
                               error={errors.surname}
-                            />{' '}
+                            />
                           </div>
                         </div>
                         <div className='mt-2'>
@@ -129,15 +129,13 @@ export const Register = () => {
                             checked={values.accepted}
                           />
                           <span>
-                            {' '}
-                            I accept the{' '}
+                            I accept the
                             <a
                               href='#'
                               className='font-semibold text-purple-500'
                             >
-                              Terms of Use{' '}
+                              Terms of Use
                             </a>
-                            &{' '}
                             <a
                               href='#'
                               className='font-semibold text-purple-500'
