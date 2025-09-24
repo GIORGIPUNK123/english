@@ -1,5 +1,4 @@
 import { BlockT } from '../../types';
-import { convertLocalDateToUTC } from '../../utils/calendarUtils';
 
 export const Lesson = (props: { name: string; time: string }) => {
   return (
@@ -9,21 +8,47 @@ export const Lesson = (props: { name: string; time: string }) => {
     </div>
   );
 };
+const checkIfLessonExists = (lessonDate: number, blockTime: number) => {
+  // const blockTime = parseInt(props.date.getTime().toString().slice(0, -3));
+
+  if (blockTime - lessonDate === 0) {
+    return { hasLesson: true, isStart: true };
+  } else if (blockTime - lessonDate === 1800) {
+    return { hasLesson: true, isStart: false };
+  } else {
+    return { hasLesson: false, isStart: false };
+  }
+};
 export const Block = (props: BlockT) => {
+  const blockTime = parseInt(props.date.getTime().toString().slice(0, -3));
+  const match = props.lessons
+    .map((lesson) => checkIfLessonExists(lesson.date, blockTime))
+    .find((res) => res.hasLesson);
+  const { hasLesson, isStart } = match ?? { hasLesson: false, isStart: false };
+  console.log('hovered: ', props.hovered, ' hasLesson: ', hasLesson);
   return (
     <div
-      className={`w-full h-10 hour-block ${
-        props.disabled
-          ? ' bg-slate-300 disabled'
-          : ' bg-slate-200 hover:bg-gray-300 cursor-pointer'
-      } ${props.border ? 'border-2 border-solid border-torch-red-700' : ''} `}
+      onMouseEnter={props.onMouseEnter}
+      onMouseLeave={props.onMouseLeave}
+      className={`w-full h-10 hour-block cursor-pointer
+        ${props.disabled ? ' bg-gray-200 cursor-default' : 'bg-white'}
+        ${props.disabledForHover ? ' disabled cursor-default' : ''}
+        ${props.hovered && !hasLesson ? '!bg-[#c3c3c3]' : ''}
+        ${props.border ? 'border-2 border-solid border-torch-red-700' : ''}
+        ${hasLesson ? '!bg-black-pearl-800 hover:!bg-black-pearl-700' : ''}
+        ${
+          hasLesson && isStart
+            ? 'rounded-t-lg'
+            : hasLesson
+            ? 'rounded-b-lg'
+            : ''
+        }
+      `}
     >
       <div
         className='flex items-center justify-center w-full h-full'
         onClick={() => {
           if (!props.disabled) {
-            console.log('block UTC date: ', convertLocalDateToUTC(props.date));
-
             props.setDefaultBlockDate(props.date);
             props.setIsModalOn(true);
           }

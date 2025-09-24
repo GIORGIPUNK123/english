@@ -3,9 +3,9 @@ import { RenderTimeBlocks } from '../components/calendar/CalendarHelpers';
 import { CalendarControls } from '../components/calendar/CalendarControls';
 import { CalendarTable } from '../components/calendar/CalendarTable';
 import { CalendarAddLessonModal } from '../components/calendar/CalendarAddLessonModal';
-import { LessonT, TopicT, userDataT } from '../types';
+import { TopicT, userDataT } from '../types';
 import { generateHoursArr } from '../utils/calendarUtils';
-import { collection, doc, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config';
 import { User } from 'firebase/auth';
 
@@ -34,18 +34,7 @@ export const TeacherCalendar = (props: { user: User; userData: userDataT }) => {
 
   const now = new Date();
   const [monday, setMonday] = useState(getMonday(now));
-  const lessons: LessonT[] = [
-    {
-      // year: 2025,
-      // day: 19,
-      // month: 0,
-      // time: 11,
-      topic: 'Freedom',
-      date: 512512512,
-      status: 'scheduled',
-    },
-    // Add other lesson entries as needed
-  ];
+  const lessons = props.userData.classes || [];
   const [isModalOn, setIsModalOn] = useState(false);
 
   const [topicsArr, setTopicsArr] = useState<TopicT[]>([]);

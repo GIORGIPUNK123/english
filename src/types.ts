@@ -15,14 +15,25 @@ export interface BlockDetailsT {
   isDisabled: boolean;
   currLesson: LessonT | null;
 }
+export interface LessonHoverT {
+  isHovering: boolean;
+  isStart: boolean; // true for the first 30min half, false for the second
+}
 export interface BlockT {
   border: boolean;
   name?: string;
   time?: number;
   date: Date;
   disabled?: boolean;
+  disabledForHover?: boolean;
   setIsModalOn: (x: boolean) => void;
   setDefaultBlockDate: (d: Date) => void;
+  hasLesson: boolean;
+  lessons: LessonT[];
+  hovered: boolean | null; // <-- Add this line
+  lessonHover?: LessonHoverT;
+  onMouseEnter?: () => void; // <-- Add this line
+  onMouseLeave?: () => void; // <-- Add this line
 }
 export interface FormInputT {
   onChange: any;

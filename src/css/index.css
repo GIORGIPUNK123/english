@@ -7,10 +7,10 @@
   line-height: 50px;
 }
 
-.hour-block:not(.disabled):hover,
-.hour-block:not(.disabled):hover + .hour-block {
-  background-color: #c3c3c3;
-}
+/* .hour-block-has-lesson:hover,
+.hour-block-has-lesson:hover + .hour-block-has-lesson-block {
+  background-color: #ff0000 !important ;
+} */
 html {
   scroll-behavior: smooth;
 }
