@@ -3,31 +3,28 @@ import { User, onAuthStateChanged } from 'firebase/auth';
 // import rightImg from '../../assets/right-arrow.svg?url';
 import profileImg from '../../assets/profile.svg';
 import { useEffect, useState } from 'react';
-import { auth } from '../../firebase/firebase-config';
+import { auth, db } from '../../firebase/firebase-config';
 import { ViewLessonModal } from './ViewLessonModal';
-import { userDataT } from '../../types';
+import { ClassesT, LessonT, TeacherT, TopicT, userDataT } from '../../types';
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 const ProgressBlock = (props: {
-  topic: string;
-  date: Date;
-  status: string;
-  onClick: (lessonData: any) => void;
+  lesson: LessonT;
+  onClickFunc: (lessonData: LessonT & { description: string }) => void;
 }) => {
-  const myDate = props.date;
-  const options: any = {
-    timeZone: 'UTC',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  };
+  const { lesson, onClickFunc } = props;
 
+  // const options: any = {
+  //   timeZone: 'UTC',
+  //   year: 'numeric',
+  //   month: '2-digit',
+  //   day: '2-digit',
+  // };
+  const dateUnit = new Date(lesson.date * 1000);
   return (
     <div
       onClick={() =>
-        props.onClick({
-          topic: props.topic,
-          teacher: 'Mr. Smith',
-          date: myDate,
-          status: props.status,
+        onClickFunc({
+          ...lesson,
           description:
             'It is very important to attend this lesson. Please be on time. We will cover the topic in detail. Make sure to review the materials beforehand. If you have any questions, feel free to ask during the lesson. Looking forward to seeing you there! Thank you for your attention.',
         })
@@ -36,13 +33,13 @@ const ProgressBlock = (props: {
     >
       <div className='flex flex-col w-full h-full text-center'>
         <span className='mt-6 text-lg font-medium text-white'>
-          {myDate.toLocaleTimeString('en-US', {
+          {dateUnit.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
           })}
         </span>
         <span className='mt-2 text-xs font-medium text-white '>
-          {myDate.toLocaleDateString('en-US', options)}
+          {dateUnit.toLocaleDateString('en-US')}
         </span>
       </div>
     </div>
@@ -56,7 +53,6 @@ export const StudentProgressMain = (props: {
   // console.log('profileImg: ', profileImg);
   const [user, setUser] = useState<User | null>(null);
   const userData = props.userData;
-  const classes = userData?.classes || [];
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
@@ -65,6 +61,104 @@ export const StudentProgressMain = (props: {
   }, []);
   console.log('userData in ProgressMain: ', userData);
   const totalClasses = userData.tokens + userData.used_tokens;
+  const [lessons, setLessons] = useState<LessonT[]>([]);
+
+  useEffect(() => {
+    const fetchLessons = async () => {
+      try {
+        // 1️⃣ Fetch all topics
+        const topicsColRef = collection(db, 'topics');
+        const topicsSnapshot = await getDocs(topicsColRef);
+        const topicsArr: TopicT[] = topicsSnapshot.docs.map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as TopicT)
+        );
+
+        // 2️⃣ Fetch all classes and build lessons
+        const lessonsPromises = props.userData.classes.map(async (c) => {
+          try {
+            // Fetch class document
+            const classRef = doc(db, 'classes', c.id);
+            const classSnap = await getDoc(classRef);
+
+            if (!classSnap.exists()) {
+              return {
+                date: 0,
+                status: 'scheduled',
+                topic: null,
+                teacher: null,
+              } as LessonT;
+            }
+
+            const classData = classSnap.data() as ClassesT & { id: string };
+
+            // Lookup topic from topicsArr
+            const topicData =
+              topicsArr.find((t) => t.id === classData.topic_id) || null;
+
+            // Fetch teacher info safely
+            const teacherData: TeacherT | null = classData.teacher_id
+              ? await (async () => {
+                  try {
+                    const teacherRef = doc(
+                      db,
+                      'teachers',
+                      classData.teacher_id
+                    );
+                    const teacherSnap = await getDoc(teacherRef);
+                    return teacherSnap.exists()
+                      ? (teacherSnap.data() as TeacherT)
+                      : null;
+                  } catch (err) {
+                    console.error(
+                      `Error fetching teacher ${classData.teacher_id}:`,
+                      err
+                    );
+                    return null;
+                  }
+                })()
+              : null;
+
+            return {
+              date: classData.date,
+              status: classData.status,
+              topic: topicData
+                ? { heading: topicData.heading, id: topicData.id }
+                : null,
+              teacher: teacherData
+                ? {
+                    first_name: teacherData.first_name,
+                    last_name: teacherData.last_name,
+                    rating: teacherData.rating,
+                    img: teacherData.img,
+                  }
+                : null,
+            } as LessonT;
+          } catch (err) {
+            console.error(`Error fetching class ${c.id}:`, err);
+            return {
+              date: 0,
+              status: 'scheduled',
+              topic: null,
+              teacher: null,
+            } as LessonT;
+          }
+        });
+
+        const initialLessons = await Promise.all(lessonsPromises);
+        setLessons(initialLessons);
+      } catch (err) {
+        console.error('Error fetching lessons/topics:', err);
+        setLessons([]); // fallback if something totally unexpected happens
+      }
+    };
+
+    fetchLessons();
+  }, [props.userData.classes]);
+
   // console.log('user: ', user);
   // classes.forEach((x) => {
   //   console.log('Lesson:', x.topic, 'Date:', new Date(x.date * 1000));
@@ -131,15 +225,17 @@ export const StudentProgressMain = (props: {
           </div>
           <div className='flex items-center justify-center w-full h-full '>
             <div className='flex flex-wrap items-center justify-center w-full h-full py-6 bg-white rounded-md shadow-lg '>
-              {classes.map((lesson, index) => {
+              {lessons.map((lesson, index) => {
                 if (lesson.date < Date.now() / 1000) {
                   return (
                     <ProgressBlock
                       key={index}
-                      date={new Date(lesson.date * 1000)}
-                      status={lesson.status}
-                      topic={lesson.topic}
-                      onClick={handleBlockClick}
+                      lesson={lesson}
+                      // date={new Date(lesson.date * 1000)}
+                      // status={lesson.status}
+                      // topic={lesson.topic!.heading}
+                      // teacher={lesson.teacher}
+                      onClickFunc={handleBlockClick}
                     />
                   );
                 }
@@ -154,15 +250,13 @@ export const StudentProgressMain = (props: {
           </div>
           <div className='flex items-center justify-center w-full h-full'>
             <div className='flex flex-wrap items-center justify-center w-full h-full py-6 bg-white rounded-md shadow-lg '>
-              {classes.map((lesson, index) => {
+              {lessons.map((lesson, index) => {
                 if (lesson.date > Date.now() / 1000) {
                   return (
                     <ProgressBlock
                       key={index}
-                      date={new Date(lesson.date * 1000)}
-                      status={lesson.status}
-                      topic={lesson.topic}
-                      onClick={handleBlockClick}
+                      lesson={lesson}
+                      onClickFunc={handleBlockClick}
                     />
                   );
                 }

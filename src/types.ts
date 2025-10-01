@@ -8,7 +8,8 @@ export interface LessonT {
     | 'missed_teacher'
     | 'cancelled_student'
     | 'cancelled_teacher';
-  topic: string;
+  topic: TopicT | null;
+  teacher: TeacherT | null;
 }
 export interface BlockDetailsT {
   date: Date;
@@ -20,8 +21,10 @@ export interface LessonHoverT {
   isStart: boolean; // true for the first 30min half, false for the second
 }
 export interface BlockT {
+  currLesson?: LessonT | null;
   border: boolean;
-  name?: string;
+  startTopic?: TopicT | null;
+  endTopic?: TopicT | null;
   time?: number;
   date: Date;
   disabled?: boolean;
@@ -30,10 +33,10 @@ export interface BlockT {
   setDefaultBlockDate: (d: Date) => void;
   hasLesson: boolean;
   lessons: LessonT[];
-  hovered: boolean | null; // <-- Add this line
-  lessonHover?: LessonHoverT;
-  onMouseEnter?: () => void; // <-- Add this line
-  onMouseLeave?: () => void; // <-- Add this line
+  // hovered: boolean | null; // <-- Add this line
+  // lessonHover?: LessonHoverT;
+  // onMouseEnter?: () => void; // <-- Add this line
+  // onMouseLeave?: () => void; // <-- Add this line
 }
 export interface FormInputT {
   onChange: any;
@@ -56,10 +59,32 @@ export interface selectSmallObjectT {
   options: optionT[];
 }
 export interface userDataT {
-  classes: LessonT[];
+  classes: {
+    id: string;
+  }[];
   first_name: string;
   last_name: string;
   role: 'student' | 'teacher';
   tokens: number;
   used_tokens: number;
+}
+export interface ClassesT {
+  date: number;
+  status:
+    | 'finished'
+    | 'scheduled'
+    | 'in-progress'
+    | 'missed_student'
+    | 'missed_teacher'
+    | 'cancelled_student'
+    | 'cancelled_teacher';
+  topic_id: string;
+  student_id: string;
+  teacher_id: string;
+}
+export interface TeacherT {
+  first_name: string;
+  last_name: string;
+  img: string;
+  rating: number;
 }

@@ -18,107 +18,71 @@ export const CalendarBody = (props: {
   setIsModalOn: (x: boolean) => void;
   setDefaultBlockDate: (d: Date) => void;
 }) => {
-  const [hoveredBlock, setHoveredBlock] = useState<{
-    row: number;
-    col: number;
-    canHover: boolean;
-  } | null>(null);
+  const weekdays = [0, 1, 2, 3, 4, 5, 6];
+  const availableBlocks = Array.from({ length: 48 }, (_, i) => i);
 
-  const weekdays = useMemo(() => [0, 1, 2, 3, 4, 5, 6], []);
-  const availableBlocks = useMemo(
-    () => Array.from({ length: 48 }, (_, i) => i),
-    []
+  // Precompute all blocks to avoid repeated calculations
+  const allBlocks = weekdays.map((dayOffset) =>
+    availableBlocks.map((blockIdx) => {
+      const [hour, minute] = myGetHourCorrectly(blockIdx / 2);
+      const { date, isDisabled, currLesson } = useBlockDetails(
+        minute,
+        hour,
+        props.monday.getDate() + dayOffset,
+        props.monday.getMonth(),
+        props.monday.getFullYear(),
+        props.lessons
+      );
+      return { date, isDisabled, currLesson };
+    })
   );
-
-  // Precompute all block details to avoid repeated calculations
-  const allBlockDetails = useMemo(() => {
-    const blocks: {
-      date: Date;
-      isDisabled: boolean;
-      currLesson?: LessonT;
-    }[][] = [];
-
-    availableBlocks.forEach((rowIdx) => {
-      const row: (typeof blocks)[0] = [];
-      weekdays.forEach((dayOffset) => {
-        const [currHour, currMinute] = myGetHourCorrectly(rowIdx / 2);
-        const { date, isDisabled, currLesson } = useBlockDetails(
-          currMinute,
-          currHour,
-          props.monday.getDate() + dayOffset,
-          props.monday.getMonth(),
-          props.monday.getFullYear(),
-          props.lessons
-        );
-
-        // Make sure currLesson is undefined instead of null
-        row.push({ date, isDisabled, currLesson: currLesson ?? undefined });
-      });
-      blocks.push(row);
-    });
-
-    return blocks;
-  }, [availableBlocks, weekdays, props.lessons, props.monday]);
-
+  console.log('lessons: ', props.lessons);
   return (
-    <div className='flex flex-col w-full'>
-      {allBlockDetails.map((row, rowIdx) => (
-        <div key={rowIdx} className='flex w-full'>
-          {row.map(({ date, isDisabled, currLesson }, colIdx) => {
-            const nextDate = new Date(date.getTime() + 30 * 60 * 1000);
-            const currentOccupied = isBlockOccupied(date, props.lessons);
-            const nextOccupied = isBlockOccupied(nextDate, props.lessons);
-            const pairCanHover = !currentOccupied && !nextOccupied;
-            const disabledForHover = currentOccupied || nextOccupied;
-
-            const hovered = hoveredBlock?.canHover
-              ? (hoveredBlock.row === rowIdx && hoveredBlock.col === colIdx) ||
-                (hoveredBlock.row + 1 === rowIdx && hoveredBlock.col === colIdx)
-              : null; // <-- use null instead of false
-
-            const lessonHover =
-              hoveredBlock && hoveredBlock.canHover
-                ? {
-                    isHovering:
-                      hoveredBlock.row === rowIdx && hoveredBlock.col === colIdx
-                        ? true
-                        : hoveredBlock.row + 1 === rowIdx &&
-                          hoveredBlock.col === colIdx
-                        ? true
-                        : false,
-                    isStart:
-                      hoveredBlock.row === rowIdx &&
-                      hoveredBlock.col === colIdx,
-                  }
-                : { isHovering: false, isStart: false };
-
-            return (
-              <div className='w-full' key={`${rowIdx}-${colIdx}`}>
+    <div className='flex w-full'>
+      {allBlocks.map((column, colIdx) => (
+        <div key={colIdx} className='flex flex-col w-full'>
+          {column.map(({ date, isDisabled, currLesson }, rowIdx) => {
+            // console.log('current Lesson: ', currLesson);
+            const beforeLesson = column[rowIdx - 1]
+              ? column[rowIdx - 1].currLesson
+              : null;
+            // console.log('beforeLesson: ', beforeLesson);
+            if (currLesson) {
+              return (
                 <Block
-                  border={false}
+                  key={`${rowIdx}-${colIdx}`}
                   date={date}
-                  name={currLesson?.topic}
+                  currLesson={currLesson}
+                  // startTopic={currLesson?.topic}
+                  // name={currLesson?.topic?.heading}
                   disabled={isDisabled}
-                  disabledForHover={disabledForHover}
                   setIsModalOn={props.setIsModalOn}
                   setDefaultBlockDate={props.setDefaultBlockDate}
-                  hasLesson={currentOccupied}
-                  hovered={hovered}
-                  lessonHover={lessonHover}
                   lessons={props.lessons}
-                  onMouseEnter={() => {
-                    if (!isDisabled) {
-                      setHoveredBlock({
-                        row: rowIdx,
-                        col: colIdx,
-                        canHover: pairCanHover,
-                      });
-                    }
-                  }}
-                  onMouseLeave={() => setHoveredBlock(null)}
+                  hasLesson={isBlockOccupied(date, props.lessons)}
+                  border={false}
+                  // nextLesson={nextLesson}
+                  // className="hour-block"
                 />
-              </div>
-            );
+              );
+            } else {
+              return (
+                <Block
+                  key={`${rowIdx}-${colIdx}`}
+                  date={date}
+                  endTopic={beforeLesson?.topic}
+                  // name={beforeLesson?.topic?.heading || null}
+                  disabled={isDisabled}
+                  setIsModalOn={props.setIsModalOn}
+                  setDefaultBlockDate={props.setDefaultBlockDate}
+                  lessons={props.lessons}
+                  hasLesson={isBlockOccupied(date, props.lessons)}
+                  border={false}
+                  // nextLesson={nextLesson}
+                  // className="hour-block"
+                />
+              );
+            }
           })}
         </div>
       ))}

@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react';
 import { SelectInput } from '../../atoms/SelectInput';
-import { TopicT, selectSmallObjectT, userDataT } from '../../types';
+import { LessonT, TopicT, selectSmallObjectT, userDataT } from '../../types';
 import { useSelectInput } from '../../hooks/useSelectInput';
-import { arrayUnion, doc, increment, updateDoc } from 'firebase/firestore';
+import {
+  addDoc,
+  arrayUnion,
+  collection,
+  doc,
+  increment,
+  setDoc,
+  updateDoc,
+} from 'firebase/firestore';
 import { db } from '../../firebase/firebase-config';
 import { User } from 'firebase/auth';
 
@@ -103,6 +111,7 @@ type CalendarAddLessonModalProps = {
   };
   user: User;
   userData: userDataT;
+  lessons: LessonT[];
   setDefaultBlockDate: (date: Date) => void;
 };
 
@@ -114,6 +123,7 @@ export const CalendarAddLessonModal = ({
   selectObjects,
   user,
   userData,
+  lessons,
 }: CalendarAddLessonModalProps) => {
   const [selectedTopicId, setSelectedTopicId] = useState(
     topicsArr[0]?.id || ''
@@ -146,24 +156,33 @@ export const CalendarAddLessonModal = ({
   const handleClose = () => setIsOn(false);
   const handleAccept = async () => {
     console.log('test');
-    const docRef = doc(db, 'userData', user.uid);
+    const userDataDocRef = doc(db, 'userData', user.uid);
     const buffer = selectedDate.getTime().toString();
-    console.log('buffer.slice: ');
-    await updateDoc(docRef, {
-      tokens: increment(-1),
-      used_tokens: increment(1),
-      classes: arrayUnion({
-        date: parseInt(buffer.slice(0, -3)),
-        status: 'scheduled',
-        topic: selectedTopicId,
-      }),
-    })
-      .then(() => {
-        console.log('Document successfully updated!');
+    const classDocRef = await addDoc(collection(db, 'classes'), {
+      date: parseInt(buffer.slice(0, -3)),
+      status: 'scheduled',
+      topic_id: selectedTopicId,
+      student_id: user.uid,
+      teacher_id: '',
+    }).then((docRef) => {
+      updateDoc(userDataDocRef, {
+        tokens: increment(-1),
+        used_tokens: increment(1),
+        classes: arrayUnion({
+          id: docRef.id,
+          // date: parseInt(buffer.slice(0, -3)),
+          // status: 'scheduled',
+          // topic: selectedTopicId,
+        }),
       })
-      .catch((error) => {
-        console.error('Error updating document: ', error);
-      });
+        .then(() => {
+          console.log('Document successfully updated!');
+        })
+        .catch((error) => {
+          console.error('Error updating document: ', error);
+        });
+    });
+
     // alert(selectedDate.getTime());
     setIsOn(false);
   };
@@ -188,7 +207,7 @@ export const CalendarAddLessonModal = ({
     }
 
     const selectedTime = Math.floor(selectedDate.getTime() / 1000); // seconds
-    const conflict = userData.classes.some((x) => {
+    const conflict = lessons.some((x) => {
       const diff = Math.abs(x.date - selectedTime);
       return diff < 3600; // less than 1 hour
     });

@@ -1,13 +1,7 @@
+import { useState } from 'react';
 import { BlockT } from '../../types';
+import { ViewLessonModal } from '../progress/ViewLessonModal';
 
-export const Lesson = (props: { name: string; time: string }) => {
-  return (
-    <div className='p-1 mb-1 text-sm text-white bg-purple-400 rounded event'>
-      <span className='event-name'> {props.name} </span>
-      <span className='time'> {props.time} </span>
-    </div>
-  );
-};
 const checkIfLessonExists = (lessonDate: number, blockTime: number) => {
   // const blockTime = parseInt(props.date.getTime().toString().slice(0, -3));
 
@@ -25,49 +19,70 @@ export const Block = (props: BlockT) => {
     .map((lesson) => checkIfLessonExists(lesson.date, blockTime))
     .find((res) => res.hasLesson);
   const { hasLesson, isStart } = match ?? { hasLesson: false, isStart: false };
-  console.log('hovered: ', props.hovered, ' hasLesson: ', hasLesson);
+  const [modalOpen, setModalOpen] = useState(false);
+  // console.log('hovered: ', props.hovered, ' hasLesson: ', hasLesson);
+
+  // ${props.disabledForHover ? ' disabled cursor-default' : ''}
+  // ${props.hovered && !hasLesson ? '!bg-[#c3c3c3]' : ''}
   return (
-    <div
-      onMouseEnter={props.onMouseEnter}
-      onMouseLeave={props.onMouseLeave}
-      className={`w-full h-10 hour-block cursor-pointer
-        ${props.disabled ? ' bg-gray-200 cursor-default' : 'bg-white'}
-        ${props.disabledForHover ? ' disabled cursor-default' : ''}
-        ${props.hovered && !hasLesson ? '!bg-[#c3c3c3]' : ''}
-        ${props.border ? 'border-2 border-solid border-torch-red-700' : ''}
-        ${hasLesson ? '!bg-black-pearl-800 hover:!bg-black-pearl-700' : ''}
-        ${
-          hasLesson && isStart
-            ? 'rounded-t-lg'
-            : hasLesson
-            ? 'rounded-b-lg'
-            : ''
-        }
-      `}
-    >
+    <>
       <div
-        className='flex items-center justify-center w-full h-full'
         onClick={() => {
-          if (!props.disabled) {
-            props.setDefaultBlockDate(props.date);
+          if (!props.disabled && !props.hasLesson) {
             props.setIsModalOn(true);
+            props.setDefaultBlockDate(props.date);
+          } else if (props.hasLesson) {
+            setModalOpen(true);
           }
         }}
+        className={`w-full h-10 hour-block relative group
+        ${
+          props.disabled
+            ? ' bg-gray-200 cursor-default hour-block-disabled'
+            : 'bg-white cursor-pointer '
+        }
+          ${props.border ? 'border-2 border-solid border-torch-red-700' : ''}
+          ${hasLesson ? '!bg-black-pearl-900  has-lesson' : ''}
+          ${
+            props.disabled || hasLesson
+              ? ''
+              : 'hover:bg-black-pearl-900 hover:rounded-t-lg'
+          }
+          ${
+            hasLesson && isStart
+              ? 'rounded-t-lg'
+              : hasLesson
+              ? 'rounded-b-lg'
+              : ''
+          }
+          justify-center
+          flex
+        `}
       >
-        {props.name && (
-          <button
-            data-modal-target='default-modal'
-            data-modal-toggle='default-modal'
-            className={`inset-0 flex-col justify-center items-center w-[90%] h-[80%] text-white ${
-              props.disabled ? 'bg-purple-950' : 'bg-purple-400'
-            }  rounded text-md text-center`}
-          >
-            <span className='text-sm'>{props.name}</span>
-            <span className='text-sm'>{props.time}</span>
-          </button>
-        )}
+        <div
+          className={` ${props.currLesson ? '' : 'hidden'} 
+          shadow-lg cursor-pointer absolute flex items-center justify-center top-0 w-[100%] h-20 z-10 hover:bg-black-pearl-800 duration-300 transition-transform rounded-lg hover:scale-110`}
+        >
+          <p className='text-base text-white'>
+            {props.currLesson?.topic?.heading}
+          </p>
+        </div>
+
+        {/* <div className='absolute top-0 hidden w-full h-10 bg-red-600 group-hover:block'></div>
+        <div className='absolute hidden w-full h-10 bg-red-600 top-full group-hover:block'></div> */}
       </div>
-    </div>
+      {props.currLesson ? (
+        <ViewLessonModal
+          isOn={modalOpen}
+          setIsOn={setModalOpen}
+          lesson={{
+            ...props.currLesson,
+            description:
+              'It is very important to attend this lesson. Please be on time. We will cover the topic in detail. Make sure to review the materials beforehand. If you have any questions, feel free to ask during the lesson. Looking forward to seeing you there! Thank you for your attention.',
+          }}
+        />
+      ) : null}
+    </>
   );
 };
 export const TimeBlock = (props: { time: string; disabled: boolean }) => {

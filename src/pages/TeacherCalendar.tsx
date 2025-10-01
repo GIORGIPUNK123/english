@@ -3,9 +3,9 @@ import { RenderTimeBlocks } from '../components/calendar/CalendarHelpers';
 import { CalendarControls } from '../components/calendar/CalendarControls';
 import { CalendarTable } from '../components/calendar/CalendarTable';
 import { CalendarAddLessonModal } from '../components/calendar/CalendarAddLessonModal';
-import { TopicT, userDataT } from '../types';
+import { ClassesT, LessonT, TeacherT, TopicT, userDataT } from '../types';
 import { generateHoursArr } from '../utils/calendarUtils';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config';
 import { User } from 'firebase/auth';
 
@@ -34,46 +34,18 @@ export const TeacherCalendar = (props: { user: User; userData: userDataT }) => {
 
   const now = new Date();
   const [monday, setMonday] = useState(getMonday(now));
-  const lessons = props.userData.classes || [];
+
   const [isModalOn, setIsModalOn] = useState(false);
-
   const [topicsArr, setTopicsArr] = useState<TopicT[]>([]);
-
-  // const topicsArr: TopicT[] = [
-  //   {
-  //     text: 'General',
-  //     value: 'general',
-  //     id: 0,
-  //   },
-  //   {
-  //     text: 'Freedom',
-  //     value: 'freedom',
-  //     id: 1,
-  //   },
-  //   {
-  //     text: 'Globalization',
-  //     value: 'globalization',
-  //     id: 2,
-  //   },
-  //   {
-  //     text: 'Global Warming',
-  //     value: 'global_warming',
-  //     id: 3,
-  //   },
-  //   {
-  //     text: 'Nature',
-  //     value: 'nature',
-  //     id: 4,
-  //   },
-  // ];
   const [defaultBlockDate, setDefaultBlockDate] = useState<Date>(new Date());
   const availableHours = generateHoursArr();
+
   const daysOptions = Array.from({ length: 31 }).map((_, idx) => ({
     id: idx + 1,
     label: (idx + 1).toString(),
     value: idx + 1,
   }));
-  console.log('daysOptions: ', daysOptions);
+
   const selectObjects = {
     hoursObj: {
       defaultId: defaultBlockDate.getHours(),
@@ -93,6 +65,9 @@ export const TeacherCalendar = (props: { user: User; userData: userDataT }) => {
     },
   };
 
+  // Fetch topics from Firestore
+  const [lessons, setLessons] = useState<LessonT[]>([]);
+
   useEffect(() => {
     console.log('Fetching topics from Firestore...');
     const topicsColRef = collection(db, 'topics');
@@ -110,6 +85,91 @@ export const TeacherCalendar = (props: { user: User; userData: userDataT }) => {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const fetchLessons = async () => {
+      try {
+        const lessonsPromises = props.userData.classes.map(async (c) => {
+          try {
+            // 1️⃣ Fetch class document
+            const classRef = doc(db, 'classes', c.id);
+            const classSnap = await getDoc(classRef);
+
+            if (!classSnap.exists()) {
+              return {
+                date: 0,
+                status: 'scheduled',
+                topic: null,
+                teacher: null,
+              } as LessonT;
+            }
+
+            const classData = classSnap.data() as ClassesT & { id: string };
+
+            // 2️⃣ Lookup topic from topicsArr
+            const topicData =
+              topicsArr.find((t) => t.id === classData.topic_id) || null;
+
+            // 3️⃣ Fetch teacher info safely
+            const teacherData: TeacherT | null = classData.teacher_id
+              ? await (async () => {
+                  try {
+                    const teacherRef = doc(
+                      db,
+                      'teachers',
+                      classData.teacher_id
+                    );
+                    const teacherSnap = await getDoc(teacherRef);
+                    return teacherSnap.exists()
+                      ? (teacherSnap.data() as TeacherT)
+                      : null;
+                  } catch (err) {
+                    console.error(
+                      `Error fetching teacher ${classData.teacher_id}:`,
+                      err
+                    );
+                    return null;
+                  }
+                })()
+              : null;
+
+            return {
+              date: classData.date,
+              status: classData.status,
+              topic: topicData
+                ? { heading: topicData.heading, id: topicData.id }
+                : null,
+              teacher: teacherData
+                ? {
+                    first_name: teacherData.first_name,
+                    last_name: teacherData.last_name,
+                    rating: teacherData.rating,
+                    img: teacherData.img,
+                  }
+                : null,
+            } as LessonT;
+          } catch (err) {
+            console.error(`Error fetching class ${c.id}:`, err);
+            return {
+              date: 0,
+              status: 'scheduled',
+              topic: null,
+              teacher: null,
+            } as LessonT;
+          }
+        });
+
+        const initialLessons = await Promise.all(lessonsPromises);
+        setLessons(initialLessons);
+      } catch (err) {
+        console.error('Error fetching lessons:', err);
+        setLessons([]); // fallback if something totally unexpected happens
+      }
+    };
+
+    fetchLessons();
+  }, [props.userData.classes, topicsArr]);
+
+  console.log('lessons: ', lessons);
   if (topicsArr.length === 0) {
     return <div>Loading...</div>;
   } else {
@@ -130,6 +190,7 @@ export const TeacherCalendar = (props: { user: User; userData: userDataT }) => {
               </div>
               <div className='w-[90%] '>
                 <CalendarAddLessonModal
+                  lessons={lessons}
                   defaultDate={defaultBlockDate}
                   setDefaultBlockDate={setDefaultBlockDate}
                   topicsArr={topicsArr}

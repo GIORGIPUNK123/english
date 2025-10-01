@@ -22,7 +22,7 @@ export const useBlockDetails = (
   const blockUTC = convertLocalDateToUTC(blockDate);
 
   // Find matching lesson
-  const lesson = lessons.find((l) => l.date === blockUTC.getTime());
+  const lesson = lessons.find((l) => l.date === blockDate.getTime() / 1000);
 
   // Check if within 12 hours
   const nowUTC = convertLocalDateToUTC(new Date());

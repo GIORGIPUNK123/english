@@ -1,15 +1,9 @@
-type Lesson = {
-  topic: string;
-  teacher: string;
-  date: Date;
-  status: string;
-  description?: string;
-};
+import { LessonT, TeacherT } from '../../types';
 
 export const ViewLessonModal = (props: {
   isOn: boolean;
   setIsOn: (v: boolean) => void;
-  lesson: Lesson;
+  lesson: LessonT & { description: string };
 }) => {
   const { topic, teacher, date, status, description } = props.lesson;
 
@@ -36,14 +30,15 @@ export const ViewLessonModal = (props: {
           </svg>
         </button>
         <h2 className='mb-4 text-2xl font-bold text-black dark:text-white'>
-          {topic}
+          {topic?.heading}
         </h2>
         <div className='mb-2 text-lg text-gray-700 dark:text-gray-300'>
-          <span className='font-semibold'>Teacher:</span> {teacher}
+          <span className='font-semibold'>Teacher:</span>{' '}
+          {teacher?.first_name + ' ' + teacher?.last_name}
         </div>
         <div className='mb-2 text-lg text-gray-700 dark:text-gray-300'>
           <span className='font-semibold'>Date & Time:</span>{' '}
-          {date.toLocaleString()}
+          {new Date(date * 1000).toLocaleString()}
         </div>
         <div className='mb-4 text-lg text-gray-700 dark:text-gray-300'>
           <span className='font-semibold'>Status:</span>{' '}
