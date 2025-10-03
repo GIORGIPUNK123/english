@@ -10,6 +10,7 @@ import profileImg from '../assets/profile.svg';
 import { StudentSettings } from '../components/progress/StudentSettings';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { userDataT } from '../types';
+import { StudentNotifications } from '../components/progress/StudentNotifications';
 
 export const StudentDashboard = () => {
   const [currPg, setCurrPg] = useState(0);
@@ -24,6 +25,7 @@ export const StudentDashboard = () => {
     { img: calendarImg, text: 'Calendar' },
     { img: calendarImg, text: 'Assignments' },
     { img: calendarImg, text: 'Messages' },
+    { img: calendarImg, text: 'Notifications' },
     { img: calendarImg, text: 'Settings' },
   ];
 
@@ -134,6 +136,12 @@ export const StudentDashboard = () => {
                 </div>
               )}
               {currPg === 4 && (
+                <StudentNotifications
+                  user={user}
+                  // capitalNames={capitalNames}
+                />
+              )}
+              {currPg === 5 && (
                 <StudentSettings
                   userData={userData}
                   capitalNames={capitalNames}

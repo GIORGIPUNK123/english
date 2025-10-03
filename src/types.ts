@@ -58,9 +58,26 @@ export interface selectSmallObjectT {
   defaultId: number;
   options: optionT[];
 }
+export interface notificationT {
+  id: string;
+  teacher?: TeacherT | null;
+  teacher_id?: string;
+  message_type: 'regular' | 'positive' | 'negative';
+  message: string;
+  heading: string;
+  read: boolean;
+}
 export interface userDataT {
   classes: {
     id: string;
+  }[];
+  notifications: {
+    id: string;
+    teacher_id?: string;
+    message_type: 'regular' | 'positive' | 'negative';
+    message: string;
+    heading: string;
+    read: boolean;
   }[];
   first_name: string;
   last_name: string;
