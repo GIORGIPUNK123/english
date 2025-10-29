@@ -80,6 +80,9 @@ export const Block = (props: BlockT) => {
             description:
               'It is very important to attend this lesson. Please be on time. We will cover the topic in detail. Make sure to review the materials beforehand. If you have any questions, feel free to ask during the lesson. Looking forward to seeing you there! Thank you for your attention.',
           }}
+          isWithin48Hours={
+            props.currLesson.date - Math.floor(Date.now() / 1000) < 172800
+          }
         />
       ) : null}
     </>

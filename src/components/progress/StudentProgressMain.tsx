@@ -292,6 +292,7 @@ export const StudentProgressMain = (props: {
             description: '',
           }
         }
+        old={selectedLesson ? selectedLesson.date < Date.now() / 1000 : false}
       />
     </div>
   );

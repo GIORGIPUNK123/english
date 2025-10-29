@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TeacherCalendar } from './TeacherCalendar';
+import { Calendar } from '../components/Calendar';
 import homeImg from '../assets/home.svg';
 import calendarImg from '../assets/calendar.svg';
 import { StudentProgressMain } from '../components/progress/StudentProgressMain';
@@ -81,7 +81,12 @@ export const StudentDashboard = () => {
         <div className='min-h-screen pb-20 bg-gradient-to-br from-black-pearl-950 to-slate-900'>
           <header className='flex items-center justify-between px-16 py-8 shadow-lg bg-black-pearl-950'>
             <h1 className='text-4xl font-bold text-white'>Student Dashboard</h1>
-            <div className='flex items-center gap-4 px-4 py-2 transition-colors duration-300 rounded-xl hover:cursor-pointer hover:bg-slate-700 hover:text-torch-red-500'>
+            <div
+              onClick={() => {
+                setCurrPg(5);
+              }}
+              className='flex items-center gap-4 px-4 py-2 transition-colors duration-300 rounded-xl hover:cursor-pointer hover:bg-slate-700 hover:text-torch-red-500'
+            >
               <img
                 src={user.photoURL || profileImg}
                 alt='Profile'
@@ -123,7 +128,7 @@ export const StudentDashboard = () => {
                 />
               )}
               {currPg === 1 && user && (
-                <TeacherCalendar user={user} userData={userData} />
+                <Calendar user={user} userData={userData} />
               )}
               {currPg === 2 && (
                 <div className='py-32 text-2xl text-center text-gray-600'>

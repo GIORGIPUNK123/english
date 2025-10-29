@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { RenderTimeBlocks } from '../components/calendar/CalendarHelpers';
-import { CalendarControls } from '../components/calendar/CalendarControls';
-import { CalendarTable } from '../components/calendar/CalendarTable';
-import { CalendarAddLessonModal } from '../components/calendar/CalendarAddLessonModal';
+import { RenderTimeBlocks } from './calendar/CalendarHelpers';
+import { CalendarControls } from './calendar/CalendarControls';
+import { CalendarAddLessonModal } from './calendar/CalendarAddLessonModal';
 import { ClassesT, LessonT, TeacherT, TopicT, userDataT } from '../types';
 import { generateHoursArr } from '../utils/calendarUtils';
 import { collection, doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config';
 import { User } from 'firebase/auth';
+import { CalendarBody } from './calendar/CalendarBody';
+import { CalendarHeader } from './calendar/CalendarHeader';
 
 const monthNames = [
   'January',
@@ -24,7 +25,7 @@ const monthNames = [
   'December',
 ];
 
-export const TeacherCalendar = (props: { user: User; userData: userDataT }) => {
+export const Calendar = (props: { user: User; userData: userDataT }) => {
   // Helper functions and constants
   const getMonday = (d: Date) => {
     const day = d.getDay();
@@ -133,6 +134,7 @@ export const TeacherCalendar = (props: { user: User; userData: userDataT }) => {
               : null;
 
             return {
+              id: classSnap.id,
               date: classData.date,
               status: classData.status,
               topic: topicData
@@ -200,12 +202,15 @@ export const TeacherCalendar = (props: { user: User; userData: userDataT }) => {
                   user={props.user}
                   userData={props.userData}
                 />
-                <CalendarTable
-                  setDefaultBlockDate={setDefaultBlockDate}
-                  setIsModalOn={setIsModalOn}
-                  monday={monday}
-                  lessons={lessons}
-                />
+                <div className='relative w-full'>
+                  <CalendarHeader monday={monday} />
+                  <CalendarBody
+                    setDefaultBlockDate={setDefaultBlockDate}
+                    setIsModalOn={setIsModalOn}
+                    monday={monday}
+                    lessons={lessons}
+                  />
+                </div>
               </div>
             </div>
           </div>

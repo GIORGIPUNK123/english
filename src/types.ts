@@ -1,4 +1,5 @@
 export interface LessonT {
+  id: string;
   date: number;
   status:
     | 'finished'

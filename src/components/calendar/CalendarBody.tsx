@@ -1,4 +1,3 @@
-import { useState, useMemo } from 'react';
 import { useBlockDetails } from '../../hooks/useBlockDetails';
 import { LessonT } from '../../types';
 import { myGetHourCorrectly } from '../../utils/calendarUtils';

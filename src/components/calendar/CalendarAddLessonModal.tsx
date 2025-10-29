@@ -8,7 +8,7 @@ import {
   collection,
   doc,
   increment,
-  setDoc,
+  // setDoc,
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '../../firebase/firebase-config';
@@ -186,7 +186,6 @@ export const CalendarAddLessonModal = ({
     // alert(selectedDate.getTime());
     setIsOn(false);
   };
-  const handleDecline = () => setIsOn(false);
 
   const selectedDate = new Date(
     Number(selectedYear),
@@ -280,7 +279,7 @@ export const CalendarAddLessonModal = ({
           isValid={isValid}
           isValidReason={isValidReason}
           onAccept={handleAccept}
-          onDecline={handleDecline}
+          onDecline={handleClose}
         />
       </div>
     </div>
