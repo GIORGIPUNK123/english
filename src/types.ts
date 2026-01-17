@@ -11,6 +11,7 @@ export interface LessonT {
     | 'cancelled_teacher';
   topic: TopicT | null;
   teacher: TeacherT | null;
+  link: string | null;
 }
 export interface BlockDetailsT {
   date: Date;
@@ -60,6 +61,7 @@ export interface selectSmallObjectT {
   options: optionT[];
 }
 export interface notificationT {
+  created_at?: number;
   id: string;
   teacher?: TeacherT | null;
   teacher_id?: string;
@@ -99,6 +101,7 @@ export interface ClassesT {
   topic_id: string;
   student_id: string;
   teacher_id: string;
+  link: string | null;
 }
 export interface TeacherT {
   first_name: string;

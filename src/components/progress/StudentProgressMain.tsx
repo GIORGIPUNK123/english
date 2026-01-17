@@ -50,7 +50,6 @@ export const StudentProgressMain = (props: {
   userData: userDataT;
   capitalNames: string[];
 }) => {
-  // console.log('profileImg: ', profileImg);
   const [user, setUser] = useState<User | null>(null);
   const userData = props.userData;
   useEffect(() => {
@@ -59,10 +58,8 @@ export const StudentProgressMain = (props: {
     });
     return () => unsubscribe();
   }, []);
-  console.log('userData in ProgressMain: ', userData);
   const totalClasses = userData.tokens + userData.used_tokens;
   const [lessons, setLessons] = useState<LessonT[]>([]);
-
   useEffect(() => {
     const fetchLessons = async () => {
       try {
@@ -94,7 +91,6 @@ export const StudentProgressMain = (props: {
             }
 
             const classData = classSnap.data() as ClassesT & { id: string };
-
             // Lookup topic from topicsArr
             const topicData =
               topicsArr.find((t) => t.id === classData.topic_id) || null;
@@ -136,6 +132,7 @@ export const StudentProgressMain = (props: {
                     img: teacherData.img,
                   }
                 : null,
+              link: classData.link,
             } as LessonT;
           } catch (err) {
             console.error(`Error fetching class ${c.id}:`, err);

@@ -15,7 +15,7 @@ export const ViewLessonModal = (props: {
   isWithin48Hours?: boolean;
   old?: boolean;
 }) => {
-  const { topic, teacher, date, status, description } = props.lesson;
+  const { topic, teacher, date, status, description, link } = props.lesson;
   console.log('teacher: ', teacher);
 
   const handleCancel = async () => {
@@ -49,7 +49,7 @@ export const ViewLessonModal = (props: {
       console.error('Error deleting class: ', error);
     }
   };
-
+  console.log('link: ', link);
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 ${
@@ -97,11 +97,38 @@ export const ViewLessonModal = (props: {
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </span>
         </div>
+        <div className='mb-2 text-lg text-gray-700 dark:text-gray-300'>
+          <span className='font-semibold'>Link :</span>{' '}
+          {link ? (
+            <a href={link} target='_blank'>
+              <button className='px-3 py-1 text-white transition bg-blue-600 rounded-lg shadow hover:bg-blue-700'>
+                <span>Join Class</span>
+              </button>
+            </a>
+          ) : (
+            <button className='px-3 py-1 text-white transition bg-blue-700 rounded-lg shadow opacity-50 cursor-not-allowed'>
+              <span>Not Generated</span>
+            </button>
+          )}
+        </div>
+        <div className='mb-2 text-lg text-gray-700 dark:text-gray-300'>
+          <span className='font-semibold'>Report :</span>{' '}
+          {status === 'finished' ? (
+            <button className='px-3 py-1 text-white transition bg-blue-600 rounded-lg shadow hover:bg-blue-700'>
+              <span>View Report</span>
+            </button>
+          ) : (
+            <button className='px-3 py-1 text-white transition bg-blue-700 rounded-lg shadow opacity-50 cursor-not-allowed'>
+              <span>Report Not Available</span>
+            </button>
+          )}
+        </div>
         {description && (
           <div className='mb-4 text-gray-600 dark:text-gray-400'>
             <span className='font-semibold'>Description:</span> {description}
           </div>
         )}
+
         <div
           className={`flex ${
             props.old ? 'justify-end' : 'justify-between'

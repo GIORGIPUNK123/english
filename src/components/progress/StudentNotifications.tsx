@@ -4,85 +4,88 @@ import homeImg from '../../assets/home.svg';
 import { User } from 'firebase/auth';
 import { db } from '../../firebase/firebase-config';
 import { useEffect, useState } from 'react';
+import { useTimeAgo } from '../../hooks/useTimeAgo';
 
-const ViewNotificationModal = (props: {
+/* ---------- Modal for viewing a single notification ---------- */
+const ViewNotificationModal = ({
+  isOn,
+  setIsOn,
+  notification,
+  user_id,
+  markAsRead,
+}: {
   isOn: boolean;
   setIsOn: (v: boolean) => void;
   notification: notificationT;
   user_id: string;
   markAsRead: (user_id: string, notification_id: string) => void;
-}) => {
-  const { isOn, setIsOn, notification, markAsRead, user_id } = props;
+}) => (
+  <div
+    className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity ${
+      isOn ? 'opacity-100' : 'opacity-0 pointer-events-none'
+    }`}
+  >
+    <div className='relative w-full max-w-3xl p-8 transition-transform transform scale-100 bg-white shadow-2xl dark:bg-gray-900 rounded-xl'>
+      <button
+        className='absolute text-gray-400 top-4 right-4 hover:text-gray-900 dark:hover:text-white'
+        onClick={() => setIsOn(false)}
+      >
+        <span className='sr-only'>Close modal</span>
+        <svg className='w-5 h-5' fill='none' viewBox='0 0 20 20'>
+          <path
+            stroke='currentColor'
+            strokeWidth='2'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            d='M6 6l8 8M6 14L14 6'
+          />
+        </svg>
+      </button>
 
-  return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 ${
-        isOn ? '' : 'hidden'
-      }`}
-    >
-      <div className='relative w-full max-w-lg p-8 bg-white shadow-2xl dark:bg-black-pearl-950 rounded-xl'>
-        <button
-          className='absolute text-gray-400 top-4 right-4 hover:text-gray-900 dark:hover:text-white'
-          onClick={() => setIsOn(false)}
-        >
-          <span className='sr-only'>Close modal</span>
-          <svg className='w-5 h-5' fill='none' viewBox='0 0 20 20'>
-            <path
-              stroke='currentColor'
-              strokeWidth='2'
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              d='M6 6l8 8M6 14L14 6'
-            />
-          </svg>
-        </button>
-        <h2 className='mb-4 text-2xl font-bold text-black dark:text-white'>
-          {notification.heading}
-        </h2>
-        <div
-          className={` ${
-            notification.teacher
-              ? 'mb-2 text-lg text-gray-700 dark:text-gray-300'
-              : 'hidden'
-          }`}
-        >
-          <span className='font-semibold'>Teacher:</span>
-          {notification.teacher?.first_name +
+      <h2 className='mb-2 text-2xl font-bold text-black dark:text-white'>
+        {notification.heading}
+      </h2>
+
+      <div className='mb-2 text-sm text-gray-500 dark:text-gray-400'>
+        {notification.created_at
+          ? useTimeAgo(notification.created_at)
+          : 'Unknown'}
+      </div>
+
+      {notification.teacher && (
+        <div className='mb-2 text-lg text-gray-700 dark:text-gray-300'>
+          <span className='font-semibold'>Teacher:</span>{' '}
+          {notification.teacher.first_name +
             ' ' +
-            notification.teacher?.last_name}
+            notification.teacher.last_name}
         </div>
+      )}
 
-        <div className='mb-4 text-gray-600 dark:text-gray-400'>
-          <span className='font-semibold'>Message:</span> {notification.message}
-        </div>
+      <div className='mb-4 text-gray-600 dark:text-gray-400'>
+        <span className='font-semibold'>Message:</span> {notification.message}
+      </div>
 
-        <div className='flex justify-end mt-6'>
-          <button
-            className='px-6 py-2 text-white transition bg-blue-600 rounded-lg shadow hover:bg-blue-700'
-            onClick={() => {
-              if (!notification.read) {
-                markAsRead(user_id, notification.id);
-              }
-              setIsOn(false);
-            }}
-          >
-            {!notification.read ? ' Mark as Read' : 'close'}
-          </button>
-        </div>
+      <div className='flex justify-end mt-6'>
+        <button
+          className='px-6 py-2 text-white transition bg-blue-600 rounded-lg shadow hover:bg-blue-700'
+          onClick={() => {
+            if (!notification.read) markAsRead(user_id, notification.id);
+            setIsOn(false);
+          }}
+        >
+          {!notification.read ? 'Mark as Read' : 'Close'}
+        </button>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
+/* ---------- Mark notification as read ---------- */
 const markAsRead = async (user_id: string, notification_id: string) => {
   try {
     const userDocRef = doc(db, 'userData', user_id);
     const docSnap = await getDoc(userDocRef);
-
-    if (!docSnap.exists()) {
-      console.warn('User not found:', user_id);
-      return;
-    }
+    if (!docSnap.exists()) return;
 
     const userData = docSnap.data() as userDataT;
     const notificationsRaw = Array.isArray(userData.notifications)
@@ -90,106 +93,85 @@ const markAsRead = async (user_id: string, notification_id: string) => {
       : [];
 
     const updatedNotifications: notificationT[] = notificationsRaw.map((n) =>
-      n.id === notification_id
-        ? { ...n, read: true } // mark as read
-        : n
+      n.id === notification_id ? { ...n, read: true } : n,
     );
 
-    await updateDoc(userDocRef, {
-      notifications: updatedNotifications,
-    });
-
-    console.log('Notification marked as read:', notification_id);
+    await updateDoc(userDocRef, { notifications: updatedNotifications });
   } catch (err) {
     console.error('Error marking notification as read:', err);
   }
 };
-const Notification = (props: {
+
+/* ---------- Single notification card ---------- */
+const NotificationCard = ({
+  notification,
+  user_id,
+}: {
   notification: notificationT;
   user_id: string;
 }) => {
-  const { teacher, message_type, read, heading } = props.notification;
   const [isOn, setIsOn] = useState(false);
 
   return (
     <>
       <ViewNotificationModal
-        notification={props.notification}
         isOn={isOn}
         setIsOn={setIsOn}
+        notification={notification}
+        user_id={user_id}
         markAsRead={markAsRead}
-        user_id={props.user_id}
       />
-      {teacher ? (
-        <div
-          className={`flex justify-between w-full h-24 bg-gray-200 rounded-2xl hover:bg-gray-300 duration-200 hover:scale-105 ${
-            message_type === 'regular'
-              ? 'border-b-slate-500'
-              : message_type === 'positive'
-              ? 'border-b-green-600'
-              : 'border-b-torch-red-600'
-          } border-b-2 p-4`}
-        >
-          {/* Left side (clickable area) */}
-          <div
-            onClick={() => {
-              setIsOn(true);
-            }}
-            className='flex items-center flex-1 gap-2 cursor-pointer'
-          >
-            {/* Teacher name block */}
-            <div className='flex items-center gap-2'>
-              <img className='w-10 h-10 aspect-square invert' src={homeImg} />
-              <p className='whitespace-nowrap'>
-                {teacher.first_name} {teacher.last_name}
+
+      <div
+        onClick={() => setIsOn(true)}
+        className={`flex justify-between items-center w-full p-4 rounded-xl shadow-md cursor-pointer transition transform hover:scale-[1.02] hover:shadow-lg ${
+          notification.read
+            ? 'bg-gray-50 dark:bg-gray-800'
+            : 'bg-blue-50 dark:bg-blue-900'
+        } border-l-4 ${
+          notification.message_type === 'regular'
+            ? 'border-gray-400'
+            : notification.message_type === 'positive'
+              ? 'border-green-500'
+              : 'border-red-500'
+        }`}
+      >
+        <div className='flex items-center gap-4'>
+          <img className='w-12 h-12 aspect-square invert' src={homeImg} />
+          <div className='flex flex-col'>
+            <p className='font-semibold text-gray-900 dark:text-white'>
+              {notification.heading}
+            </p>
+            {notification.created_at && (
+              <p className='text-xs text-gray-500 dark:text-gray-400'>
+                {useTimeAgo(notification.created_at)}
               </p>
-            </div>
-
-            {/* Heading in the center of left block */}
-            <div className='flex justify-center flex-1'>
-              <p className='text-center'>{heading}</p>
-            </div>
-          </div>
-
-          {/* Right side (button) */}
-          <div className='flex items-center'>
-            <button
-              className={`${
-                read
-                  ? 'hidden'
-                  : '  text-white h-8 bg-black-pearl-900 rounded-lg text-lg px-4 cursor-pointer underline underline-offset-1'
-              }`}
-            >
-              Mark As Read
-            </button>
+            )}
+            {notification.teacher && (
+              <p className='text-sm text-gray-600 dark:text-gray-300'>
+                {notification.teacher.first_name}{' '}
+                {notification.teacher.last_name}
+              </p>
+            )}
           </div>
         </div>
-      ) : (
-        <div
-          className={`flex justify-between w-full p-4 h-24 bg-gray-300 rounded-2xl hover:bg-gray-200 duration-200 hover:scale-105 ${
-            message_type === 'regular'
-              ? 'border-b-slate-500'
-              : message_type === 'positive'
-              ? 'border-b-green-600'
-              : 'border-b-torch-red-600'
-          } border-b-2`}
-        >
-          <div>
-            <img src={homeImg} />
-          </div>
-          <div>
-            <p>{heading}</p>
-          </div>
-        </div>
-      )}
+
+        {!notification.read && (
+          <span className='text-sm font-bold text-blue-600 dark:text-blue-400'>
+            New
+          </span>
+        )}
+      </div>
     </>
   );
 };
 
-export const StudentNotifications = (props: { user: User }) => {
-  const userDocRef = doc(db, 'userData', props.user.uid);
+/* ---------- Notifications Container ---------- */
+export const StudentNotifications = ({ user }: { user: User }) => {
+  const userDocRef = doc(db, 'userData', user.uid);
   const [notifications, setNotifications] = useState<notificationT[]>([]);
-  const [activeBtn, setActiveBtn] = useState(0);
+  const [activeTab, setActiveTab] = useState<'unread' | 'read'>('unread');
+
   useEffect(() => {
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (!docSnap.exists()) {
@@ -202,7 +184,6 @@ export const StudentNotifications = (props: { user: User }) => {
         ? userData.notifications
         : [];
 
-      // Run async logic separately
       const enrichNotifications = async () => {
         const buffer = await Promise.all(
           notificationsRaw.map(async (x) => {
@@ -213,21 +194,17 @@ export const StudentNotifications = (props: { user: User }) => {
                 const teacherData = teacherSnap.exists()
                   ? (teacherSnap.data() as TeacherT)
                   : null;
-
                 return { ...x, teacher: teacherData };
               } catch {
                 return { ...x, teacher: null };
               }
             }
             return { ...x, teacher: null };
-          })
+          }),
         );
-
-        setNotifications((prev) => {
-          const prevStr = JSON.stringify(prev);
-          const newStr = JSON.stringify(buffer);
-          return prevStr === newStr ? prev : buffer;
-        });
+        setNotifications((prev) =>
+          JSON.stringify(prev) === JSON.stringify(buffer) ? prev : buffer,
+        );
       };
 
       enrichNotifications();
@@ -235,60 +212,49 @@ export const StudentNotifications = (props: { user: User }) => {
 
     return () => unsubscribe();
   }, [userDocRef]);
-  const filteredNotifications = notifications.filter((notification) =>
-    activeBtn === 0 ? !notification.read : notification.read
-  );
-  return (
-    <div className='flex justify-center w-full py-16 bg-gray-100'>
-      <div className='flex flex-col w-full max-w-2xl'>
-        <div className='flex '>
-          <button
-            onClick={() => {
-              if (activeBtn !== 0) {
-                setActiveBtn(0);
-              }
-            }}
-            className={`${
-              activeBtn === 0 ? 'bg-white' : 'bg-gray-200'
-            } w-20 h-8  rounded-tl-2xl`}
-          >
-            New
-          </button>
-          <button
-            onClick={() => {
-              if (activeBtn !== 1) {
-                setActiveBtn(1);
-              }
-            }}
-            className={`${
-              activeBtn === 1 ? 'bg-white' : 'bg-gray-200'
-            } w-20 h-8  rounded-tr-2xl`}
-          >
-            Read
-          </button>
-        </div>
-        <div className='flex flex-col items-center gap-8 p-12 bg-white shadow-2xl rounded-b-2xl rounded-tr-2xl '>
-          {filteredNotifications.length === 0 ? (
-            <p className='mb-4 text-lg text-gray-700'>
-              You don't have any notifications.
-            </p>
-          ) : (
-            filteredNotifications.map((notification, _index) => {
-              return (
-                <Notification
-                  key={_index}
-                  user_id={props.user.uid}
-                  notification={notification}
-                />
-              );
-            })
-          )}
 
-          <p className='text-sm text-gray-500'>
-            Please check back later for updates.
-          </p>
-        </div>
+  const filteredNotifications = notifications.filter((n) =>
+    activeTab === 'unread' ? !n.read : n.read,
+  );
+
+  return (
+    <div className='flex flex-col w-full h-full px-6 py-16 bg-gray-100 rounded-md md:px-12 '>
+      {/* Tabs */}
+      <div className='flex justify-start gap-4 mb-6'>
+        <button
+          onClick={() => setActiveTab('unread')}
+          className={`px-5 py-2 rounded-full font-semibold transition ${
+            activeTab === 'unread'
+              ? 'bg-indigo-800 text-white shadow-md'
+              : 'bg-indigo-950 text-gray-700 dark:text-gray-300'
+          }`}
+        >
+          Unread ({notifications.filter((n) => !n.read).length})
+        </button>
+        <button
+          onClick={() => setActiveTab('read')}
+          className={`px-5 py-2 rounded-full font-semibold transition ${
+            activeTab === 'read'
+              ? 'bg-indigo-800 text-white shadow-md'
+              : 'bg-indigo-950 text-gray-700 dark:text-gray-300'
+          }`}
+        >
+          Read ({notifications.filter((n) => n.read).length})
+        </button>
       </div>
+
+      {/* Notification List */}
+      {filteredNotifications.length === 0 ? (
+        <p className='mt-10 text-center text-gray-700 dark:text-gray-400'>
+          You don't have any {activeTab} notifications.
+        </p>
+      ) : (
+        <div className='flex flex-col gap-4'>
+          {filteredNotifications.map((n) => (
+            <NotificationCard key={n.id} notification={n} user_id={user.uid} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

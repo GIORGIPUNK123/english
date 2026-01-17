@@ -16,7 +16,12 @@ export const Register = () => {
   return (
     <>
       <div className='flex flex-col'>
-        <Header loggedIn={false} main={false} backUrl='../' />
+        <Header
+          loggedIn={false}
+          main={false}
+          registerPage={true}
+          backUrl='../'
+        />
         <div
           className='bg-black-pearl-950'
           style={{ minHeight: 'calc(100vh - 96px)' }}

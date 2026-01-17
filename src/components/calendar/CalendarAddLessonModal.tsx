@@ -210,10 +210,14 @@ export const CalendarAddLessonModal = ({
       const diff = Math.abs(x.date - selectedTime);
       return diff < 3600; // less than 1 hour
     });
-
+    const isBefore6HoursAhead =
+      selectedTime < Math.floor(Date.now() / 1000) + 21600;
     if (conflict) {
       setIsValid(false);
       setIsValidReason('You have another lesson within 1 hour of this time');
+    } else if (isBefore6HoursAhead) {
+      setIsValid(false);
+      setIsValidReason('Lessons must be scheduled at least 6 hours in advance');
     } else if (userData.tokens <= 0) {
       setIsValid(false);
       setIsValidReason('You have no tokens left');

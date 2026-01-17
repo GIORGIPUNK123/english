@@ -11,6 +11,7 @@ import { StudentSettings } from '../components/progress/StudentSettings';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { userDataT } from '../types';
 import { StudentNotifications } from '../components/progress/StudentNotifications';
+import { Courses } from '../components/progress/Courses';
 
 export const StudentDashboard = () => {
   const [currPg, setCurrPg] = useState(0);
@@ -22,9 +23,9 @@ export const StudentDashboard = () => {
 
   const menuItems = [
     { img: homeImg, text: 'Dashboard' },
+    { img: calendarImg, text: 'Courses' },
     { img: calendarImg, text: 'Calendar' },
     { img: calendarImg, text: 'Assignments' },
-    { img: calendarImg, text: 'Messages' },
     { img: calendarImg, text: 'Notifications' },
     { img: calendarImg, text: 'Settings' },
   ];
@@ -127,17 +128,13 @@ export const StudentDashboard = () => {
                   capitalNames={capitalNames}
                 />
               )}
-              {currPg === 1 && user && (
+              {currPg === 1 && user && <Courses userData={userData} />}
+              {currPg === 2 && user && (
                 <Calendar user={user} userData={userData} />
-              )}
-              {currPg === 2 && (
-                <div className='py-32 text-2xl text-center text-gray-600'>
-                  Assignments coming soon!
-                </div>
               )}
               {currPg === 3 && (
                 <div className='py-32 text-2xl text-center text-gray-600'>
-                  Messages coming soon!
+                  Assignments coming soon!
                 </div>
               )}
               {currPg === 4 && (

@@ -25,6 +25,7 @@ export const Header = (props: {
   main: boolean;
   backUrl?: string;
   loggedIn: boolean;
+  registerPage?: boolean;
 }) => {
   const [user, setUser] = useState<null | User | 'loading'>('loading');
   useEffect(() => {
@@ -150,6 +151,15 @@ export const Header = (props: {
                   className='bg-cover size-10 sm:size-12'
                   style={{ backgroundImage: `url(${back})` }}
                 />
+              </Link>
+            </div>
+          ) : null}
+          {props.registerPage ? (
+            <div className='fixed z-10 flex items-center top-3 right-3 sm:top-6 sm:right-8'>
+              <Link to={'/register-teacher'}>
+                <div className='h-10 px-4 py-2 text-lg text-white transition-transform bg-purple-500 bg-cover rounded-sm hover:scale-105 sm:h-12'>
+                  Register As a Teacher
+                </div>
               </Link>
             </div>
           ) : null}
