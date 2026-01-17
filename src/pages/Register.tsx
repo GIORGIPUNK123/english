@@ -56,7 +56,7 @@ export const Register = () => {
                     createUserWithEmailAndPassword(
                       auth,
                       values.email,
-                      values.password
+                      values.password,
                     ).then(async (res) => {
                       setSubmitting(false);
                     });

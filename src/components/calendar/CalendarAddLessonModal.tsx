@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SelectInput } from '../../atoms/SelectInput';
-import { LessonT, TopicT, selectSmallObjectT, userDataT } from '../../types';
+import { LessonT, TopicT, SelectSmallObjectT, UserDataT } from '../../types';
 import { useSelectInput } from '../../hooks/useSelectInput';
 import {
   addDoc,
@@ -105,12 +105,12 @@ type CalendarAddLessonModalProps = {
   topicsArr: TopicT[];
   defaultDate: Date;
   selectObjects: {
-    hoursObj: selectSmallObjectT;
-    daysObj: selectSmallObjectT;
-    monthsObj: selectSmallObjectT;
+    hoursObj: SelectSmallObjectT;
+    daysObj: SelectSmallObjectT;
+    monthsObj: SelectSmallObjectT;
   };
   user: User;
-  userData: userDataT;
+  userData: UserDataT;
   lessons: LessonT[];
   setDefaultBlockDate: (date: Date) => void;
 };
@@ -126,7 +126,7 @@ export const CalendarAddLessonModal = ({
   lessons,
 }: CalendarAddLessonModalProps) => {
   const [selectedTopicId, setSelectedTopicId] = useState(
-    topicsArr[0]?.id || ''
+    topicsArr[0]?.id || '',
   );
   const yearsArr = [
     { id: 2025, label: '2025' },
@@ -137,12 +137,12 @@ export const CalendarAddLessonModal = ({
   const { value: selectedMonth, handleChange: handleMonthChange } =
     useSelectInput(
       defaultDate.getMonth(), // Use month (1-12) for default
-      selectObjects.monthsObj.options
+      selectObjects.monthsObj.options,
     );
 
   const { value: selectedDay, handleChange: handleDayChange } = useSelectInput(
     defaultDate.getDate(), // Use day of month for default
-    selectObjects.daysObj.options
+    selectObjects.daysObj.options,
   );
 
   const { value: selectedHour, handleChange: handleHourChange } =
@@ -192,7 +192,7 @@ export const CalendarAddLessonModal = ({
     Number(selectedMonth),
     Number(selectedDay),
     Number(selectedHour),
-    Number(selectedMinutes)
+    Number(selectedMinutes),
   );
   const [isValid, setIsValid] = useState(false);
   const [isValidReason, setIsValidReason] = useState('');

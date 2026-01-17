@@ -41,7 +41,7 @@ export const Login = () => {
                         const res = await signInWithEmailAndPassword(
                           auth,
                           values.email,
-                          values.password
+                          values.password,
                         );
 
                         // Navigate only if login is successful

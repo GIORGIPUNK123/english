@@ -52,36 +52,37 @@ export interface TopicT {
   id: string;
   heading: string;
 }
-export interface optionT {
+export interface OptionT {
   label: string;
   id: number | string;
 }
-export interface selectSmallObjectT {
+export interface SelectSmallObjectT {
   defaultId: number;
-  options: optionT[];
+  options: OptionT[];
 }
-export interface notificationT {
-  created_at?: number;
+export interface NotificationT {
+  created_at: number;
   id: string;
   teacher?: TeacherT | null;
   teacher_id?: string;
-  message_type: 'regular' | 'positive' | 'negative';
+  message_type:
+    | 'info'
+    | 'success'
+    | 'warning'
+    | 'course'
+    | 'assignment'
+    | 'calendar'
+    | 'group'
+    | 'achievement';
   message: string;
   heading: string;
   read: boolean;
 }
-export interface userDataT {
+export interface UserDataT {
   classes: {
     id: string;
   }[];
-  notifications: {
-    id: string;
-    teacher_id?: string;
-    message_type: 'regular' | 'positive' | 'negative';
-    message: string;
-    heading: string;
-    read: boolean;
-  }[];
+  notifications: NotificationT[];
   first_name: string;
   last_name: string;
   role: 'student' | 'teacher';
