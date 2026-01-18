@@ -2,42 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-.hour-block {
-  text-align: center;
-  line-height: 50px;
-}
-
-/* .hour-block:hover,
-.hour-block:hover + .hour-block + .hour-block {
-  background-color: #ff0000 !important ;
-} */
-/* .hour-block:hover { */
-/* background-color: #ff0000 !important ; */
-/* height: 80px; */
-/* } */
-/* .hour-block:hover .hidden-overlay {
-  display: block !important;
-} */
-
-/* .hour-block:hover, */
-/* .hour-block:hover + .hour-block:not(.hour-block-disabled) {
-  background-color: #0065b0;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-} */
-.hour-block:not(.hour-block-disabled):not(.has-lesson):hover
-  + .hour-block:not(.hour-block-disabled):not(.has-lesson) {
-  background-color: #034777;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-
-/* .hour-block.has-lesson:hover + .hour-block.has-lesson { */
-/* background-color: #0065b0 !important; lesson hover color */
-/* border-bottom-left-radius: 8px; */
-/* border-bottom-right-radius: 8px; */
-/* } */
-
 html {
   scroll-behavior: smooth;
 }
+
+@import './reset.css';

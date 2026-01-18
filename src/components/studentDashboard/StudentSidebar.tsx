@@ -104,7 +104,7 @@ export const StudentSidebar = ({
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 w-64 bg-[#1a1a1a] border-r border-gray-800 flex flex-col h-screen z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:static inset-y-0 left-0 w-64 bg-[#1a1a1a] border-r border-gray-800 flex flex-col min-h-screen z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >

@@ -1,4 +1,4 @@
-import '../css/reset.css';
+// import '../css/reset.css';
 import '../css/index.css';
 import { Landing } from './Landing';
 

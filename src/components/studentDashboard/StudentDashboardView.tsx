@@ -1,104 +1,62 @@
 import {
-  BookOpen,
   Clock,
   Calendar,
   Users,
-  CheckCircle,
   AlertCircle,
   Star,
   Video,
   Coins,
   Plus,
 } from 'lucide-react';
+import { LessonT, UserDataT } from '../../types';
+import { arrayRemove, increment, updateDoc } from 'firebase/firestore';
+import { LessonDetailModal } from '../calendar/LessonDetailModal';
+import { useState } from 'react';
 
-export const StudentDashboardView = () => {
+export const StudentDashboardView = (props: {
+  userData: UserDataT;
+  lessons: LessonT[];
+}) => {
+  const { userData, lessons } = props;
+  const capitalNames = [
+    userData.first_name.charAt(0).toUpperCase() + userData.first_name.slice(1),
+    userData.last_name.charAt(0).toUpperCase() + userData.last_name.slice(1),
+  ];
+  const upcomingLessons = lessons.filter(
+    (lesson) =>
+      lesson.status === 'scheduled' &&
+      lesson.date >= Math.floor(Date.now() / 1000) &&
+      lesson.teacher !== null,
+  );
+  const pendingRequests = lessons.filter(
+    (lesson) =>
+      lesson.status === 'scheduled' &&
+      lesson.date > Math.floor(Date.now() / 1000),
+  );
   const stats = [
     {
       label: 'Available Tokens',
-      value: '5',
+      value: userData.tokens,
       icon: Coins,
       color: 'bg-yellow-500',
     },
     {
       label: 'Upcoming Lessons',
-      value: '3',
+      value: upcomingLessons.length,
       icon: Calendar,
       color: 'bg-blue-500',
     },
     {
       label: 'Hours Completed',
-      value: '24',
+      value: lessons.filter((lesson) => lesson.status === 'finished').length,
       icon: Clock,
       color: 'bg-purple-500',
     },
     {
       label: 'Pending Requests',
-      value: '3',
+      value: pendingRequests.length,
       icon: AlertCircle,
       color: 'bg-orange-500',
-    },
-  ];
-
-  const upcomingLessons = [
-    {
-      id: '1',
-      teacher: 'Sarah Johnson',
-      subject: 'Business English',
-      date: 'Today',
-      time: '3:00 PM - 4:00 PM',
-      status: 'confirmed',
-      avatar: 'SJ',
-      color: 'bg-blue-500',
-    },
-    {
-      id: '2',
-      teacher: 'Michael Chen',
-      subject: 'Conversation Practice',
-      date: 'Tomorrow',
-      time: '10:00 AM - 11:00 AM',
-      status: 'confirmed',
-      avatar: 'MC',
-      color: 'bg-purple-500',
-    },
-    {
-      id: '3',
-      teacher: 'Emma Williams',
-      subject: 'Grammar & Writing',
-      date: 'Jan 20',
-      time: '2:00 PM - 3:00 PM',
-      status: 'confirmed',
-      avatar: 'EW',
-      color: 'bg-green-500',
-    },
-  ];
-
-  const pendingRequests = [
-    {
-      id: '1',
-      teacher: null, // No specific teacher - any teacher can accept
-      subject: 'General Conversation',
-      requestedDate: 'Jan 21',
-      requestedTime: '4:00 PM - 5:00 PM',
-      avatar: '?',
-      color: 'bg-gray-500',
-    },
-    {
-      id: '2',
-      teacher: 'David Martinez',
-      subject: 'IELTS Preparation',
-      requestedDate: 'Jan 21',
-      requestedTime: '6:00 PM - 7:00 PM',
-      avatar: 'DM',
-      color: 'bg-orange-500',
-    },
-    {
-      id: '3',
-      teacher: null, // No specific teacher
-      subject: 'Pronunciation Practice',
-      requestedDate: 'Jan 22',
-      requestedTime: '11:00 AM - 12:00 PM',
-      avatar: '?',
-      color: 'bg-gray-500',
     },
   ];
 
@@ -129,15 +87,54 @@ export const StudentDashboardView = () => {
     },
   ];
 
+  // const handleCancel = async (lesson: LessonT) => {
+  //   try {
+  //     const classId = lesson.id;
+  //     console.log('classId: ', classId);
+  //     if (props.isWithin48Hours) {
+  //       console.error('Cannot cancel class within 48 hours');
+  //       return;
+  //     }
+  //     if (!classId || !auth.currentUser?.uid) {
+  //       console.error('Missing class id or user Id, cannot delete');
+  //       return;
+  //     }
+
+  //     // Delete class document from 'classes' collection
+  //     await deleteDoc(doc(db, 'classes', classId));
+
+  //     // Get user's data to find the class reference
+  //     const userDataDocRef = doc(db, 'userData', auth.currentUser.uid);
+
+  //     // Update userData: remove class from array and increment tokens
+  //     await updateDoc(userDataDocRef, {
+  //       tokens: increment(1),
+  //       used_tokens: increment(-1),
+  //       classes: arrayRemove({ id: classId }),
+  //     });
+
+  //     props.setIsOn(false);
+  //   } catch (error) {
+  //     console.error('Error deleting class: ', error);
+  //   }
+  // };
+  const [selectedLesson, setSelectedLesson] = useState<LessonT | null>(null);
   return (
     <div className='h-full overflow-y-auto'>
+      {/* Lesson Detail Modal */}
+      {selectedLesson && (
+        <LessonDetailModal
+          lesson={selectedLesson}
+          onClose={() => setSelectedLesson(null)}
+        />
+      )}
       {/* Welcome Section */}
       <div className='mb-8'>
         <h1 className='mb-2 text-xl text-white sm:text-2xl lg:text-3xl'>
-          Welcome back, Giorgi! 👋
+          Welcome back, {capitalNames[0]}! 👋
         </h1>
         <p className='text-sm text-gray-400 sm:text-base'>
-          You have 5 tokens available. Each token = 1 lesson.
+          You have {userData.tokens} tokens available. Each token = 1 lesson.
         </p>
       </div>
 
@@ -191,25 +188,27 @@ export const StudentDashboardView = () => {
               >
                 <div className='flex items-start gap-3'>
                   <div
-                    className={`w-10 h-10 rounded-full ${lesson.color} flex items-center justify-center flex-shrink-0`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0`}
                   >
                     <span className='text-sm font-semibold text-white'>
-                      {lesson.avatar}
+                      {/* {lesson.avatar} */}
                     </span>
                   </div>
                   <div className='flex-1 min-w-0'>
                     <h4 className='mb-1 text-sm text-white sm:text-base'>
-                      {lesson.teacher}
+                      {lesson.teacher
+                        ? `${lesson.teacher.first_name} ${lesson.teacher.last_name}`
+                        : 'TBA'}
                     </h4>
                     <p className='mb-2 text-xs text-gray-400 sm:text-sm'>
-                      {lesson.subject}
+                      {/* {lesson.subject} */}
                     </p>
                     <div className='flex flex-wrap items-center gap-2 text-xs text-gray-500'>
                       <Calendar className='w-3 h-3' />
                       <span>{lesson.date}</span>
                       <span>•</span>
                       <Clock className='w-3 h-3' />
-                      <span>{lesson.time}</span>
+                      {/* <span>{lesson.time}</span> */}
                     </div>
                   </div>
                   <button className='px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-all flex items-center gap-1 flex-shrink-0'>
@@ -231,52 +230,62 @@ export const StudentDashboardView = () => {
             Pending Requests
           </h2>
           <div className='mb-4 space-y-3'>
-            {pendingRequests.map((request) => (
-              <div
-                key={request.id}
-                className='p-3 border border-gray-700 rounded-lg bg-gray-800/60'
-              >
-                <div className='flex items-start gap-3'>
-                  <div
-                    className={`w-10 h-10 rounded-full ${request.color} flex items-center justify-center flex-shrink-0`}
-                  >
-                    <span className='text-sm font-semibold text-white'>
-                      {request.avatar}
-                    </span>
-                  </div>
-                  <div className='flex-1 min-w-0'>
-                    <h4 className='mb-1 text-sm text-white sm:text-base'>
-                      {request.teacher
-                        ? request.teacher
-                        : 'Any Available Teacher'}
-                    </h4>
-                    <p className='mb-2 text-xs text-gray-400 sm:text-sm'>
-                      {request.subject}
-                    </p>
-                    <div className='flex flex-wrap items-center gap-2 text-xs text-gray-500'>
-                      <Calendar className='w-3 h-3' />
-                      <span>{request.requestedDate}</span>
-                      <span>•</span>
-                      <Clock className='w-3 h-3' />
-                      <span>{request.requestedTime}</span>
+            {pendingRequests.map((lesson) => {
+              const lessonDate = new Date(lesson.date * 1000);
+              return (
+                <div
+                  key={lesson.id}
+                  className='p-3 border border-gray-700 rounded-lg bg-gray-800/60'
+                >
+                  <div className='flex items-start gap-3'>
+                    <div
+                      className={`w-10 h-10 rounded-full  flex items-center justify-center flex-shrink-0`}
+                    >
+                      <span className='text-sm font-semibold text-white'>
+                        {/* {lesson.teacher?.img} */}
+                        <Users />
+                      </span>
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <h4 className='mb-1 text-sm text-white sm:text-base'>
+                        {lesson.teacher
+                          ? `${lesson.teacher.first_name} ${lesson.teacher.last_name}`
+                          : 'Any Available Teacher'}
+                      </h4>
+                      <p className='mb-2 text-xs text-gray-400 sm:text-sm'>
+                        {lesson.topic?.heading}
+                      </p>
+                      <div className='flex flex-wrap items-center gap-2 text-xs text-gray-500'>
+                        <Calendar className='w-3 h-3' />
+                        <span>{lessonDate.toLocaleDateString()}</span>
+                        <span>•</span>
+                        <Clock className='w-3 h-3' />
+                        <span>
+                          {lessonDate.getHours()}:{lessonDate.getMinutes()} -{' '}
+                          {lessonDate.getHours() + 1}:{lessonDate.getMinutes()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className='flex items-center flex-shrink-0 gap-1'>
+                      <AlertCircle className='w-4 h-4 text-orange-400' />
                     </div>
                   </div>
-                  <div className='flex items-center flex-shrink-0 gap-1'>
-                    <AlertCircle className='w-4 h-4 text-orange-400' />
+                  <div className='flex items-center justify-between pt-3 mt-3 border-t border-gray-700'>
+                    <p className='text-xs text-gray-500'>
+                      {lesson.teacher
+                        ? 'Waiting for teacher confirmation...'
+                        : 'Waiting for any teacher to accept...'}
+                    </p>
+                    <button
+                      onClick={() => setSelectedLesson(lesson)}
+                      className='text-xs sm:text-sm px-3 py-1.5 bg-red-600/20 text-red-400 border border-red-600/30 rounded hover:bg-red-600/30 transition-all'
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
-                <div className='flex items-center justify-between pt-3 mt-3 border-t border-gray-700'>
-                  <p className='text-xs text-gray-500'>
-                    {request.teacher
-                      ? 'Waiting for teacher confirmation...'
-                      : 'Waiting for any teacher to accept...'}
-                  </p>
-                  <button className='text-xs sm:text-sm px-3 py-1.5 bg-red-600/20 text-red-400 border border-red-600/30 rounded hover:bg-red-600/30 transition-all'>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className='p-3 border rounded-lg bg-blue-500/10 border-blue-500/20'>
             <p className='text-xs text-blue-400 sm:text-sm'>
