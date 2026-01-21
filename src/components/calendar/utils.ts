@@ -70,7 +70,6 @@ export const isTimestampConflicting = (
 export const isTimestampTooSoon = (timestamp: number) => {
   const now = getCurrentTimestamp();
   const sixHoursFromNow = now + 21600; // 6 hours = 21600 seconds
-
   return timestamp < sixHoursFromNow;
 };
 

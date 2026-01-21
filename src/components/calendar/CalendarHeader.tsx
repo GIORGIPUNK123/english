@@ -11,10 +11,10 @@ export const CalendarHeader = (props: {
     <div className='mb-6'>
       <div className='flex items-center justify-between mb-4'>
         <div>
-          <h1 className='mb-2 text-xl text-white sm:text-2xl lg:text-3xl'>
+          <h1 className='mb-2 text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
             Calendar
           </h1>
-          <p className='text-sm text-gray-400 sm:text-base'>
+          <p className='text-sm text-gray-600 dark:text-gray-400 sm:text-base'>
             Schedule your English lessons
           </p>
         </div>

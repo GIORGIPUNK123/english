@@ -79,9 +79,7 @@ export interface NotificationT {
   read: boolean;
 }
 export interface UserDataT {
-  classes: {
-    id: string;
-  }[];
+  classes: string[];
   notifications: NotificationT[];
   first_name: string;
   last_name: string;

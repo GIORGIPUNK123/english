@@ -1,87 +1,262 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
 admin.initializeApp();
 const db = admin.firestore();
 
+/* =====================================================
+   CLEAN UP OLD CLASSES (teacher never joined)
+   ===================================================== */
 export const cleanUpOldClasses = onSchedule('every 5 minutes', async () => {
-  const now = Math.floor(Date.now() / 1000); // current Unix timestamp in seconds
-  console.log(
-    `[CLEANUP] cleanUpOldClasses triggered at ${new Date().toISOString()}`,
-  );
+  const now = Math.floor(Date.now() / 1000);
 
-  try {
-    // Fetch classes older than 1 hour with status 'scheduled'
-    const classesSnapshot = await db
-      .collection('classes')
-      .where('date', '<', now - 3600)
-      .where('status', '==', 'scheduled')
-      .get();
+  const snapshot = await db
+    .collection('classes')
+    .where('date', '<', now - 3600)
+    .where('status', '==', 'scheduled')
+    .get();
 
-    console.log(
-      `[CLEANUP] Found ${classesSnapshot.size} classes for possible cleanup.`,
-    );
+  const batch = db.batch();
 
-    const batch = db.batch();
+  for (const docSnap of snapshot.docs) {
+    const cls = docSnap.data();
 
-    for (const classDoc of classesSnapshot.docs) {
-      const classData = classDoc.data();
-      const teacherId = classData.teacher_id;
-      const studentId = classData.student_id;
-      const topicId = classData.topic_id;
+    if (!cls.teacher_id && cls.student_id) {
+      const classRef = docSnap.ref;
+      const studentRef = db.collection('userData').doc(cls.student_id);
 
-      // Only delete if teacher_id is missing/invalid
-      if (!teacherId && studentId) {
-        console.log(
-          `[CLEANUP] Removing class ${classDoc.id} due to invalid teacher.`,
-        );
+      batch.update(classRef, {
+        status: 'cancelled_teacher',
+        cancelled_at: admin.firestore.FieldValue.serverTimestamp(),
+        cancelled_by: 'system',
+      });
 
-        // Fetch the topic heading
-        let topicHeading = 'Unknown topic';
-        if (topicId) {
-          const topicDoc = await db.collection('topics').doc(topicId).get();
-          if (topicDoc.exists) {
-            const topicData = topicDoc.data();
-            topicHeading = topicData?.heading ?? 'Unknown topic';
-          }
-        }
+      batch.update(studentRef, {
+        tokens: admin.firestore.FieldValue.increment(1),
+        used_tokens: admin.firestore.FieldValue.increment(-1),
+        classes: admin.firestore.FieldValue.arrayRemove(docSnap.id),
+        notifications: admin.firestore.FieldValue.arrayUnion({
+          id: db.collection('_').doc().id,
+          created_at: now,
+          heading: 'Class Cancelled',
+          message:
+            'Your class was cancelled because the teacher was unavailable. Your token has been refunded.',
+          message_type: 'warning',
+          read: false,
+        }),
+      });
+    }
+  }
 
-        // Delete the class document
-        batch.delete(classDoc.ref);
+  await batch.commit();
+});
 
-        const studentRef = db.collection('userData').doc(studentId);
-        const studentDoc = await studentRef.get();
+/* =====================================================
+   SCHEDULE LESSON
+   ===================================================== */
+type ScheduleLessonData = {
+  date: number;
+  topicId: string;
+};
 
-        if (studentDoc.exists) {
-          const studentData = studentDoc.data()!;
+export const scheduleLesson = onCall<ScheduleLessonData>(
+  async ({ auth, data }) => {
+    if (!auth) throw new HttpsError('unauthenticated', 'Login required');
 
-          // Refund token, remove class from user's classes array, add notification
-          batch.update(studentRef, {
-            token: (studentData.token ?? 0) + 1,
-            used_token: Math.max((studentData.used_token ?? 0) - 1, 0),
-            classes: admin.firestore.FieldValue.arrayRemove(classDoc.id),
-            notifications: admin.firestore.FieldValue.arrayUnion({
-              id: db.collection('_').doc().id, // unique notification ID
-              heading: 'Class cancelled',
-              message: `Your class on "${topicHeading}" was cancelled because the teacher was unavailable. Your token has been refunded.`,
-              message_type: 'regular',
-              read: false,
-              created_at: now,
-            }),
-          });
+    const { date, topicId } = data;
+    const userId = auth.uid;
 
-          console.log(
-            `[CLEANUP] Updated student ${studentId} with notification about "${topicHeading}"`,
-          );
-        }
-      }
+    if (!date || !topicId) {
+      throw new HttpsError('invalid-argument', 'Missing fields');
     }
 
-    await batch.commit();
-    console.log(
-      `[CLEANUP] Cleanup completed for ${classesSnapshot.size} classes.`,
-    );
-  } catch (error) {
-    console.error('[CLEANUP] Cleanup error:', error);
-  }
+    const userRef = db.collection('userData').doc(userId);
+    const classRef = db.collection('classes').doc();
+
+    await db.runTransaction(async (tx) => {
+      const userSnap = await tx.get(userRef);
+      if (!userSnap.exists) throw new HttpsError('not-found', 'User not found');
+
+      const user = userSnap.data()!;
+      if (user.tokens <= 0) {
+        throw new HttpsError('failed-precondition', 'No tokens available');
+      }
+
+      tx.set(classRef, {
+        date,
+        status: 'scheduled',
+        topic_id: topicId,
+        student_id: userId,
+        teacher_id: '',
+        link: '',
+      });
+
+      tx.update(userRef, {
+        tokens: admin.firestore.FieldValue.increment(-1),
+        used_tokens: admin.firestore.FieldValue.increment(1),
+        classes: admin.firestore.FieldValue.arrayUnion(classRef.id),
+      });
+    });
+
+    return { classId: classRef.id };
+  },
+);
+
+/* =====================================================
+   CANCEL LESSON
+   ===================================================== */
+type CancelLessonData = {
+  classId: string;
+};
+
+export const cancelLesson = onCall<CancelLessonData>(async ({ auth, data }) => {
+  if (!auth) throw new HttpsError('unauthenticated', 'Login required');
+
+  const { classId } = data;
+  if (!classId) throw new HttpsError('invalid-argument', 'Missing classId');
+
+  const userId = auth.uid;
+  const classRef = db.collection('classes').doc(classId);
+
+  await db.runTransaction(async (tx) => {
+    const classSnap = await tx.get(classRef);
+    if (!classSnap.exists) throw new HttpsError('not-found', 'Class not found');
+
+    const lesson = classSnap.data()!;
+    const isStudent = lesson.student_id === userId;
+    const isTeacher = lesson.teacher_id === userId;
+
+    if (!isStudent && !isTeacher) {
+      throw new HttpsError('permission-denied', 'Not allowed');
+    }
+
+    const status = isStudent ? 'cancelled_student' : 'cancelled_teacher';
+
+    const studentRef = lesson.student_id
+      ? db.collection('userData').doc(lesson.student_id)
+      : null;
+
+    const teacherRef = lesson.teacher_id?.trim()
+      ? db.collection('teachers').doc(lesson.teacher_id)
+      : null;
+
+    // Update class
+    tx.update(classRef, {
+      status,
+      cancelled_at: admin.firestore.FieldValue.serverTimestamp(),
+      cancelled_by: isStudent ? 'student' : 'teacher',
+    });
+
+    // Refund student
+    if (studentRef) {
+      tx.update(studentRef, {
+        tokens: admin.firestore.FieldValue.increment(1),
+        used_tokens: admin.firestore.FieldValue.increment(-1),
+        classes: admin.firestore.FieldValue.arrayRemove(classId),
+      });
+    }
+
+    // Update teacher scheduled classes
+    if (teacherRef) {
+      tx.update(teacherRef, {
+        scheduled_classes: admin.firestore.FieldValue.arrayRemove(classId),
+      });
+    }
+  });
+
+  return { success: true };
 });
+
+/* =====================================================
+   MARK NOTIFICATION AS READ
+   ===================================================== */
+type MarkNotificationAsReadData = {
+  notificationId: string;
+};
+
+export const markNotificationAsRead = onCall<MarkNotificationAsReadData>(
+  async ({ auth, data }) => {
+    if (!auth) throw new HttpsError('unauthenticated', 'Login required');
+
+    const { notificationId } = data;
+    if (!notificationId) {
+      throw new HttpsError('invalid-argument', 'Missing notificationId');
+    }
+
+    const userId = auth.uid;
+    console.log(
+      `[MARK READ] User ID: ${userId}, Notification ID: ${notificationId}`,
+    );
+
+    await db.runTransaction(async (tx) => {
+      // Check userData (student)
+      const userRef = db.collection('userData').doc(userId);
+      const userSnap = await tx.get(userRef);
+
+      if (userSnap.exists) {
+        console.log('[MARK READ] Found user in userData collection');
+        const user = userSnap.data()!;
+        const notifications = user.notifications || [];
+
+        console.log(
+          `[MARK READ] User has ${notifications.length} notifications`,
+        );
+
+        const notificationExists = notifications.some(
+          (notif: any) => notif.id === notificationId,
+        );
+
+        if (!notificationExists) {
+          console.warn('[MARK READ] Notification not found in userData');
+          throw new HttpsError('not-found', 'Notification not found');
+        }
+
+        const updatedNotifications = notifications.map((notif: any) =>
+          notif.id === notificationId ? { ...notif, read: true } : notif,
+        );
+
+        tx.update(userRef, { notifications: updatedNotifications });
+        console.log('[MARK READ] Notification marked as read for student');
+        return;
+      }
+
+      // Check teachers
+      const teacherRef = db.collection('teachers').doc(userId);
+      const teacherSnap = await tx.get(teacherRef);
+
+      if (teacherSnap.exists) {
+        console.log('[MARK READ] Found user in teachers collection');
+        const teacher = teacherSnap.data()!;
+        const notifications = teacher.notifications || [];
+
+        console.log(
+          `[MARK READ] Teacher has ${notifications.length} notifications`,
+        );
+
+        const notificationExists = notifications.some(
+          (notif: any) => notif.id === notificationId,
+        );
+
+        if (!notificationExists) {
+          console.warn('[MARK READ] Notification not found in teachers');
+          throw new HttpsError('not-found', 'Notification not found');
+        }
+
+        const updatedNotifications = notifications.map((notif: any) =>
+          notif.id === notificationId ? { ...notif, read: true } : notif,
+        );
+
+        tx.update(teacherRef, { notifications: updatedNotifications });
+        console.log('[MARK READ] Notification marked as read for teacher');
+        return;
+      }
+
+      console.warn('[MARK READ] User not found in either collection');
+      throw new HttpsError('not-found', 'User not found');
+    });
+
+    console.log('[MARK READ] Transaction complete');
+    return { success: true };
+  },
+);

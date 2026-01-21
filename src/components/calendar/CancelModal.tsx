@@ -1,22 +1,31 @@
-import { X, Clock, User, Video } from 'lucide-react';
+import { X, Clock, AlertTriangle } from 'lucide-react';
 import { LessonT } from '../../types';
-import { getLessonColor, formatTime, formatDate } from './utils';
-import { auth, db } from '../../firebase/firebase-config';
+import { formatTime } from './utils';
+import { auth, db, functions } from '../../firebase/firebase-config';
 import {
   arrayRemove,
+  arrayUnion,
   deleteDoc,
   doc,
   increment,
   updateDoc,
 } from 'firebase/firestore';
 import { useState } from 'react';
+import { useGenerateId } from '../../hooks/useGenerateRandomId';
+import { httpsCallable } from 'firebase/functions';
+import { useToast } from '../../context/ToastContext';
 
 interface LessonDetailModalProps {
   lesson: LessonT;
   onClose: () => void;
+  additionalCallback?: () => void;
 }
 
-export const CancelModal = ({ lesson, onClose }: LessonDetailModalProps) => {
+export const CancelModal = ({
+  lesson,
+  onClose,
+  additionalCallback,
+}: LessonDetailModalProps) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const isWithin48Hours = (() => {
     const now = Date.now();
@@ -24,6 +33,7 @@ export const CancelModal = ({ lesson, onClose }: LessonDetailModalProps) => {
     const diffInMs = lessonTime - now;
     return diffInMs <= 48 * 60 * 60 * 1000;
   })();
+  const { addToast } = useToast();
   const canCancel = () => {
     const classId = lesson.id;
     if (lesson.teacher) {
@@ -42,57 +52,58 @@ export const CancelModal = ({ lesson, onClose }: LessonDetailModalProps) => {
   const handleCancel = async () => {
     try {
       if (!canCancel()) return; // Check if cancellation is possible
-      try {
-        const classId = lesson.id;
-        console.log('classId: ', classId);
-        if (lesson.teacher) {
-          if (isWithin48Hours) {
-            setErrorMsg('Cannot cancel class within 48 hours');
-            return;
-          }
-        }
-        if (!classId || !auth.currentUser?.uid) {
-          setErrorMsg('Missing class id or user Id, cannot delete');
-          return;
-        }
 
-        // Delete class document from 'classes' collection
-        await deleteDoc(doc(db, 'classes', classId));
+      const classId = lesson.id;
 
-        // Get user's data to find the class reference
-        const userDataDocRef = doc(db, 'userData', auth.currentUser.uid);
-
-        // Update userData: remove class from array and increment tokens
-        await updateDoc(userDataDocRef, {
-          tokens: increment(1),
-          used_tokens: increment(-1),
-          classes: arrayRemove({ id: classId }),
-        });
-
-        onClose();
-      } catch (error) {
-        setErrorMsg('Error deleting class');
-        console.error('Error deleting class: ', error);
+      if (lesson.teacher && isWithin48Hours) {
+        setErrorMsg('Cannot cancel class within 48 hours');
+        return;
       }
-    } catch (error) {
-      setErrorMsg('Error deleting class');
-      console.error('Error deleting class: ', error);
+
+      if (!classId || !auth.currentUser?.uid) {
+        setErrorMsg('Missing class id or user Id, cannot cancel');
+        return;
+      }
+
+      // Call the Cloud Function
+      const cancelFn = httpsCallable<{ classId: string }, { success: boolean }>(
+        functions,
+        'cancelLesson',
+      );
+
+      const res = await cancelFn({ classId });
+
+      if (res.data.success) {
+        addToast({
+          title: 'Class Cancelled',
+          message: 'The class has been successfully cancelled.',
+          type: 'success',
+        });
+        onClose();
+        if (additionalCallback) additionalCallback();
+      } else {
+        setErrorMsg('Failed to cancel class');
+      }
+    } catch (error: any) {
+      console.error('Error cancelling class: ', error);
+      setErrorMsg(error?.message || 'Error cancelling class');
     }
   };
+
   return (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm'
+      className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/70 backdrop-blur-sm'
       onClick={onClose}
     >
       <div
-        className='w-full max-w-lg bg-gray-800 border border-gray-700 shadow-2xl rounded-xl'
+        className='w-full max-w-lg transition-all transform bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 dark:border-gray-700 rounded-xl'
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className={`bg-red-500 p-6 rounded-t-xl relative`}>
+        <div className='relative p-6 bg-red-500 dark:bg-red-500 rounded-t-xl'>
           <button
             onClick={onClose}
-            className='absolute p-2 transition-all rounded-lg top-4 right-4 hover:bg-white/10'
+            className='absolute p-2 transition-all rounded-lg top-4 right-4 hover:bg-white/10 dark:hover:bg-black/10'
           >
             <X className='w-5 h-5 text-white' />
           </button>
@@ -109,18 +120,51 @@ export const CancelModal = ({ lesson, onClose }: LessonDetailModalProps) => {
 
         {/* Modal Body */}
         <div className='p-6 space-y-4'>
-          <div className='flex justify-between gap-3 pt-2'>
-            <p className='text-white'>
-              Are you sure you want to cancel this lesson?
-            </p>
+          {/* Warning Message */}
+          <div className='flex items-start gap-3 p-4 border border-red-200 rounded-lg bg-orange-50 dark:bg-red-900/20 dark:border-red-800/50'>
+            <AlertTriangle className='w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
+            <div>
+              <p className='mb-1 font-medium text-gray-900 dark:text-white'>
+                Cancel this lesson?
+              </p>
+              <p className='text-sm text-gray-700 dark:text-gray-300'>
+                {lesson.teacher && !isWithin48Hours
+                  ? 'Your token will be refunded to your account.'
+                  : !lesson.teacher
+                    ? 'This will cancel your pending lesson request and refund your token.'
+                    : 'You cannot cancel this lesson as it is within 48 hours of the scheduled time.'}
+              </p>
+            </div>
+          </div>
+          {/* Error Message */}
+          {errorMsg && (
+            <div className='flex items-start gap-2 p-3 bg-red-100 border border-red-300 rounded-lg dark:bg-red-900/30 dark:border-red-700'>
+              <AlertTriangle className='w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
+              <p className='text-sm text-red-700 dark:text-red-300'>
+                {errorMsg}
+              </p>
+            </div>
+          )}
+          {/* Action Buttons */}
+          <div className='flex justify-end gap-3 pt-2 border-t border-gray-200 dark:border-gray-700'>
+            <button
+              onClick={onClose}
+              className='px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              Keep Lesson
+            </button>
             <button
               onClick={handleCancel}
-              className={` ${lesson.teacher ? 'disabled cursor-not-allowed' : ''} px-4 py-3 text-red-400 transition-all border rounded-lg bg-red-600/20 hover:bg-red-600/30 border-red-600/30`}
+              disabled={!!lesson.teacher && !!isWithin48Hours}
+              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                lesson.teacher && isWithin48Hours
+                  ? 'bg-red-200 dark:bg-red-800/40 text-red-400 dark:text-red-500 cursor-not-allowed'
+                  : 'bg-red-500 dark:bg-red-500 text-white hover:bg-red-600 dark:hover:bg-red-600'
+              }`}
             >
-              Cancel
+              Cancel Lesson
             </button>
           </div>
-          {errorMsg && <p className='text-red-700'>{errorMsg}</p>}
         </div>
       </div>
     </div>

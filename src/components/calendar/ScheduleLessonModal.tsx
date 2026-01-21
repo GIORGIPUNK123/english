@@ -1,10 +1,21 @@
 import { X, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
-import { TopicT, TeacherT, LessonT } from '../../types';
+import { TopicT, LessonT } from '../../types';
 import {
   getWeekDates,
   isTimestampConflicting,
   isTimestampTooSoon,
 } from './utils';
+import {
+  addDoc,
+  arrayUnion,
+  collection,
+  doc,
+  increment,
+  updateDoc,
+} from 'firebase/firestore';
+import { db, functions } from '../../firebase/firebase-config';
+import { useToast } from '../../context/ToastContext';
+import { httpsCallable } from 'firebase/functions';
 
 interface ScheduleModalState {
   day: number;
@@ -26,10 +37,11 @@ interface ScheduleLessonModalProps {
   // availableTeachers: TeacherT[];
   lessons: LessonT[];
   onClose: () => void;
-  onSchedule: () => void;
   topicsArr: TopicT[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
+  userUid: string;
+  availableTokens: number;
 }
 
 const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -47,21 +59,87 @@ export const ScheduleLessonModal = ({
   // availableTeachers,
   lessons,
   onClose,
-  onSchedule,
   selectedDate,
+  userUid,
+  availableTokens,
 }: ScheduleLessonModalProps) => {
   const modalWeekDates = getWeekDates(scheduleTime.week);
   selectedDate.setHours(scheduleTime.hour, scheduleTime.minute, 0, 0);
+  selectedDate.setDate(modalWeekDates[scheduleTime.day].getDate());
+  selectedDate.setMonth(modalWeekDates[scheduleTime.day].getMonth());
+  selectedDate.setFullYear(modalWeekDates[scheduleTime.day].getFullYear());
   const timestamp = Math.floor(selectedDate.getTime() / 1000);
   const isConflicting = isTimestampConflicting(timestamp, lessons);
   const isTooSoon = isTimestampTooSoon(timestamp);
+  const validationMessages: string[] = [];
+  if (availableTokens <= 0) {
+    validationMessages.push('No tokens available. Please top up to schedule.');
+  }
+  if (isTooSoon) {
+    validationMessages.push('Must be at least 6 hours in the future.');
+  }
+  if (isConflicting) {
+    validationMessages.push('Conflicts with an existing lesson.');
+  }
+  const hasBlockingValidation = validationMessages.length > 0;
+  const { addToast } = useToast();
+  const handleScheduleLesson = async () => {
+    if (hasBlockingValidation) {
+      addToast({
+        title: 'Cannot schedule lesson',
+        message: validationMessages.join(' '),
+        type: 'error',
+      });
+      return;
+    }
+
+    const date = Math.floor(selectedDate.getTime() / 1000);
+
+    const fn = httpsCallable<
+      { date: number; topicId: string },
+      { classId: string }
+    >(functions, 'scheduleLesson');
+
+    try {
+      const res = await fn({
+        date,
+        topicId: selectedTopicId,
+      });
+
+      addToast({
+        title: 'Lesson Scheduled',
+        message: 'Your lesson has been successfully scheduled.',
+        type: 'success',
+      });
+
+      onClose();
+      return res.data;
+    } catch (err: any) {
+      console.error(err);
+
+      let message = 'Failed to schedule lesson';
+
+      if (err.code === 'functions/failed-precondition') {
+        message = 'You do not have enough tokens';
+      } else if (err.code === 'functions/unauthenticated') {
+        message = 'Please log in again';
+      }
+
+      addToast({
+        title: 'Scheduling Failed',
+        message,
+        type: 'error',
+      });
+    }
+  };
+
   return (
     <div
       className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm'
       onClick={onClose}
     >
       <div
-        className='w-full max-w-lg bg-gray-800 border border-gray-700 shadow-2xl rounded-xl'
+        className='w-full max-w-lg bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 dark:border-gray-700 rounded-xl'
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -93,12 +171,12 @@ export const ScheduleLessonModal = ({
         <div className='p-6 space-y-5 max-h-[70vh] overflow-y-auto'>
           {/* Week Selector for Date Picking */}
           <div>
-            <label className='block mb-3 text-sm text-gray-400'>
+            <label className='block mb-3 text-sm text-gray-600 dark:text-gray-400'>
               Select Date
             </label>
 
             {/* Week Navigation */}
-            <div className='flex items-center justify-between p-2 mb-3 rounded-lg bg-gray-700/20'>
+            <div className='flex items-center justify-between p-2 mb-3 rounded-lg bg-gray-50 dark:bg-gray-800/60'>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -108,11 +186,11 @@ export const ScheduleLessonModal = ({
                     day: 0,
                   });
                 }}
-                className='p-2 text-gray-400 transition-all rounded-lg hover:bg-gray-700 hover:text-white'
+                className='p-2 text-gray-600 transition-all rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               >
                 <ChevronLeft className='w-4 h-4' />
               </button>
-              <div className='text-sm font-medium text-white'>
+              <div className='text-sm font-medium text-gray-900 dark:text-white'>
                 {modalWeekDates[0].toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -133,7 +211,7 @@ export const ScheduleLessonModal = ({
                     day: 0,
                   });
                 }}
-                className='p-2 text-gray-400 transition-all rounded-lg hover:bg-gray-700 hover:text-white'
+                className='p-2 text-gray-600 transition-all rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               >
                 <ChevronRight className='w-4 h-4' />
               </button>
@@ -159,7 +237,7 @@ export const ScheduleLessonModal = ({
                       className={`p-3 rounded-lg transition-all text-center ${
                         isSelected
                           ? 'bg-blue-600 text-white'
-                          : 'bg-gray-700/40 hover:bg-gray-700/60 text-gray-300'
+                          : 'bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
                       }`}
                     >
                       <div
@@ -167,15 +245,15 @@ export const ScheduleLessonModal = ({
                           isSelected
                             ? 'text-blue-200'
                             : isSunday
-                              ? 'text-red-400'
-                              : 'text-gray-500'
+                              ? 'text-red-500 dark:text-red-400'
+                              : 'text-gray-600 dark:text-gray-400'
                         }`}
                       >
                         {dayName}
                       </div>
                       <div
                         className={`text-sm font-medium ${
-                          isToday && !isSelected ? 'text-blue-400' : ''
+                          isToday && !isSelected ? 'text-blue-500' : ''
                         }`}
                       >
                         {date.getDate()}
@@ -189,14 +267,16 @@ export const ScheduleLessonModal = ({
 
           {/* Time Selector */}
           <div>
-            <label className='block mb-3 text-sm text-gray-400'>
+            <label className='block mb-3 text-sm text-gray-600 dark:text-gray-400'>
               Select Time
             </label>
             <div className='grid grid-cols-2 gap-3'>
               {/* Hour Selector */}
               <div>
-                <div className='mb-2 text-xs text-gray-500'>Hour</div>
-                <div className='grid grid-cols-6 gap-1 max-h-[200px] overflow-y-auto bg-gray-700/20 p-2 rounded-lg'>
+                <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
+                  Hour
+                </div>
+                <div className='grid grid-cols-6 gap-1 max-h-[200px] overflow-y-auto bg-gray-50 dark:bg-gray-800/60 p-2 rounded-lg'>
                   {hours.map((hour) => (
                     <button
                       key={hour}
@@ -207,7 +287,7 @@ export const ScheduleLessonModal = ({
                       className={`p-2 rounded text-xs transition-all ${
                         scheduleTime.hour === hour
                           ? 'bg-blue-600 text-white'
-                          : 'bg-gray-700/40 hover:bg-gray-700/60 text-gray-300'
+                          : 'bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
                       }`}
                     >
                       {hour.toString().padStart(2, '0')}
@@ -218,8 +298,10 @@ export const ScheduleLessonModal = ({
 
               {/* Minute Selector */}
               <div>
-                <div className='mb-2 text-xs text-gray-500'>Minute</div>
-                <div className='grid grid-cols-2 gap-2 p-2 rounded-lg bg-gray-700/20'>
+                <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
+                  Minute
+                </div>
+                <div className='grid grid-cols-2 gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/60'>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -228,10 +310,10 @@ export const ScheduleLessonModal = ({
                     className={`p-3 rounded text-sm transition-all ${
                       scheduleTime.minute === 0
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-700/40 hover:bg-gray-700/60 text-gray-300'
+                        : 'bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
                     }`}
                   >
-                    00
+                    :00
                   </button>
                   <button
                     onClick={(e) => {
@@ -241,20 +323,20 @@ export const ScheduleLessonModal = ({
                     className={`p-3 rounded text-sm transition-all ${
                       scheduleTime.minute === 30
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-700/40 hover:bg-gray-700/60 text-gray-300'
+                        : 'bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
                     }`}
                   >
-                    30
+                    :30
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Selected Time Display */}
-            <div className='p-3 mt-3 border rounded-lg bg-blue-600/10 border-blue-600/30'>
+            <div className='p-3 mt-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-600/30'>
               <div className='flex items-center gap-2'>
-                <Clock className='w-4 h-4 text-blue-400' />
-                <span className='text-sm text-white'>
+                <Clock className='w-4 h-4 text-blue-600 dark:text-blue-400' />
+                <span className='text-sm text-gray-900 dark:text-white'>
                   {modalWeekDates[scheduleTime.day].toLocaleDateString(
                     'en-US',
                     {
@@ -271,60 +353,62 @@ export const ScheduleLessonModal = ({
             </div>
 
             {/* Validation Warning */}
-            {(isConflicting || isTooSoon) && (
-              <div className='flex items-center gap-1 p-2 mt-2 text-xs text-red-400 border rounded bg-red-500/10 border-red-500/30'>
-                <span>⚠️</span>
-                <span>
-                  {isTooSoon && 'Must be at least 6 hours in the future'}
-                  {isConflicting &&
-                    !isTooSoon &&
-                    'Conflicts with existing lesson'}
-                </span>
+            {hasBlockingValidation && (
+              <div className='flex items-start gap-2 p-2 mt-2 text-xs text-red-500 border border-red-200 rounded dark:text-red-400 bg-red-50 dark:bg-red-500/10 dark:border-red-500/30'>
+                <span className='pt-0.5'>⚠️</span>
+                <div className='flex flex-col gap-1'>
+                  {validationMessages.map((msg, idx) => (
+                    <span key={idx}>{msg}</span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
           {/* Lesson Type Selection */}
           <div>
-            <label className='block mb-2 text-sm text-gray-400'>
+            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
               Lesson Type
             </label>
             <div className='grid grid-cols-2 gap-3'>
               <button
-                className={`p-4 ${lessonType === '1on1' ? 'bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-600/30 transition-all' : 'bg-gray-700/40 border-2 border-gray-700 rounded-lg hover:bg-gray-700/60 transition-all'}`}
+                className={`p-4 ${lessonType === '1on1' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'}`}
                 onClick={() => onLessonTypeChange('1on1')}
               >
-                <div className='mb-1 font-medium text-white'>1-on-1 Lesson</div>
-                <div className='text-xs text-gray-400'>Personal coaching</div>
+                <div className='mb-1 font-medium text-gray-900 dark:text-white'>
+                  1-on-1 Lesson
+                </div>
+                <div className='text-xs text-gray-600 dark:text-gray-400'>
+                  Personal coaching
+                </div>
               </button>
               <button
-                className={`p-4 ${lessonType === 'group' ? 'bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-600/30 transition-all' : 'bg-gray-700/40 border-2 border-gray-700 rounded-lg hover:bg-gray-700/60 transition-all'}`}
+                className={`p-4 ${lessonType === 'group' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'}`}
                 onClick={() => onLessonTypeChange('group')}
               >
-                <div className='mb-1 font-medium text-white'>Group Class</div>
-                <div className='text-xs text-gray-400'>Learn with others</div>
+                <div className='mb-1 font-medium text-gray-900 dark:text-white'>
+                  Group Class
+                </div>
+                <div className='text-xs text-gray-600 dark:text-gray-400'>
+                  Learn with others
+                </div>
               </button>
             </div>
           </div>
 
           {/* Teacher Selection */}
-          {/* Not available for now */}
           {/* <div>
-            <label className='block mb-2 text-sm text-gray-400'>
+            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
               Select Teacher
             </label>
             <select
               value={selectedTeacher}
               onChange={(e) => onTeacherChange(e.target.value)}
-              className='w-full p-3 text-white bg-gray-700 border border-gray-700 rounded-lg focus:border-blue-600 focus:outline-none'
+              className='w-full p-3 text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
             >
               <option value=''>Any Teacher - First available</option>
               {availableTeachers.map((teacher) => (
-                <option
-                  className='bg-gray-700/40'
-                  key={teacher.first_name}
-                  value={teacher.first_name}
-                >
+                <option key={teacher.first_name} value={teacher.first_name}>
                   {teacher.first_name} {teacher.last_name} -{' '}
                   {teacher.rating.toFixed(1)}★
                 </option>
@@ -334,16 +418,17 @@ export const ScheduleLessonModal = ({
 
           {/* Topic Selection */}
           <div>
-            <label className='block mb-2 text-sm text-gray-400'>
+            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
               Lesson Topic
             </label>
+
             <select
               value={selectedTopicId}
               onChange={(e) => onTopicChange(e.target.value)}
-              className='w-full p-3 text-white bg-gray-700 border border-gray-700 rounded-lg focus:border-blue-600 focus:outline-none'
+              className='w-full p-3 text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
             >
               {availableTopics.map((topic, index) => (
-                <option className='bg-gray-700/40' key={index} value={topic.id}>
+                <option key={index} value={topic.id}>
                   {topic.heading}
                 </option>
               ))}
@@ -352,38 +437,47 @@ export const ScheduleLessonModal = ({
 
           {/* Lesson Focus (Optional) */}
           <div>
-            <label className='block mb-2 text-sm text-gray-400'>
+            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
               Lesson Focus (Optional)
             </label>
             <textarea
-              className='w-full p-3 text-white placeholder-gray-500 border border-gray-700 rounded-lg resize-none bg-gray-700/40 focus:border-blue-600 focus:outline-none'
+              className='w-full p-3 text-gray-900 placeholder-gray-500 bg-white border border-gray-200 rounded-lg resize-none dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
               rows={3}
               placeholder='What would you like to focus on in this lesson?'
             />
           </div>
 
           {/* Token Cost */}
-          <div className='flex items-center justify-between p-4 border rounded-lg bg-blue-600/10 border-blue-600/30'>
-            <div className='text-sm text-gray-400'>Token Cost</div>
+          <div className='flex items-center justify-between p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-600/30'>
+            <div className='text-sm text-gray-600 dark:text-gray-400'>
+              Token Cost
+            </div>
             <div className='flex items-center gap-2'>
               <div className='flex items-center justify-center w-6 h-6 text-xs font-bold bg-yellow-500 rounded-full'>
                 T
               </div>
-              <span className='font-semibold text-white'>1 Token</span>
+              <span className='font-semibold text-gray-900 dark:text-white'>
+                1 Token
+              </span>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className='flex gap-3 pt-2'>
             <button
-              onClick={onSchedule}
-              className='flex-1 px-4 py-3 font-medium text-white transition-all bg-blue-600 rounded-lg hover:bg-blue-700'
+              onClick={handleScheduleLesson}
+              disabled={hasBlockingValidation}
+              className={`flex-1 px-4 py-3 font-medium text-white transition-all rounded-lg ${
+                hasBlockingValidation
+                  ? 'bg-blue-300 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
               Schedule Lesson
             </button>
             <button
               onClick={onClose}
-              className='px-4 py-3 text-white transition-all bg-gray-700 rounded-lg hover:bg-gray-600'
+              className='px-4 py-3 text-gray-900 transition-all bg-gray-200 rounded-lg dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
             >
               Cancel
             </button>

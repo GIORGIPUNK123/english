@@ -52,11 +52,11 @@ export function CalendarGrid({
   };
 
   return (
-    <div className='flex-1 overflow-auto border-2 border-gray-700 border-solid shadow-2xl bg-gray-800/40 rounded-xl'>
+    <div className='flex-1 overflow-auto bg-white border border-gray-200 shadow-lg dark:bg-gray-800/40 rounded-xl dark:border-gray-700'>
       <div className='min-w-[800px]'>
         {/* Days Header */}
-        <div className='grid grid-cols-[80px_repeat(7,1fr)] bg-gray-800/80 sticky top-0 z-10 border-b-2 border-solid border-gray-700'>
-          <div className='p-3 border-r-2 border-gray-700 border-solid'></div>
+        <div className='grid grid-cols-[80px_repeat(7,1fr)] bg-white dark:bg-gray-800/40 sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700'>
+          <div className='p-3 border-r border-gray-200 dark:border-gray-700'></div>
           {days.map((day, index) => {
             const date = weekDates[index];
             const isToday = date.toDateString() === new Date().toDateString();
@@ -64,12 +64,12 @@ export function CalendarGrid({
             return (
               <div
                 key={day}
-                className={`p-3 text-center border-r-2 border-solid border-gray-700 last:border-r-0 ${
+                className={`p-3 text-center border-r border-gray-200 dark:border-gray-700 last:border-r-0 ${
                   isToday ? 'bg-blue-500/10' : ''
                 }`}
               >
                 <div
-                  className={`text-sm font-medium ${isSunday ? 'text-red-400' : 'text-gray-300'}`}
+                  className={`text-sm font-medium ${isSunday ? 'text-red-500 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}
                 >
                   {day}
                 </div>
@@ -78,8 +78,8 @@ export function CalendarGrid({
                     isToday
                       ? 'bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center mx-auto'
                       : isSunday
-                        ? 'text-red-400'
-                        : 'text-gray-500'
+                        ? 'text-red-500 dark:text-red-400'
+                        : 'text-gray-600 dark:text-gray-400'
                   }`}
                 >
                   {date.getDate()}
@@ -94,10 +94,10 @@ export function CalendarGrid({
           {hours.map((hour) => (
             <div
               key={hour}
-              className='grid grid-cols-[80px_repeat(7,1fr)] border-b border-solid border-gray-700/80 last:border-b-0'
+              className='grid grid-cols-[80px_repeat(7,1fr)] border-b border-gray-200 dark:border-gray-700 last:border-b-0'
             >
               {/* Time Label */}
-              <div className='flex items-start p-3 text-xs text-gray-500 border-r border-solid border-gray-700/80'>
+              <div className='flex items-start p-3 text-xs text-gray-600 border-r border-gray-200 dark:border-gray-700 dark:text-gray-400'>
                 {hour.toString().padStart(2, '0')}:00
               </div>
 
@@ -118,14 +118,14 @@ export function CalendarGrid({
                 return (
                   <div
                     key={dayIndex}
-                    className='min-h-[80px] border-r border-solid border-gray-700/80 last:border-r-0 transition-all relative'
+                    className='min-h-[80px] border-r border-gray-200 dark:border-gray-700 last:border-r-0 transition-all relative'
                   >
                     {/* Top Half (00 minutes) - Clickable */}
                     <div
                       className={`absolute inset-x-0 top-0 h-1/2 p-2 group ${
                         isSlot00Available
-                          ? 'cursor-pointer hover:bg-gray-800/30'
-                          : 'cursor-not-allowed bg-gray-900/20'
+                          ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/30'
+                          : 'cursor-not-allowed bg-gray-100 dark:bg-gray-800/30'
                       }`}
                       onClick={() => {
                         if (isSlot00Available) {
@@ -140,7 +140,9 @@ export function CalendarGrid({
                     >
                       <div
                         className={`opacity-0 group-hover:opacity-100 transition-all text-[10px] ${
-                          isSlot00Available ? 'text-gray-500' : 'text-red-500'
+                          isSlot00Available
+                            ? 'text-gray-600 dark:text-gray-400'
+                            : 'text-red-500'
                         }`}
                       >
                         {isSlot00Available
@@ -153,8 +155,8 @@ export function CalendarGrid({
                     <div
                       className={`absolute inset-x-0 bottom-0 h-1/2 p-2 group ${
                         isSlot30Available
-                          ? 'cursor-pointer hover:bg-gray-800/30'
-                          : 'cursor-not-allowed bg-gray-900/20'
+                          ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/30'
+                          : 'cursor-not-allowed bg-gray-100 dark:bg-gray-800/30'
                       }`}
                       onClick={() => {
                         if (isSlot30Available) {
@@ -169,7 +171,9 @@ export function CalendarGrid({
                     >
                       <div
                         className={`opacity-0 group-hover:opacity-100 transition-all text-[10px] ${
-                          isSlot30Available ? 'text-gray-500' : 'text-red-500'
+                          isSlot30Available
+                            ? 'text-gray-600 dark:text-gray-400'
+                            : 'text-red-500'
                         }`}
                       >
                         {isSlot30Available
@@ -183,7 +187,7 @@ export function CalendarGrid({
                       const eventStartDate = new Date(event.date * 1000);
                       const eventMinute = eventStartDate.getMinutes();
                       const isHalfHour = eventMinute === 30;
-                      console.log('event: ', event);
+
                       return (
                         <div
                           key={event.id}

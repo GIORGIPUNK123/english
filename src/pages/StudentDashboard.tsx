@@ -11,10 +11,13 @@ import { ClassesT, LessonT, TeacherT, TopicT, UserDataT } from '../types';
 import { StudentSidebar } from '../components/studentDashboard/StudentSidebar';
 import { Menu } from 'lucide-react';
 import { StudentDashboardView } from '../components/studentDashboard/StudentDashboardView';
-import { StudentCoursesView } from '../components/studentDashboard/StudentCoursesView';
 import { StudentNotificationsView } from '../components/studentDashboard/StudentNotifications';
 import { StudentCalendar } from '../components/calendar/StudentCalendar';
 import { Loading } from './Loading';
+import { StudentSettingsView } from '../components/studentDashboard/StudentSettingsView';
+import { ToastContainer } from '../components/ToastNotification';
+import { useToast } from '../context/ToastContext';
+import { useFirebaseNotifications } from '../hooks/useFirebaseNotifications';
 
 export const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -28,6 +31,9 @@ export const StudentDashboard = () => {
   const [lessons, setLessons] = useState<LessonT[]>([]);
 
   const navigate = useNavigate();
+  const { toasts, removeToast } = useToast();
+
+  useFirebaseNotifications(user?.uid || null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -76,8 +82,8 @@ export const StudentDashboard = () => {
     if (!userData || topicsArr.length === 0) return;
 
     const fetchLessons = async () => {
-      const lessonsPromises = userData.classes.map(async (c) => {
-        const classRef = doc(db, 'classes', c.id);
+      const lessonsPromises = userData.classes.map(async (classId) => {
+        const classRef = doc(db, 'classes', classId);
         const classSnap = await getDoc(classRef);
 
         if (!classSnap.exists()) {
@@ -137,9 +143,21 @@ export const StudentDashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <StudentDashboardView userData={userData} lessons={lessons} />;
+        return (
+          <StudentDashboardView
+            user={user!}
+            userData={userData}
+            lessons={lessons}
+            topicsArr={topicsArr}
+          />
+        );
       case 'courses':
-        return <StudentCoursesView />;
+        return (
+          <div className='text-3xl text-gray-800 dark:text-white '>
+            Courses Coming Soon!
+          </div>
+        );
+      // <StudentCoursesView />;
       case 'calendar':
         return (
           <StudentCalendar
@@ -149,14 +167,31 @@ export const StudentDashboard = () => {
             topicsArr={topicsArr}
           />
         );
-      // case 'assignments':
-      //   return <AssignmentsView />;
+      case 'assignments':
+        return (
+          <div className='text-3xl text-gray-800 dark:text-white '>
+            Assignments Coming Soon!
+          </div>
+        );
       case 'notifications':
         return <StudentNotificationsView user={user!} />;
-      // case 'settings':
-      //   return <SettingsView />;
+      case 'settings':
+        return (
+          <StudentSettingsView
+            email={user!.email!}
+            userData={userData}
+            capitalNames={capitalNames}
+          />
+        );
       default:
-        return <StudentDashboardView userData={userData} lessons={lessons} />;
+        return (
+          <StudentDashboardView
+            user={user!}
+            userData={userData}
+            lessons={lessons}
+            topicsArr={topicsArr}
+          />
+        );
     }
   };
   const capitalNames = [
@@ -166,7 +201,8 @@ export const StudentDashboard = () => {
   return (
     <>
       {user && (
-        <div className='min-h-screen bg-[#0f0f0f] dark flex'>
+        <div className='min-h-screen dark:bg-[#0f0f0f] flex'>
+          <ToastContainer toasts={toasts} onDismiss={removeToast} />
           {/* Sidebar */}
           <StudentSidebar
             user={user}
@@ -182,7 +218,7 @@ export const StudentDashboard = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className='fixed z-30 flex items-center justify-center w-10 h-10 text-white transition-all bg-gray-800 border border-gray-700 rounded-lg lg:hidden top-4 left-4 hover:bg-gray-700'
+              className='fixed z-30 flex items-center justify-center w-10 h-10 text-gray-900 transition-all bg-white border border-gray-300 rounded-lg shadow-sm lg:hidden top-4 left-4 dark:bg-gray-800 dark:border-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
             >
               <Menu className='w-5 h-5' />
             </button>

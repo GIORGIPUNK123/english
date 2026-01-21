@@ -1,5 +1,5 @@
 import { Clock } from 'lucide-react';
-import { LessonT } from './types';
+import { LessonT } from '../../types';
 import { getLessonColor, formatTime } from './utils';
 
 interface MobileCalendarViewProps {
