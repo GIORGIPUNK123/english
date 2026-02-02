@@ -1,20 +1,19 @@
 import {
   Clock,
   Calendar,
-  Users,
   AlertCircle,
   Star,
   Video,
   Coins,
   Plus,
 } from 'lucide-react';
-import { LessonT, TopicT, UserDataT } from '../../types';
-import { LessonDetailModal } from '../calendar/LessonDetailModal';
+import { LessonT, TopicT, UserDataT } from '../../../types';
+import { LessonDetailModal } from '../../calendar/LessonDetailModal';
 import { useState } from 'react';
-import { ScheduleLessonModal } from '../calendar/ScheduleLessonModal';
+import { ScheduleLessonModal } from '../../calendar/ScheduleLessonModal';
 import { User } from 'firebase/auth';
-import { useScheduleLessonModal } from '../../hooks/useScheduleLessonModal';
-import { CancelModal } from '../calendar/CancelModal';
+import { useScheduleLessonModal } from '../../../hooks/useScheduleLessonModal';
+import { CancelModal } from '../../calendar/CancelModal';
 import { TopUpModal } from './TopUpModal';
 export const StudentDashboardView = (props: {
   user: User;

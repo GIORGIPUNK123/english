@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../../firebase/firebase-config';
-import { UserDataT } from '../../types';
+import { useState } from 'react';
+import { UserDataT } from '../../../types';
 import { Globe, Mail, Moon, Sun, User as UserImg } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../../context/ThemeContext';
 
-export const StudentSettingsView = (props: {
+interface SettingsViewProps {
   userData: UserDataT | null;
   capitalNames: string[];
   email: string;
-}) => {
-  const [user, setUser] = useState<User | null>(null);
+  userType?: 'student' | 'teacher'; // For future teacher dashboard support
+}
+
+export const SettingsView = ({
+  userData,
+  capitalNames,
+  email,
+  userType = 'student',
+}: SettingsViewProps) => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [advertisementEmails, setAdvertisementEmails] = useState(false);
-  const { userData, capitalNames, email } = props;
+
   const sections = [
     {
       title: 'Profile Settings',
@@ -36,18 +41,8 @@ export const StudentSettingsView = (props: {
       ],
     },
   ];
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    // Optionally redirect to login page here
-  };
 
   const handleChangePassword = () => {
-    // Implement password change logic or redirect to password change page
     alert('Change password feature coming soon!');
   };
 

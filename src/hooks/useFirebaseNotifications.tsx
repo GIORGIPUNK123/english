@@ -1,12 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useToast } from '../context/ToastContext';
-import { NotificationT, UserDataT } from '../types';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { NotificationT } from '../types';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/firebase-config';
-
-// Import your Firebase config
-// import { db } from '@/firebase/config';
-// import { doc, onSnapshot } from 'firebase/firestore';
 
 // Map your message_type to toast type
 function mapMessageTypeToToastType(
@@ -35,46 +31,40 @@ export function useFirebaseNotifications(userId: string | null) {
   const isInitialLoad = useRef(true);
 
   useEffect(() => {
-    if (!userId) {
-      return;
-    }
-    // Firestore listener for user data
-    const userDocRef = doc(db, 'userData', userId); // Adjust collection name as needed
+    if (!userId) return;
 
-    const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-      if (!docSnapshot.exists()) {
-        return;
-      }
+    const notificationsRef = collection(db, 'users', userId, 'notifications');
+    const q = query(notificationsRef, orderBy('created_at', 'desc'));
 
-      const userData = docSnapshot.data() as UserDataT;
-      const notifications = userData.notifications || [];
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifications: NotificationT[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as NotificationT[];
 
-      // On initial load, just store existing notification IDs without showing toasts
+      // On initial load, just store existing IDs
       if (isInitialLoad.current) {
-        notifications.forEach((notif) => {
-          previousNotificationIds.current.add(notif.id);
-        });
+        notifications.forEach((notif) =>
+          previousNotificationIds.current.add(notif.id),
+        );
         isInitialLoad.current = false;
         return;
       }
 
-      // Check for new notifications
+      // Check for new notifications and show toast
       notifications.forEach((notif) => {
-        // If this notification ID hasn't been seen before, it's new!
         if (!previousNotificationIds.current.has(notif.id)) {
           previousNotificationIds.current.add(notif.id);
-          // Show toast for new notification
           addToast({
             title: notif.heading,
             message: notif.message,
             type: mapMessageTypeToToastType(notif.message_type),
-            duration: 7000, // Show for 7 seconds since it's important
+            duration: 7000,
           });
         }
       });
     });
 
-    // Cleanup listener on unmount
     return () => unsubscribe();
   }, [userId, addToast]);
 }

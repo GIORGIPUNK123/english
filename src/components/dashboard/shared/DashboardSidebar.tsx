@@ -1,5 +1,4 @@
 import { User } from 'firebase/auth';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import {
   LayoutDashboard,
   BookOpen,
@@ -11,8 +10,9 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { NotificationT, TeacherT, UserDataT } from '../../types';
-import { db } from '../../firebase/firebase-config';
+import { NotificationT } from '../../../types';
+import { db } from '../../../firebase/firebase-config';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
 interface SidebarProps {
   user: User;
@@ -32,7 +32,7 @@ const navItems = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export const StudentSidebar = ({
+export const DashboardSidebar = ({
   user,
   activeTab,
   onTabChange,
@@ -40,9 +40,7 @@ export const StudentSidebar = ({
   isOpen,
   onClose,
 }: SidebarProps) => {
-  const [notifications, setNotifications] = useState<NotificationT[]>([]);
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const userDocRef = doc(db, 'userData', user!.uid);
+  const [unreadCount, setUnreadCount] = useState(0);
   const handleTabChange = (tab: string) => {
     onTabChange(tab);
     // Close sidebar on mobile after selection
@@ -51,47 +49,29 @@ export const StudentSidebar = ({
     }
   };
 
+  // Get unread count from user document
+
+  const userNotificationsColRef = collection(
+    db,
+    'users',
+    user!.uid,
+    'notifications',
+  );
   useEffect(() => {
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-      if (!docSnap.exists()) {
-        setNotifications([]);
-        return;
-      }
-
-      const userData = docSnap.data() as UserDataT;
-      const notificationsRaw = Array.isArray(userData.notifications)
-        ? userData.notifications
-        : [];
-
-      const enrichNotifications = async () => {
-        const buffer = await Promise.all(
-          notificationsRaw.map(async (x) => {
-            if (x.teacher_id) {
-              try {
-                const teacherRef = doc(db, 'teachers', x.teacher_id);
-                const teacherSnap = await getDoc(teacherRef);
-                const teacherData = teacherSnap.exists()
-                  ? (teacherSnap.data() as TeacherT)
-                  : null;
-                return { ...x, teacher: teacherData };
-              } catch {
-                return { ...x, teacher: null };
-              }
-            }
-            return { ...x, teacher: null };
-          }),
-        );
-        setNotifications((prev) =>
-          JSON.stringify(prev) === JSON.stringify(buffer) ? prev : buffer,
-        );
-      };
-
-      enrichNotifications();
+    // Listen to notifications subcollection
+    const q = query(userNotificationsColRef); // you can add orderBy if needed
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifications: NotificationT[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as NotificationT[];
+      console.log('Notifications:', notifications);
+      const unread = notifications.filter((n) => !n.read).length;
+      setUnreadCount(unread);
     });
 
     return () => unsubscribe();
-  }, [userDocRef]);
-
+  }, [userNotificationsColRef]);
   return (
     <>
       {/* Mobile Overlay */}

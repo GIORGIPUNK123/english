@@ -14,11 +14,11 @@ import {
   ArrowUp,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '../../firebase/firebase-config';
-import { NotificationT, TeacherT, UserDataT } from '../../types';
-import { useTimeAgo } from '../../hooks/useTimeAgo';
-import { useMarkAsRead } from '../../hooks/useMarkAsRead';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from '../../../firebase/firebase-config';
+import { NotificationT } from '../../../types';
+import { useTimeAgo } from '../../../hooks/useTimeAgo';
+import { useMarkAsRead } from '../../../hooks/useMarkAsRead';
 
 const iconMap = {
   info: Info,
@@ -231,53 +231,31 @@ const ViewNotificationModal = ({
 
 export const StudentNotificationsView = (props: { user: User }) => {
   const { user } = props;
-  const userDocRef = doc(db, 'userData', user.uid);
   const [notifications, setNotifications] = useState<NotificationT[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const markAsRead = useMarkAsRead();
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-      if (!docSnap.exists()) {
-        setNotifications([]);
-        return;
-      }
-
-      const userData = docSnap.data() as UserDataT;
-      const notificationsRaw = Array.isArray(userData.notifications)
-        ? userData.notifications
-        : [];
-
-      const enrichNotifications = async () => {
-        const buffer = await Promise.all(
-          notificationsRaw.map(async (x) => {
-            if (x.teacher_id) {
-              try {
-                const teacherRef = doc(db, 'teachers', x.teacher_id);
-                const teacherSnap = await getDoc(teacherRef);
-                const teacherData = teacherSnap.exists()
-                  ? (teacherSnap.data() as TeacherT)
-                  : null;
-                return { ...x, teacher: teacherData };
-              } catch {
-                return { ...x, teacher: null };
-              }
-            }
-            return { ...x, teacher: null };
-          }),
-        );
-        setNotifications((prev) =>
-          JSON.stringify(prev) === JSON.stringify(buffer) ? prev : buffer,
-        );
-      };
-
-      enrichNotifications();
+    // Listen to notifications subcollection
+    const userNotificationsColRef = collection(
+      db,
+      'users',
+      user.uid,
+      'notifications',
+    );
+    const q = query(userNotificationsColRef);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifications: NotificationT[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as NotificationT[];
+      console.log('Notifications:', notifications);
+      setNotifications(notifications);
     });
 
     return () => unsubscribe();
-  }, [userDocRef]);
-
+  }, [user.uid]);
   const filteredNotifications = notifications.filter((notification) => {
     if (filter === 'unread') return !notification.read;
     if (filter === 'read') return notification.read;

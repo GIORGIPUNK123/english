@@ -1,20 +1,16 @@
 import { useEffect, useState } from 'react';
-// import { Calendar } from '../components/Calendar';
-// import homeImg from '../assets/home.svg';
-// import calendarImg from '../assets/calendar.svg';
-// import { StudentProgressMain } from '../components/progress/StudentProgressMain';
 import { auth, db } from '../firebase/firebase-config';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { ClassesT, LessonT, TeacherT, TopicT, UserDataT } from '../types';
-import { StudentSidebar } from '../components/studentDashboard/StudentSidebar';
+import { DashboardSidebar } from '../components/dashboard/shared/DashboardSidebar';
 import { Menu } from 'lucide-react';
-import { StudentDashboardView } from '../components/studentDashboard/StudentDashboardView';
-import { StudentNotificationsView } from '../components/studentDashboard/StudentNotifications';
+import { DashboardView } from '../components/dashboard/views/DashboardView';
+import { NotificationsView } from '../components/dashboard/views/NotificationsView';
 import { StudentCalendar } from '../components/calendar/StudentCalendar';
 import { Loading } from './Loading';
-import { StudentSettingsView } from '../components/studentDashboard/StudentSettingsView';
+import { SettingsView } from '../components/dashboard/views/SettingsView';
 import { ToastContainer } from '../components/ToastNotification';
 import { useToast } from '../context/ToastContext';
 import { useFirebaseNotifications } from '../hooks/useFirebaseNotifications';
@@ -25,7 +21,7 @@ export const StudentDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserDataT | null>(null);
   const [loading, setLoading] = useState(true);
-
+  console.log('User Data:', userData);
   // ✅ MOVE THESE UP
   const [topicsArr, setTopicsArr] = useState<TopicT[]>([]);
   const [lessons, setLessons] = useState<LessonT[]>([]);
@@ -49,7 +45,7 @@ export const StudentDashboard = () => {
   useEffect(() => {
     if (!user) return;
 
-    const userDocRef = doc(db, 'userData', user.uid);
+    const userDocRef = doc(db, 'users', user.uid);
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         setUserData(docSnap.data() as UserDataT);
@@ -144,11 +140,12 @@ export const StudentDashboard = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <StudentDashboardView
+          <DashboardView
             user={user!}
             userData={userData}
             lessons={lessons}
             topicsArr={topicsArr}
+            userType='student'
           />
         );
       case 'courses':
@@ -174,22 +171,24 @@ export const StudentDashboard = () => {
           </div>
         );
       case 'notifications':
-        return <StudentNotificationsView user={user!} />;
+        return <NotificationsView userId={user!.uid} userType='student' />;
       case 'settings':
         return (
-          <StudentSettingsView
+          <SettingsView
             email={user!.email!}
             userData={userData}
             capitalNames={capitalNames}
+            userType='student'
           />
         );
       default:
         return (
-          <StudentDashboardView
+          <DashboardView
             user={user!}
             userData={userData}
             lessons={lessons}
             topicsArr={topicsArr}
+            userType='student'
           />
         );
     }
@@ -204,7 +203,7 @@ export const StudentDashboard = () => {
         <div className='min-h-screen dark:bg-[#0f0f0f] flex'>
           <ToastContainer toasts={toasts} onDismiss={removeToast} />
           {/* Sidebar */}
-          <StudentSidebar
+          <DashboardSidebar
             user={user}
             activeTab={activeTab}
             onTabChange={setActiveTab}

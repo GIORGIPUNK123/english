@@ -24,7 +24,7 @@ export const cleanUpOldClasses = onSchedule('every 5 minutes', async () => {
 
     if (!cls.teacher_id && cls.student_id) {
       const classRef = docSnap.ref;
-      const studentRef = db.collection('userData').doc(cls.student_id);
+      const studentRef = db.collection('users').doc(cls.student_id);
 
       batch.update(classRef, {
         status: 'cancelled_teacher',
@@ -71,7 +71,7 @@ export const scheduleLesson = onCall<ScheduleLessonData>(
       throw new HttpsError('invalid-argument', 'Missing fields');
     }
 
-    const userRef = db.collection('userData').doc(userId);
+    const userRef = db.collection('users').doc(userId);
     const classRef = db.collection('classes').doc();
 
     await db.runTransaction(async (tx) => {
@@ -134,7 +134,7 @@ export const cancelLesson = onCall<CancelLessonData>(async ({ auth, data }) => {
     const status = isStudent ? 'cancelled_student' : 'cancelled_teacher';
 
     const studentRef = lesson.student_id
-      ? db.collection('userData').doc(lesson.student_id)
+      ? db.collection('users').doc(lesson.student_id)
       : null;
 
     const teacherRef = lesson.teacher_id?.trim()
@@ -190,12 +190,12 @@ export const markNotificationAsRead = onCall<MarkNotificationAsReadData>(
     );
 
     await db.runTransaction(async (tx) => {
-      // Check userData (student)
-      const userRef = db.collection('userData').doc(userId);
+      // Check users (student)
+      const userRef = db.collection('users').doc(userId);
       const userSnap = await tx.get(userRef);
 
       if (userSnap.exists) {
-        console.log('[MARK READ] Found user in userData collection');
+        console.log('[MARK READ] Found user in users collection');
         const user = userSnap.data()!;
         const notifications = user.notifications || [];
 
@@ -208,7 +208,7 @@ export const markNotificationAsRead = onCall<MarkNotificationAsReadData>(
         );
 
         if (!notificationExists) {
-          console.warn('[MARK READ] Notification not found in userData');
+          console.warn('[MARK READ] Notification not found in users');
           throw new HttpsError('not-found', 'Notification not found');
         }
 
