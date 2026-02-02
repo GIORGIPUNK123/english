@@ -43,11 +43,6 @@ export const StudentDashboardView = (props: {
   const [cancelLessonId, setCancelLessonId] = useState<string | null>(null);
 
   // Computed values
-  const capitalNames = [
-    userData.first_name.charAt(0).toUpperCase() + userData.first_name.slice(1),
-    userData.last_name.charAt(0).toUpperCase() + userData.last_name.slice(1),
-  ];
-
   const upcomingLessons = lessons.filter(
     (lesson) =>
       lesson.status === 'scheduled' &&

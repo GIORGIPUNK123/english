@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Bell, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { X, Bell, CheckCircle, AlertCircle } from 'lucide-react';
 
 export interface Toast {
   id: string;

@@ -52,9 +52,9 @@ export const NotificationsView = ({
 
   const sortedNotifications = [...filteredNotifications].sort((a, b) => {
     if (sortOrder === 'newest') {
-      return b.created_at.seconds - a.created_at.seconds;
+      return b.created_at - a.created_at;
     } else {
-      return a.created_at.seconds - b.created_at.seconds;
+      return a.created_at - b.created_at;
     }
   });
 

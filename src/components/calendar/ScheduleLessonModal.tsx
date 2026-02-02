@@ -5,15 +5,7 @@ import {
   isTimestampConflicting,
   isTimestampTooSoon,
 } from './utils';
-import {
-  addDoc,
-  arrayUnion,
-  collection,
-  doc,
-  increment,
-  updateDoc,
-} from 'firebase/firestore';
-import { db, functions } from '../../firebase/firebase-config';
+import { functions } from '../../firebase/firebase-config';
 import { useToast } from '../../context/ToastContext';
 import { httpsCallable } from 'firebase/functions';
 
@@ -60,7 +52,6 @@ export const ScheduleLessonModal = ({
   lessons,
   onClose,
   selectedDate,
-  userUid,
   availableTokens,
 }: ScheduleLessonModalProps) => {
   const modalWeekDates = getWeekDates(scheduleTime.week);

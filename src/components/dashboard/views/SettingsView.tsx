@@ -11,10 +11,10 @@ interface SettingsViewProps {
 }
 
 export const SettingsView = ({
-  userData,
+
   capitalNames,
   email,
-  userType = 'student',
+
 }: SettingsViewProps) => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [advertisementEmails, setAdvertisementEmails] = useState(false);
@@ -42,9 +42,7 @@ export const SettingsView = ({
     },
   ];
 
-  const handleChangePassword = () => {
-    alert('Change password feature coming soon!');
-  };
+
 
   return (
     <div className='h-full overflow-y-auto'>

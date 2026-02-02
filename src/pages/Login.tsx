@@ -60,7 +60,7 @@ export const Login = () => {
                       errors,
                       handleChange,
                       handleBlur,
-                      handleSubmit,
+
                       isSubmitting,
                     }) => (
                       <Form>
@@ -111,7 +111,7 @@ export const Login = () => {
                 </button>
                 <button
                   onClick={() => {
-                    logins.loginWithGoogle().then(async (res) => {
+                    logins.loginWithGoogle().then(async () => {
                       // logins.addUserData(res.user);
                     });
                   }}

@@ -29,7 +29,7 @@ export const DashboardView = ({
   userData,
   lessons,
   topicsArr,
-  userType = 'student',
+
 }: DashboardViewProps) => {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
 

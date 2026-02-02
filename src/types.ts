@@ -81,3 +81,8 @@ export interface TeacherT {
   img: string;
   rating: number;
 }
+export interface BlockDetailsT {
+  date: number;
+  isDisabled: boolean;
+  currLesson: LessonT | null;
+}

@@ -8,10 +8,10 @@ import { Header } from '../components/Header';
 import { RegisterSchema } from '../schemas/registerSchema';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/firebase-config';
-import { useNavigate } from 'react-router-dom';
+
 import { useFirebaseLogins } from '../hooks/useFirebaseLogins';
 export const Register = () => {
-  const navigate = useNavigate();
+
   const logins = useFirebaseLogins();
   return (
     <>
@@ -57,7 +57,7 @@ export const Register = () => {
                       auth,
                       values.email,
                       values.password,
-                    ).then(async (res) => {
+                    ).then(async () => {
                       setSubmitting(false);
                     });
                   }}

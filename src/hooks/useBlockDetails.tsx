@@ -48,7 +48,7 @@ export const useBlockDetails = (
     isWithin12Hours || isAfter8pmUTC || isBefore5amUTC || !checkMinutes();
 
   return {
-    date: blockDate,
+    date: Math.floor(blockDate.getTime() / 1000),
     isDisabled,
     currLesson: lesson || null,
   };

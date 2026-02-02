@@ -2,16 +2,10 @@ import { FormInput } from '../atoms/FormInput';
 import { Formik } from 'formik';
 import { Header } from '../components/Header';
 import { TeacherRegisterSchema } from '../schemas/TeacherRegisterSchema';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase/firebase-config';
-import { useNavigate } from 'react-router-dom';
-import { useFirebaseLogins } from '../hooks/useFirebaseLogins';
 import homeImg from '../assets/home.svg';
 import { useState } from 'react';
 export const TeacherRegister = () => {
-  const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const logins = useFirebaseLogins();
   return (
     <>
       <div className='flex flex-col'>

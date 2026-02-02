@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { optionT } from '../types';
+import { OptionT } from '../types';
 
 export const useSelectInput = (
-  defaultId: optionT['id'],
-  options: optionT[]
+  defaultId: OptionT['id'],
+  options: OptionT[]
 ) => {
-  const findFunc = (findById: optionT['id']) => {
+  const findFunc = (findById: OptionT['id']) => {
     const find = options.find((x) => x.id === findById);
     return find ? find.id : options[0].id;
   };

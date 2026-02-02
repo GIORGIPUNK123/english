@@ -1,10 +1,10 @@
-import { optionT } from '../types';
+import { OptionT } from '../types';
 
 export const SelectInput: React.FC<{
   value: string | number;
   defaultValue?: string | number;
   onChange: (e: any) => void;
-  options: optionT[];
+  options: OptionT[];
 }> = (props) => {
   return (
     <select

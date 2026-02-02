@@ -1,17 +1,8 @@
 import { X, Clock, AlertTriangle } from 'lucide-react';
 import { LessonT } from '../../types';
 import { formatTime } from './utils';
-import { auth, db, functions } from '../../firebase/firebase-config';
-import {
-  arrayRemove,
-  arrayUnion,
-  deleteDoc,
-  doc,
-  increment,
-  updateDoc,
-} from 'firebase/firestore';
+import { auth, functions } from '../../firebase/firebase-config';
 import { useState } from 'react';
-import { useGenerateId } from '../../hooks/useGenerateRandomId';
 import { httpsCallable } from 'firebase/functions';
 import { useToast } from '../../context/ToastContext';
 
