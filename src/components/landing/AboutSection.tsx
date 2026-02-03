@@ -39,7 +39,7 @@ export const AboutSection = () => {
           </div>
           <h2 className='mb-6 text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
             Your trusted partner in
-            <span className='text-transparent bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text'>
+            <span className='text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
               {' '}
               language learning
             </span>
@@ -56,7 +56,7 @@ export const AboutSection = () => {
                 alt='Students studying together'
                 className='w-full h-auto'
               />
-              <div className='absolute inset-0 bg-gradient-to-t from-black/50 to-transparent' />
+              <div className='absolute inset-0 bg-linear-to-t from-black/50 to-transparent' />
             </div>
 
             {/* Floating Stats */}
@@ -101,7 +101,7 @@ export const AboutSection = () => {
             const Icon = value.icon;
             return (
               <div key={index} className='text-center'>
-                <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600'>
+                <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-2xl bg-linear-to-br from-blue-500 to-purple-600'>
                   <Icon className='w-8 h-8 text-white' />
                 </div>
                 <h3 className='mb-2 text-lg font-semibold text-foreground'>

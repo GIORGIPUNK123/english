@@ -34,15 +34,6 @@ export const Login = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSocialLogin = async (provider: string) => {
-    try {
-      // await fakeAuth.login(`demo@${provider}.com`, 'password');
-      navigate('/dashboard');
-    } catch (error: any) {
-      alert(error.message || 'Login failed');
-    }
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({
@@ -170,7 +161,7 @@ export const Login = () => {
                 </button>
 
                 <button
-                  onClick={() => handleSocialLogin('twitter')}
+                  // onClick={() => handleSocialLogin('twitter')}
                   className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                 >
                   <Twitter className='w-5 h-5' />

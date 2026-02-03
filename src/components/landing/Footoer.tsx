@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin, Mail } from 'lucide-react';
 
 export const Footer = () => {
@@ -137,7 +136,7 @@ export const Footer = () => {
                 placeholder='Enter your email'
                 className='flex-1 px-4 py-2 text-sm border rounded-lg bg-background border-border focus:outline-none focus:ring-2 focus:ring-blue-500'
               />
-              <button className='px-4 py-2 text-white transition-all duration-300 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
+              <button className='px-4 py-2 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
                 <Mail className='w-5 h-5' />
               </button>
             </div>
@@ -149,7 +148,7 @@ export const Footer = () => {
           <div className='flex flex-col items-center justify-between space-y-4 md:flex-row md:space-y-0'>
             {/* Logo & Copyright */}
             <div className='flex items-center space-x-4'>
-              <div className='flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600'>
+              <div className='flex items-center justify-center w-8 h-8 rounded-lg bg-linear-to-br from-blue-500 to-purple-600'>
                 <span className='text-lg font-bold text-white'>BW</span>
               </div>
               <p className='text-sm text-muted-foreground'>

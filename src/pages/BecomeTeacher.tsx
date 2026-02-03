@@ -10,7 +10,6 @@ import {
   CheckCircle,
   Video,
 } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
 import { BecomeTeacherSchema } from '../schemas/BecomeTeacherSchema';
 
 type FormData = {
@@ -40,7 +39,6 @@ const REQUIRED_FIELDS_BY_STEP: Record<number, (keyof FormData)[]> = {
 
 export const BecomeTeacher = () => {
   const navigate = useNavigate();
-  const { theme } = useTheme();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -612,7 +610,7 @@ export const BecomeTeacher = () => {
           </Link>
 
           <div className='flex items-center space-x-2'>
-            <div className='flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600'>
+            <div className='flex items-center justify-center w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600'>
               <span className='text-xl font-bold text-white'>BW</span>
             </div>
             <span className='hidden text-xl font-semibold text-foreground sm:inline'>
@@ -627,7 +625,7 @@ export const BecomeTeacher = () => {
         <div className='max-w-4xl mx-auto'>
           {/* Header */}
           <div className='mb-12 text-center'>
-            <div className='inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600'>
+            <div className='inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-linear-to-br from-blue-500 to-purple-600'>
               <GraduationCap className='w-8 h-8 text-white' />
             </div>
             <h1 className='mb-4 text-4xl font-bold text-foreground'>
@@ -678,7 +676,7 @@ export const BecomeTeacher = () => {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
                       step === currentStep
-                        ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
+                        ? 'bg-linear-to-br from-blue-500 to-purple-600 text-white'
                         : step < currentStep
                           ? 'bg-green-500 text-white'
                           : 'bg-muted text-muted-foreground'
@@ -727,7 +725,7 @@ export const BecomeTeacher = () => {
                   <button
                     type='button'
                     onClick={handleNextStep}
-                    className='px-6 py-3 font-medium text-white transition-all rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
+                    className='px-6 py-3 font-medium text-white transition-all rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
                   >
                     Next Step
                   </button>
@@ -735,7 +733,7 @@ export const BecomeTeacher = () => {
                   <button
                     type='submit'
                     disabled={isSubmitting}
-                    className='px-8 py-3 font-medium text-white transition-all rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                    className='px-8 py-3 font-medium text-white transition-all rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
                   >
                     {isSubmitting ? 'Submitting...' : 'Submit Application'}
                   </button>

@@ -59,7 +59,7 @@ const PricingCard = ({ plan }: { plan: (typeof pricingPlans)[0] }) => {
       {/* Popular Badge */}
       {plan.popular && (
         <div className='absolute -translate-x-1/2 -top-4 left-1/2'>
-          <div className='px-4 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold rounded-full flex items-center space-x-1'>
+          <div className='px-4 py-1.5 bg-linear-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold rounded-full flex items-center space-x-1'>
             <Sparkles className='w-4 h-4' />
             <span>Most Popular</span>
           </div>
@@ -92,7 +92,7 @@ const PricingCard = ({ plan }: { plan: (typeof pricingPlans)[0] }) => {
       <ul className='mb-8 space-y-4'>
         {plan.features.map((feature, index) => (
           <li key={index} className='flex items-start space-x-3'>
-            <div className='flex-shrink-0 w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center mt-0.5'>
+            <div className='shrink-0 w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center mt-0.5'>
               <Check className='w-3 h-3 text-green-500' />
             </div>
             <span className='text-muted-foreground'>{feature}</span>
@@ -104,7 +104,7 @@ const PricingCard = ({ plan }: { plan: (typeof pricingPlans)[0] }) => {
         <button
           className={`w-full py-3.5 rounded-lg font-semibold transition-all duration-300 ${
             plan.popular
-              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg hover:scale-105'
+              ? 'bg-linear-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg hover:scale-105'
               : 'bg-accent text-foreground hover:bg-accent/80'
           }`}
         >
@@ -128,7 +128,7 @@ export const PricingSection = () => {
           </div>
           <h2 className='mb-6 text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
             Simple, transparent
-            <span className='text-transparent bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text'>
+            <span className='text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
               {' '}
               pricing
             </span>

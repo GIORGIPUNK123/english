@@ -11,7 +11,7 @@ import { NotificationModal } from './NotificationModal';
 
 interface NotificationCardProps {
   notification: NotificationT;
-  markAsRead: (notification_id: string) => void;
+  markAsRead: (notification_id: string) => Promise<void>;
 }
 
 export const NotificationCard = ({
@@ -40,7 +40,7 @@ export const NotificationCard = ({
       >
         <div className='flex items-start gap-3'>
           <div
-            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${colorClass}`}
+            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 ${colorClass}`}
           >
             <Icon className='w-4 h-4 sm:w-5 sm:h-5' />
           </div>

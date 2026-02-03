@@ -59,13 +59,13 @@ const FeatureCard = ({ feature }: { feature: (typeof features)[0] }) => {
     <div className='relative p-8 transition-all duration-300 border group bg-card border-border rounded-2xl hover:shadow-xl hover:-translate-y-1'>
       {/* Gradient Background on Hover */}
       <div
-        className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-300`}
+        className={`absolute inset-0 bg-linear-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-300`}
       />
 
       <div className='relative'>
         {/* Icon */}
         <div
-          className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
+          className={`w-14 h-14 rounded-xl bg-linear-to-br ${feature.gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
         >
           <Icon className='text-white w-7 h-7' />
         </div>
@@ -95,7 +95,7 @@ export const FeaturesSection = () => {
           </div>
           <h2 className='mb-6 text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
             Everything you need to
-            <span className='text-transparent bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text'>
+            <span className='text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
               {' '}
               master English
             </span>
@@ -119,7 +119,7 @@ export const FeaturesSection = () => {
             Ready to start your learning journey?
           </p>
           <a href='#pricing'>
-            <button className='px-8 py-4 text-white transition-all duration-300 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-xl hover:scale-105'>
+            <button className='px-8 py-4 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-xl hover:scale-105'>
               View Pricing Plans
             </button>
           </a>

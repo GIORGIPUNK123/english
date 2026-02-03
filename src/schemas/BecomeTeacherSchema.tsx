@@ -1,4 +1,4 @@
-import { bool, object, string, mixed } from 'yup';
+import { object, string, mixed } from 'yup';
 
 export const BecomeTeacherSchema = object().shape({
   // Step 1: Personal Information
@@ -50,7 +50,7 @@ export const BecomeTeacherSchema = object().shape({
     .max(1000, 'Motivation must not exceed 1000 characters')
     .required('Motivation is required'),
 
-  resume: mixed<File | null>()
+  resume: mixed()
     .test('fileRequired', 'Resume is required', (value) => {
       return value instanceof File;
     })
@@ -68,7 +68,8 @@ export const BecomeTeacherSchema = object().shape({
       return value.size <= 10 * 1024 * 1024; // 10MB
     }),
 
-  videoIntro: mixed<File | null>()
+  videoIntro: mixed()
+    .nullable()
     .test('fileType', 'Video must be a video file', (value) => {
       if (!value) return true;
       return value instanceof File && value.type.startsWith('video/');

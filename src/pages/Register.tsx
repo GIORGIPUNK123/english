@@ -8,11 +8,9 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
 
 export const Register = () => {
   const navigate = useNavigate();
-  const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -26,6 +24,7 @@ export const Register = () => {
 
   const handleSocialLogin = async (provider: string) => {
     try {
+      console.log('Initiating social login with provider:', provider);
       // await fakeAuth.register(`demo@${provider}.com`, 'password');
       navigate('/dashboard');
     } catch (error: any) {
@@ -78,7 +77,7 @@ export const Register = () => {
           {/* Logo */}
           <div className='mb-8 text-center'>
             <div className='inline-flex items-center mb-4 space-x-2'>
-              <div className='flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600'>
+              <div className='flex items-center justify-center w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600'>
                 <span className='text-xl font-bold text-white'>BW</span>
               </div>
               <span className='text-2xl font-semibold text-foreground'>
@@ -270,7 +269,7 @@ export const Register = () => {
               <button
                 type='submit'
                 disabled={isSubmitting}
-                className='w-full px-4 py-3 font-medium text-white transition-all duration-300 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                className='w-full px-4 py-3 font-medium text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
               >
                 {isSubmitting ? 'Creating account...' : 'Create account'}
               </button>

@@ -33,7 +33,7 @@ export const NotificationModal = ({
         <div className='flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-800'>
           <div className='flex items-start gap-4'>
             <div
-              className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${colorClass}`}
+              className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${colorClass}`}
             >
               <Icon className='w-6 h-6' />
             </div>

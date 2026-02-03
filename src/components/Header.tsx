@@ -36,7 +36,7 @@ export const Header = () => {
           <div className='flex items-center justify-between h-16 sm:h-20'>
             {/* Logo */}
             <Link to='/' className='flex items-center space-x-2'>
-              <div className='flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600'>
+              <div className='flex items-center justify-center w-8 h-8 rounded-lg bg-linear-to-br from-blue-500 to-purple-600'>
                 <span className='text-lg font-bold text-white'>BW</span>
               </div>
               <span className='text-xl font-semibold text-foreground'>
@@ -96,7 +96,7 @@ export const Header = () => {
               {/* Auth Buttons (Desktop) */}
               {user && user !== 'loading' ? (
                 <Link to='/dashboard'>
-                  <button className='hidden lg:block px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
+                  <button className='hidden lg:block px-6 py-2.5 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
                     Dashboard
                   </button>
                 </Link>
@@ -110,7 +110,7 @@ export const Header = () => {
                     </button>
                   </Link>
                   <Link to='/register'>
-                    <button className='px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
+                    <button className='px-6 py-2.5 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
                       Sign Up
                     </button>
                   </Link>
@@ -171,7 +171,7 @@ export const Header = () => {
               <div className='pt-4 space-y-3'>
                 {user && user !== 'loading' ? (
                   <Link to='/dashboard' onClick={() => setIsMenuOpen(false)}>
-                    <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
+                    <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
                       Dashboard
                     </button>
                   </Link>
@@ -184,7 +184,7 @@ export const Header = () => {
                         </button>
                       </Link>
                       <Link to='/register' onClick={() => setIsMenuOpen(false)}>
-                        <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
+                        <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
                           Sign Up
                         </button>
                       </Link>
