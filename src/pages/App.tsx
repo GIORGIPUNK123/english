@@ -1,4 +1,5 @@
 // import '../css/reset.css';
+// import '../css/theme.css';
 import '../css/index.css';
 import { Landing } from './Landing';
 
@@ -7,9 +8,9 @@ import { Login } from './Login';
 import { Register } from './Register';
 import { Profile } from './Profile';
 import { StudentDashboard } from './StudentDashboard';
-import { TeacherRegister } from './TeacherRegister';
 import { ToastProvider } from '../context/ToastContext';
 import { ThemeProvider } from '../context/ThemeContext';
+import { BecomeTeacher } from './BecomeTeacher';
 export const App = () => {
   return (
     <>
@@ -21,7 +22,7 @@ export const App = () => {
               <Route path='/dashboard' element={<StudentDashboard />} />
               <Route path='/login' element={<Login />} />
               <Route path='/register' element={<Register />} />
-              <Route path='/register-teacher' element={<TeacherRegister />} />
+              <Route path='/become-teacher' element={<BecomeTeacher />} />
               <Route path='/profile' element={<Profile />} />
             </Routes>
           </ToastProvider>

@@ -12,7 +12,7 @@ interface NotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   notification: NotificationT;
-  markAsRead: (notification_id: string) => void;
+  markAsRead: (notification_id: string) => Promise<void>;
 }
 
 export const NotificationModal = ({
@@ -111,7 +111,13 @@ export const NotificationModal = ({
           {!notification.read && (
             <button
               onClick={() => {
-                markAsRead(notification.id);
+                markAsRead(notification.id)
+                  .then((x) => {
+                    console.log('notification x: ', x);
+                  })
+                  .catch((err) => {
+                    console.error('Error marking notification as read: ', err);
+                  });
                 onClose();
               }}
               className='flex items-center justify-center flex-1 gap-2 px-4 py-2 text-sm text-white transition-all bg-blue-600 rounded-lg hover:bg-blue-700 sm:text-base'

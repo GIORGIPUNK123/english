@@ -36,15 +36,21 @@ export const cleanUpOldClasses = onSchedule('every 5 minutes', async () => {
         tokens: admin.firestore.FieldValue.increment(1),
         used_tokens: admin.firestore.FieldValue.increment(-1),
         classes: admin.firestore.FieldValue.arrayRemove(docSnap.id),
-        notifications: admin.firestore.FieldValue.arrayUnion({
-          id: db.collection('_').doc().id,
-          created_at: now,
-          heading: 'Class Cancelled',
-          message:
-            'Your class was cancelled because the teacher was unavailable. Your token has been refunded.',
-          message_type: 'warning',
-          read: false,
-        }),
+      });
+
+      const notificationRef = db
+        .collection('users')
+        .doc(cls.student_id)
+        .collection('notifications')
+        .doc();
+
+      batch.set(notificationRef, {
+        created_at: now,
+        heading: 'Class Cancelled',
+        message:
+          'Your class was cancelled because the teacher was unavailable. Your token has been refunded.',
+        message_type: 'warning',
+        read: false,
       });
     }
   }
@@ -177,6 +183,7 @@ type MarkNotificationAsReadData = {
 
 export const markNotificationAsRead = onCall<MarkNotificationAsReadData>(
   async ({ auth, data }) => {
+    console.log('[MARK READ] Function invoked');
     if (!auth) throw new HttpsError('unauthenticated', 'Login required');
 
     const { notificationId } = data;
@@ -196,29 +203,20 @@ export const markNotificationAsRead = onCall<MarkNotificationAsReadData>(
 
       if (userSnap.exists) {
         console.log('[MARK READ] Found user in users collection');
-        const user = userSnap.data()!;
-        const notifications = user.notifications || [];
+        const notificationRef = userRef
+          .collection('notifications')
+          .doc(notificationId);
+        const notificationSnap = await tx.get(notificationRef);
 
-        console.log(
-          `[MARK READ] User has ${notifications.length} notifications`,
-        );
-
-        const notificationExists = notifications.some(
-          (notif: any) => notif.id === notificationId,
-        );
-
-        if (!notificationExists) {
-          console.warn('[MARK READ] Notification not found in users');
-          throw new HttpsError('not-found', 'Notification not found');
+        if (notificationSnap.exists) {
+          tx.update(notificationRef, { read: true });
+          console.log('[MARK READ] Notification marked as read for student');
+          return;
         }
 
-        const updatedNotifications = notifications.map((notif: any) =>
-          notif.id === notificationId ? { ...notif, read: true } : notif,
+        console.warn(
+          '[MARK READ] Notification not found in users, checking teachers',
         );
-
-        tx.update(userRef, { notifications: updatedNotifications });
-        console.log('[MARK READ] Notification marked as read for student');
-        return;
       }
 
       // Check teachers
@@ -227,29 +225,18 @@ export const markNotificationAsRead = onCall<MarkNotificationAsReadData>(
 
       if (teacherSnap.exists) {
         console.log('[MARK READ] Found user in teachers collection');
-        const teacher = teacherSnap.data()!;
-        const notifications = teacher.notifications || [];
+        const notificationRef = teacherRef
+          .collection('notifications')
+          .doc(notificationId);
+        const notificationSnap = await tx.get(notificationRef);
 
-        console.log(
-          `[MARK READ] Teacher has ${notifications.length} notifications`,
-        );
-
-        const notificationExists = notifications.some(
-          (notif: any) => notif.id === notificationId,
-        );
-
-        if (!notificationExists) {
-          console.warn('[MARK READ] Notification not found in teachers');
-          throw new HttpsError('not-found', 'Notification not found');
+        if (notificationSnap.exists) {
+          tx.update(notificationRef, { read: true });
+          console.log('[MARK READ] Notification marked as read for teacher');
+          return;
         }
 
-        const updatedNotifications = notifications.map((notif: any) =>
-          notif.id === notificationId ? { ...notif, read: true } : notif,
-        );
-
-        tx.update(teacherRef, { notifications: updatedNotifications });
-        console.log('[MARK READ] Notification marked as read for teacher');
-        return;
+        console.warn('[MARK READ] Notification not found in teachers');
       }
 
       console.warn('[MARK READ] User not found in either collection');

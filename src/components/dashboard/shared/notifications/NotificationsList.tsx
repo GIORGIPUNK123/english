@@ -4,7 +4,7 @@ import { Bell } from 'lucide-react';
 
 interface NotificationsListProps {
   notifications: NotificationT[];
-  markAsRead: (notification_id: string) => void;
+  markAsRead: (notification_id: string) => Promise<void>;
 }
 
 export const NotificationsList = ({

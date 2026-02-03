@@ -35,6 +35,7 @@ dashboard/
 These components accept a `userType` prop ('student' | 'teacher') and work for both user types:
 
 #### DashboardView
+
 ```tsx
 import { DashboardView } from '@/components/dashboard/views';
 
@@ -43,21 +44,23 @@ import { DashboardView } from '@/components/dashboard/views';
   userData={userData}
   lessons={lessons}
   topicsArr={topicsArr}
-  userType="student" // or "teacher"
-/>
+  userType='student' // or "teacher"
+/>;
 ```
 
 #### NotificationsView
+
 ```tsx
 import { NotificationsView } from '@/components/dashboard/views';
 
 <NotificationsView
   userId={user.uid}
-  userType="student" // or "teacher"
-/>
+  userType='student' // or "teacher"
+/>;
 ```
 
 #### SettingsView
+
 ```tsx
 import { SettingsView } from '@/components/dashboard/views';
 
@@ -65,8 +68,8 @@ import { SettingsView } from '@/components/dashboard/views';
   email={user.email}
   userData={userData}
   capitalNames={capitalNames}
-  userType="student" // or "teacher"
-/>
+  userType='student' // or "teacher"
+/>;
 ```
 
 ### Shared Notification Components
@@ -80,19 +83,22 @@ import {
   NotificationFilters,
   NotificationsList,
   iconMap,
-  colorMap
+  colorMap,
 } from '@/components/dashboard/shared/notifications';
 ```
 
 ## Migration Guide
 
 ### For Student Dashboard
+
 The StudentDashboard.tsx already uses the new views:
+
 - ✅ Uses `DashboardView` instead of `StudentDashboardView`
 - ✅ Uses `NotificationsView` instead of `StudentNotificationsView`
 - ✅ Uses `SettingsView` instead of `StudentSettingsView`
 
 ### For Teacher Dashboard (Coming Soon)
+
 When implementing the teacher dashboard:
 
 1. Create `TeacherDashboard.tsx` in `src/pages/`
@@ -102,8 +108,13 @@ When implementing the teacher dashboard:
 5. Fetch data from `teachers` collection instead of `users`
 
 Example:
+
 ```tsx
-import { DashboardView, NotificationsView, SettingsView } from '@/components/dashboard/views';
+import {
+  DashboardView,
+  NotificationsView,
+  SettingsView,
+} from '@/components/dashboard/views';
 
 export const TeacherDashboard = () => {
   // ... setup code ...
@@ -114,7 +125,7 @@ export const TeacherDashboard = () => {
       userData={teacherData}
       lessons={lessons}
       topicsArr={topicsArr}
-      userType="teacher"
+      userType='teacher'
     />
   );
 };

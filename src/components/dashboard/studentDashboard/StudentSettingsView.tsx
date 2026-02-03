@@ -1,24 +1,29 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../../../firebase/firebase-config';
 import { UserDataT } from '../../../types';
-import { Globe, Mail, Moon, Sun, User as UserImg } from 'lucide-react';
+import { Globe, Mail, Moon, Sun, User as UserImg, LogOut } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 
 export const StudentSettingsView = (props: {
   userData: UserDataT | null;
   email: string;
 }) => {
-
   const { isDarkMode, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [advertisementEmails, setAdvertisementEmails] = useState(false);
   const { email, userData } = props;
-  
-  const capitalNames = userData ? [
-    userData.first_name.charAt(0).toUpperCase() + userData.first_name.slice(1),
-    userData.last_name.charAt(0).toUpperCase() + userData.last_name.slice(1),
-  ] : ['', ''];
-  
+
+  const capitalNames = userData
+    ? [
+        userData.first_name.charAt(0).toUpperCase() +
+          userData.first_name.slice(1),
+        userData.last_name.charAt(0).toUpperCase() +
+          userData.last_name.slice(1),
+      ]
+    : ['', ''];
+
   const sections = [
     {
       title: 'Profile Settings',
@@ -48,7 +53,14 @@ export const StudentSettingsView = (props: {
     return () => unsubscribe();
   }, []);
 
-
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <div className='h-full overflow-y-auto'>
@@ -194,6 +206,13 @@ export const StudentSettingsView = (props: {
           </button>
           <button className='px-4 py-3 text-sm text-gray-700 transition-all bg-gray-200 rounded-lg sm:px-6 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 sm:text-base'>
             Reset to Default
+          </button>
+          <button
+            onClick={handleLogout}
+            className='flex items-center justify-center gap-2 px-4 py-3 text-sm text-white transition-all bg-red-600 rounded-lg sm:px-6 hover:bg-red-700 sm:text-base'
+          >
+            <LogOut className='w-4 h-4' />
+            Logout
           </button>
         </div>
       </div>

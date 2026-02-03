@@ -29,7 +29,6 @@ export const DashboardView = ({
   userData,
   lessons,
   topicsArr,
-
 }: DashboardViewProps) => {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
 

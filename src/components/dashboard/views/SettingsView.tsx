@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { signOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 import { UserDataT } from '../../../types';
-import { Globe, Mail, Moon, Sun, User as UserImg } from 'lucide-react';
+import { Globe, Mail, Moon, Sun, User as UserImg, LogOut } from 'lucide-react';
+import { auth } from '../../../firebase/firebase-config';
 import { useTheme } from '../../../context/ThemeContext';
 
 interface SettingsViewProps {
@@ -10,14 +13,19 @@ interface SettingsViewProps {
   userType?: 'student' | 'teacher'; // For future teacher dashboard support
 }
 
-export const SettingsView = ({
-
-  capitalNames,
-  email,
-
-}: SettingsViewProps) => {
+export const SettingsView = ({ capitalNames, email }: SettingsViewProps) => {
   const { isDarkMode, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [advertisementEmails, setAdvertisementEmails] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const sections = [
     {
@@ -41,8 +49,6 @@ export const SettingsView = ({
       ],
     },
   ];
-
-
 
   return (
     <div className='h-full overflow-y-auto'>
@@ -188,6 +194,13 @@ export const SettingsView = ({
           </button>
           <button className='px-4 py-3 text-sm text-gray-700 transition-all bg-gray-200 rounded-lg sm:px-6 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 sm:text-base'>
             Reset to Default
+          </button>
+          <button
+            onClick={handleLogout}
+            className='flex items-center justify-center gap-2 px-4 py-3 text-sm text-white transition-all bg-red-600 rounded-lg sm:px-6 hover:bg-red-700 sm:text-base'
+          >
+            <LogOut className='w-4 h-4' />
+            Logout
           </button>
         </div>
       </div>

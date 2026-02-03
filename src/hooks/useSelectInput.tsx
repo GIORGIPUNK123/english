@@ -3,7 +3,7 @@ import { OptionT } from '../types';
 
 export const useSelectInput = (
   defaultId: OptionT['id'],
-  options: OptionT[]
+  options: OptionT[],
 ) => {
   const findFunc = (findById: OptionT['id']) => {
     const find = options.find((x) => x.id === findById);

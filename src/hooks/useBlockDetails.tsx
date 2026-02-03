@@ -7,7 +7,7 @@ export const useBlockDetails = (
   blockDay: number,
   blockMonth: number,
   blockYear: number,
-  lessons: LessonT[]
+  lessons: LessonT[],
 ): BlockDetailsT => {
   // Create block date object
   const blockDate = new Date(
@@ -15,7 +15,7 @@ export const useBlockDetails = (
     blockMonth,
     blockDay,
     blockHours,
-    blockMinutes
+    blockMinutes,
   );
 
   // Convert to UTC

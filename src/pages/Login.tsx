@@ -1,135 +1,288 @@
-import google_logo from '../assets/google_logo.svg';
-import facebook_logo from '../assets/facebook_logo.svg';
-import twitter_logo from '../assets/twitter_logo.svg';
-import { Header } from '../components/Header';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Chrome,
+  Facebook,
+  Twitter,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
+import { LoginSchema } from '../schemas/LoginSchema';
+import { ValidationError } from 'yup';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/firebase-config';
-import { Form, Formik } from 'formik';
-import { useNavigate } from 'react-router-dom';
-import { FormInput } from '../atoms/FormInput';
 import { useFirebaseLogins } from '../hooks/useFirebaseLogins';
+
+type FormData = {
+  email: string;
+  password: string;
+};
+
+type FormErrors = Partial<Record<keyof FormData, string>>;
+
+// import { fakeAuth } from '../utils/fakeAuth';
+
 export const Login = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
+    email: '',
+    password: '',
+  });
   const logins = useFirebaseLogins();
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSocialLogin = async (provider: string) => {
+    try {
+      // await fakeAuth.login(`demo@${provider}.com`, 'password');
+      navigate('/dashboard');
+    } catch (error: any) {
+      alert(error.message || 'Login failed');
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+    // Clear error for this field when user starts editing
+    if (errors[name as keyof FormData]) {
+      setErrors({
+        ...errors,
+        [name]: undefined,
+      });
+    }
+  };
+
+  const validateForm = async (): Promise<boolean> => {
+    try {
+      await LoginSchema.validate(formData, { abortEarly: false });
+      setErrors({});
+      return true;
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        const newErrors: FormErrors = {};
+        err.inner.forEach((error) => {
+          if (error.path) {
+            newErrors[error.path as keyof FormData] = error.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const isValid = await validateForm();
+    if (!isValid) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password,
+      );
+
+      // Navigate only if login is successful
+      if (res) {
+        navigate('/dashboard');
+      }
+      // await fakeAuth.login(formData.email, formData.password);
+      // navigate('/dashboard');
+    } catch (error: any) {
+      alert(error.message || 'Login failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className='flex flex-col'>
-      <Header loggedIn={false} main={false} backUrl='../' />
-      <div
-        className='flex flex-col items-center justify-center h-full py-6 bg-black-pearl-950 sm:py-12'
-        style={{ minHeight: 'calc(100vh - 96px)' }}
-      >
-        <div className='relative w-full py-3 sm:max-w-4xl'>
-          <div className='absolute inset-0 transform -skew-y-6 shadow-lg bg-gradient-to-r sm:w-full from-black-pearl-700 to-black-pearl-900 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl' />
-          <div className='relative px-4 py-10 mx-3 bg-white shadow-lg sm:mx-0 rounded-xl sm:rounded-3xl sm:p-20'>
-            <div className='max-w-md mx-auto'>
-              <div>
-                <h1 className='text-2xl font-semibold'>Login</h1>
+    <div className='flex flex-col min-h-screen bg-background'>
+      {/* Header */}
+      <div className='p-4 sm:p-6'>
+        <Link
+          to='/'
+          className='inline-flex items-center space-x-2 transition-colors text-muted-foreground hover:text-foreground'
+        >
+          <ArrowLeft className='w-5 h-5' />
+          <span>Back to home</span>
+        </Link>
+      </div>
+
+      {/* Main Content */}
+      <div className='flex items-center justify-center flex-1 px-4 py-12 sm:px-6 lg:px-8'>
+        <div className='w-full max-w-md'>
+          {/* Logo */}
+          <div className='mb-8 text-center'>
+            <div className='inline-flex items-center mb-4 space-x-2'>
+              <div className='flex items-center justify-center w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600'>
+                <span className='text-xl font-bold text-white'>BW</span>
               </div>
-              <div className='divide-y divide-gray-200'>
-                <div className='py-8 space-y-4 text-base leading-6 text-gray-700 sm:text-lg sm:leading-7'>
-                  <Formik
-                    initialValues={{
-                      email: '',
-                      password: '',
-                    }}
-                    // validationSchema={RegisterSchema}
-                    onSubmit={async (values, { setSubmitting }) => {
-                      try {
-                        console.log('email:', values.email);
-
-                        // Just sign in with email and password
-                        const res = await signInWithEmailAndPassword(
-                          auth,
-                          values.email,
-                          values.password,
-                        );
-
-                        // Navigate only if login is successful
-                        if (res) {
-                          navigate('/');
-                        }
-                      } catch (error: any) {
-                        alert(error.message || 'Login failed');
-                      } finally {
-                        setSubmitting(false);
-                      }
-                    }}
-                  >
-                    {({
-                      values,
-                      errors,
-                      handleChange,
-                      handleBlur,
-
-                      isSubmitting,
-                    }) => (
-                      <Form>
-                        <FormInput
-                          name='email'
-                          placeholder='Email Address'
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          value={values.email}
-                          error={errors.email}
-                        />
-                        <FormInput
-                          name='password'
-                          placeholder='Password'
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          value={values.password}
-                          error={errors.password}
-                        />
-
-                        <div className='relative'>
-                          <button
-                            type='submit'
-                            className='w-full py-3 text-center text-white rounded-sm bg-cyan-500'
-                            disabled={isSubmitting}
-                          >
-                            Log Now
-                          </button>
-                        </div>
-                      </Form>
-                    )}
-                  </Formik>
-                </div>
-              </div>
+              <span className='text-2xl font-semibold text-foreground'>
+                British World
+              </span>
             </div>
+            <h1 className='mb-2 text-3xl font-bold text-foreground'>
+              Welcome back
+            </h1>
+            <p className='text-muted-foreground'>
+              Sign in to continue your learning journey
+            </p>
+          </div>
 
-            <div className='flex justify-center w-full'>
-              <div className='flex w-full mb-5 justify-evenly lg:w-4/6'>
+          {/* Card */}
+          <div className='p-8 border shadow-lg bg-card border-border rounded-2xl'>
+            {/* Social Login Buttons */}
+            <div className='mb-6 space-y-3'>
+              <button
+                onClick={() => {
+                  logins.loginWithGoogle().then(() => {
+                    navigate('/dashboard');
+                  });
+                }}
+                className='flex items-center justify-center w-full px-4 py-3 space-x-3 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
+              >
+                <Chrome className='w-5 h-5' />
+                <span className='text-foreground'>Continue with Google</span>
+              </button>
+
+              <div className='grid grid-cols-2 gap-3'>
                 <button
                   onClick={() => {
                     logins.loginWithFacebook().then(() => {
-                      navigate('/');
+                      navigate('/dashboard');
                     });
                   }}
-                  className='flex items-center h-12 px-6 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg shadow-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+                  className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                 >
-                  <img src={facebook_logo} width='28px' alt='Facebook Logo' />
+                  <Facebook className='w-5 h-5' />
+                  <span className='text-foreground'>Facebook</span>
                 </button>
+
                 <button
-                  onClick={() => {
-                    logins.loginWithGoogle().then(async () => {
-                      // logins.addUserData(res.user);
-                    });
-                  }}
-                  className='flex items-center h-12 px-6 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg shadow-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+                  onClick={() => handleSocialLogin('twitter')}
+                  className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                 >
-                  <img src={google_logo} width='28px' alt='Google Logo' />
-                </button>
-                <button
-                  onClick={() => {
-                    logins.loginWithTwitter().then(() => {
-                      navigate('/');
-                    });
-                  }}
-                  className='flex items-center h-12 px-6 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-300 rounded-lg shadow-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
-                >
-                  <img src={twitter_logo} width='28px' alt='twitter Logo' />
+                  <Twitter className='w-5 h-5' />
+                  <span className='text-foreground'>Twitter</span>
                 </button>
               </div>
+            </div>
+
+            {/* Divider */}
+            <div className='relative my-6'>
+              <div className='absolute inset-0 flex items-center'>
+                <div className='w-full border-t border-border'></div>
+              </div>
+              <div className='relative flex justify-center text-sm'>
+                <span className='px-4 bg-card text-muted-foreground'>
+                  Or continue with email
+                </span>
+              </div>
+            </div>
+
+            {/* Email/Password Form */}
+            <form onSubmit={handleSubmit} className='space-y-4'>
+              <div>
+                <label className='block mb-2 text-sm font-medium text-foreground'>
+                  Email Address
+                </label>
+                <input
+                  type='email'
+                  name='email'
+                  placeholder='Enter your email'
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className={`w-full px-4 py-3 transition-all border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 ${
+                    errors.email
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-border focus:ring-blue-500'
+                  }`}
+                />
+                {errors.email && (
+                  <p className='mt-1 text-sm text-red-500'>{errors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label className='block mb-2 text-sm font-medium text-foreground'>
+                  Password
+                </label>
+                <div className='relative'>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name='password'
+                    placeholder='Enter your password'
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className={`w-full px-4 py-3 pr-12 transition-all border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 ${
+                      errors.password
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-border focus:ring-blue-500'
+                    }`}
+                  />
+                  <button
+                    type='button'
+                    onClick={() => setShowPassword(!showPassword)}
+                    className='absolute transition-colors -translate-y-1/2 right-3 top-1/2 text-muted-foreground hover:text-foreground'
+                  >
+                    {showPassword ? (
+                      <EyeOff className='w-5 h-5' />
+                    ) : (
+                      <Eye className='w-5 h-5' />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className='mt-1 text-sm text-red-500'>{errors.password}</p>
+                )}
+              </div>
+
+              <div className='flex items-center justify-between text-sm'>
+                <label className='flex items-center space-x-2 cursor-pointer'>
+                  <input type='checkbox' className='rounded border-border' />
+                  <span className='text-muted-foreground'>Remember me</span>
+                </label>
+                <Link
+                  to='#'
+                  className='text-blue-500 transition-colors hover:text-blue-600'
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              <button
+                type='submit'
+                disabled={isSubmitting}
+                className='w-full px-4 py-3 font-medium text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                {isSubmitting ? 'Signing in...' : 'Sign in'}
+              </button>
+            </form>
+
+            {/* Sign Up Link */}
+            <div className='mt-6 text-sm text-center'>
+              <span className='text-muted-foreground'>
+                Don't have an account?{' '}
+              </span>
+              <Link
+                to='/register'
+                className='font-medium text-blue-500 transition-colors hover:text-blue-600'
+              >
+                Sign up
+              </Link>
             </div>
           </div>
         </div>

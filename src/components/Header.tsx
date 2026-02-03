@@ -1,171 +1,202 @@
 import { Link } from 'react-router-dom';
-import burger_bar from '../assets/burger_bar.svg';
-import back from '../assets/back.svg';
-import { useEffect, useState } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase/firebase-config';
-const baseLiClass = 'hover:underline underline-offset-8 cursor-pointer';
+import { Menu, X, Moon, Sun } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
-const AuthButtons = () => (
-  <div className='justify-between hidden w-56 lg:flex xl:w-80'>
-    <Link to='/login'>
-      <button className='w-24 h-12 text-white duration-300 rounded-lg shadow-md xl:w-36 xl:h-14 hover:shadow-2xl hover:bg-bright-turquoise-500 bg-bright-turquoise-300'>
-        Login
-      </button>
-    </Link>
-    <Link to='/register'>
-      <button className='w-24 h-12 text-white duration-300 rounded-lg shadow-md xl:w-36 xl:h-14 hover:shadow-2xl hover:bg-torch-red-700 bg-torch-red-500'>
-        Sign Up
-      </button>
-    </Link>
-  </div>
-);
+export const Header = () => {
+  const [user, setUser] = useState<null | { email: string } | 'loading'>(
+    'loading',
+  );
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isDarkMode, toggleTheme } = useTheme();
 
-export const Header = (props: {
-  main: boolean;
-  backUrl?: string;
-  loggedIn: boolean;
-  registerPage?: boolean;
-}) => {
-  const [user, setUser] = useState<null | User | 'loading'>('loading');
   useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      setUser(user);
-    });
-  }, []);
-  const [isOpen, setIsOpen] = useState(false);
-  const RightPart = () => {
-    if (user && user !== 'loading') {
-      return (
-        <Link to='/profile'>
-          <h2 className={`hidden lg:block ${baseLiClass}`}>Profile</h2>
-        </Link>
-      );
-    } else if (user === 'loading') {
-      return <h2 className='hidden w-20 lg:block '></h2>;
+    // Check fake auth status
+    const isAuth = localStorage.getItem('isAuthenticated') === 'true';
+    const email = localStorage.getItem('userEmail');
+    if (isAuth && email) {
+      setUser({ email });
     } else {
-      return <AuthButtons />;
+      setUser(null);
+    }
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setIsMenuOpen(false);
     }
   };
-  if (props.main) {
-    return (
-      <>
-        <div className='fixed z-10 flex justify-between items-center px-12 w-full h-16 sm:h-24 font-mono text-xl font-medium bg-[#FDFFFC]'>
-          <Link to='/'>
-            <h3 className='text-2xl'>British World</h3>
-          </Link>
-          <ul className='hidden lg:flex'>
-            <a className={`mr-4 xl:mr-6 ${baseLiClass}`} href='#'>
-              Home
-            </a>
-            <a className={`mr-4 xl:mr-6 ${baseLiClass}`} href='#features'>
-              Our Features
-            </a>
-            <a className={`mx-4 xl:mx-6 ${baseLiClass}`} href='#pricing'>
-              Pricing
-            </a>
-            <a className={`ml-4 xl:ml-6 ${baseLiClass}`} href='#about'>
-              About Us
-            </a>
-          </ul>
-          <RightPart />
-          <div
-            onClick={() => {
-              setIsOpen((prevState: boolean) => !prevState);
-            }}
-            className='block w-10 h-8 bg-no-repeat bg-contain cursor-pointer invert lg:hidden'
-            style={{ backgroundImage: `url(${burger_bar})` }}
-          />
-        </div>
-        <div
-          className={` ${
-            isOpen ? 'block' : 'hidden'
-          } fixed top-16 sm:top-24 z-10 w-full h-56 bg-white`}
-        >
-          <ul className='flex flex-col h-full justify-evenly'>
-            <li
-              className={`font-mono text-2xl font-medium text-center ${baseLiClass}`}
-            >
-              Home
-            </li>
-            <li
-              className={`font-mono text-2xl font-medium text-center ${baseLiClass}`}
-            >
-              Our Features
-            </li>
-            <li
-              className={`font-mono text-2xl font-medium text-center ${baseLiClass}`}
-            >
-              Pricing
-            </li>
-            <li
-              className={`font-mono text-2xl font-medium text-center ${baseLiClass}`}
-            >
-              About Us
-            </li>
-            {user ? (
-              <Link to='/profile'>
-                <li
-                  className={`font-mono text-2xl font-medium text-center ${baseLiClass}`}
-                >
-                  Profile
-                </li>
-              </Link>
-            ) : (
-              <>
-                <Link to='/login'>
-                  <li
-                    className={`font-mono text-2xl font-medium text-center ${baseLiClass}`}
-                  >
-                    Login
-                  </li>
-                </Link>
 
-                <Link to='/register'>
-                  <li
-                    className={`font-mono text-2xl font-medium text-center ${baseLiClass}`}
-                  >
-                    Sign Up
-                  </li>
-                </Link>
-              </>
-            )}
-          </ul>
-        </div>
-        <div className={`${isOpen ? 'mb-[320px]' : 'mb-16 sm:mb-24'} `} />
-      </>
-    );
-  } else {
-    return (
-      <>
-        <div className='relative'>
-          <div className='fixed z-10 flex justify-center items-center px-12 w-full h-16 sm:h-24 font-mono text-xl font-medium bg-[#FDFFFC]'>
-            <Link to='/'>
-              <h3 className='text-2xl'>British World</h3>
+  return (
+    <>
+      <header className='fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-md border-border'>
+        <div className='px-4 mx-auto max-w-7xl sm:px-6 lg:px-8'>
+          <div className='flex items-center justify-between h-16 sm:h-20'>
+            {/* Logo */}
+            <Link to='/' className='flex items-center space-x-2'>
+              <div className='flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600'>
+                <span className='text-lg font-bold text-white'>BW</span>
+              </div>
+              <span className='text-xl font-semibold text-foreground'>
+                British World
+              </span>
             </Link>
-          </div>
-          {props.backUrl ? (
-            <div className='fixed z-10 flex items-center top-3 left-3 sm:top-6 sm:left-8'>
-              <Link to={props.backUrl}>
-                <div
-                  className='bg-cover size-10 sm:size-12'
-                  style={{ backgroundImage: `url(${back})` }}
-                />
+
+            {/* Desktop Navigation */}
+            <nav className='items-center hidden space-x-8 lg:flex'>
+              <button
+                onClick={() => scrollToSection('home')}
+                className='transition-colors text-muted-foreground hover:text-foreground'
+              >
+                Home
+              </button>
+              <button
+                onClick={() => scrollToSection('features')}
+                className='transition-colors text-muted-foreground hover:text-foreground'
+              >
+                Features
+              </button>
+              <button
+                onClick={() => scrollToSection('pricing')}
+                className='transition-colors text-muted-foreground hover:text-foreground'
+              >
+                Pricing
+              </button>
+              <button
+                onClick={() => scrollToSection('about')}
+                className='transition-colors text-muted-foreground hover:text-foreground'
+              >
+                About
+              </button>
+              <Link
+                to='/become-teacher'
+                className='transition-colors text-muted-foreground hover:text-foreground'
+              >
+                Teach
               </Link>
-            </div>
-          ) : null}
-          {props.registerPage ? (
-            <div className='fixed z-10 flex items-center top-3 right-3 sm:top-6 sm:right-8'>
-              <Link to={'/register-teacher'}>
-                <div className='h-10 px-4 py-2 text-lg text-white transition-transform bg-purple-500 bg-cover rounded-sm hover:scale-105 sm:h-12'>
-                  Register As a Teacher
+            </nav>
+
+            {/* Right Side Actions */}
+            <div className='flex items-center space-x-4'>
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className='p-2 transition-colors rounded-lg hover:bg-accent'
+                aria-label='Toggle theme'
+              >
+                {isDarkMode ? (
+                  <Sun className='w-5 h-5 text-foreground' />
+                ) : (
+                  <Moon className='w-5 h-5 text-foreground' />
+                )}
+              </button>
+
+              {/* Auth Buttons (Desktop) */}
+              {user && user !== 'loading' ? (
+                <Link to='/dashboard'>
+                  <button className='hidden lg:block px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
+                    Dashboard
+                  </button>
+                </Link>
+              ) : user === 'loading' ? (
+                <div className='hidden w-24 h-10 rounded-lg lg:block bg-muted animate-pulse' />
+              ) : (
+                <div className='items-center hidden space-x-3 lg:flex'>
+                  <Link to='/login'>
+                    <button className='px-6 py-2.5 text-foreground hover:bg-accent rounded-lg transition-all duration-300'>
+                      Login
+                    </button>
+                  </Link>
+                  <Link to='/register'>
+                    <button className='px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
+                      Sign Up
+                    </button>
+                  </Link>
                 </div>
-              </Link>
+              )}
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className='p-2 transition-colors rounded-lg lg:hidden hover:bg-accent'
+                aria-label='Toggle menu'
+              >
+                {isMenuOpen ? (
+                  <X className='w-6 h-6 text-foreground' />
+                ) : (
+                  <Menu className='w-6 h-6 text-foreground' />
+                )}
+              </button>
             </div>
-          ) : null}
-          <div className='mb-16 sm:mb-24' />
+          </div>
         </div>
-      </>
-    );
-  }
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className='border-t lg:hidden border-border bg-background'>
+            <div className='px-4 py-6 space-y-4'>
+              <button
+                onClick={() => scrollToSection('home')}
+                className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
+              >
+                Home
+              </button>
+              <button
+                onClick={() => scrollToSection('features')}
+                className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
+              >
+                Features
+              </button>
+              <button
+                onClick={() => scrollToSection('pricing')}
+                className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
+              >
+                Pricing
+              </button>
+              <button
+                onClick={() => scrollToSection('about')}
+                className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
+              >
+                About
+              </button>
+              <Link
+                to='/become-teacher'
+                className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
+              >
+                Teach
+              </Link>
+
+              <div className='pt-4 space-y-3'>
+                {user && user !== 'loading' ? (
+                  <Link to='/dashboard' onClick={() => setIsMenuOpen(false)}>
+                    <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
+                      Dashboard
+                    </button>
+                  </Link>
+                ) : (
+                  user !== 'loading' && (
+                    <>
+                      <Link to='/login' onClick={() => setIsMenuOpen(false)}>
+                        <button className='w-full px-6 py-3 transition-all duration-300 border rounded-lg text-foreground border-border hover:bg-accent'>
+                          Login
+                        </button>
+                      </Link>
+                      <Link to='/register' onClick={() => setIsMenuOpen(false)}>
+                        <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
+                          Sign Up
+                        </button>
+                      </Link>
+                    </>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+      <div className='h-16 sm:h-20' /> {/* Spacer for fixed header */}
+    </>
+  );
 };
