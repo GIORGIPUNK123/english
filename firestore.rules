@@ -1,0 +1,100 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ========== HELPERS ========== */
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isLoggedIn() && request.auth.uid == uid;
+    }
+
+    /* ========== USER DATA ========== */
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+
+      // Users may ONLY update first_name and last_name ONCE (when empty)
+      // OR update teacher application fields
+      // OR update teacher file path fields
+      allow update: if isOwner(userId)
+        && (
+          // Allow updating first_name and last_name (once when empty)
+          (request.resource.data.diff(resource.data).changedKeys()
+            .hasOnly(['first_name', 'last_name'])
+            && (
+              (request.resource.data.first_name != resource.data.first_name)
+              ? (resource.data.first_name == '' && request.resource.data.first_name != '')
+              : true
+            )
+            && (
+              (request.resource.data.last_name != resource.data.last_name)
+              ? (resource.data.last_name == '' && request.resource.data.last_name != '')
+              : true
+            ))
+            // Allow updating teacher application fields and related file paths
+          || (request.resource.data.diff(resource.data).changedKeys()
+              .hasOnly([
+              'teacher_bio',
+              'teacher_motivation',
+              'teacher_education',
+              'teacher_years_experience',
+              'teacher_certificates',
+              'teacher_native_language',
+              'teacher_proficiency_level',
+              'teacher_status',
+              'last_applied_teacher',
+              'cv_file_path',
+              'pfp_file_path',
+              'video_file_path'
+              ]))
+        );
+
+      allow create, delete: if false;
+
+      // Notifications subcollection (read-only for users)
+      match /notifications/{notifId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      // Student ratings subcollection (read-only for users)
+      match /student_ratings/{raterId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      // Teacher ratings subcollection (read-only for users)
+      match /teacher_ratings/{raterId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+    }
+
+    /* ========== CLASSES ========== */
+    match /classes/{classId} {
+      allow read: if isLoggedIn();
+      allow write: if false;
+    }
+
+    /* ========== TEACHERS ========== */
+    match /teachers/{teacherId} {
+      allow read: if isLoggedIn();
+
+      // Teacher profile only
+      allow update: if isOwner(teacherId)
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['first_name', 'last_name', 'img']);
+
+      allow create, delete: if false;
+    }
+
+    /* ========== TOPICS ========== */
+    match /topics/{topicId} {
+      allow read: if isLoggedIn();
+      allow write: if false;
+    }
+  }
+}

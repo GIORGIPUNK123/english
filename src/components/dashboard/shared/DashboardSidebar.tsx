@@ -8,6 +8,7 @@ import {
   Settings,
   User as UserIcon,
   X,
+  History,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NotificationT } from '../../../types';
@@ -21,11 +22,13 @@ interface SidebarProps {
   userName: string;
   isOpen: boolean;
   onClose: () => void;
+  userMode: 'student' | 'teacher';
 }
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'courses', label: 'Courses', icon: BookOpen },
+  { id: 'history', label: 'History', icon: History },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
   { id: 'assignments', label: 'Assignments', icon: FileText },
   { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -39,6 +42,7 @@ export const DashboardSidebar = ({
   userName,
   isOpen,
   onClose,
+  userMode,
 }: SidebarProps) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const handleTabChange = (tab: string) => {
@@ -99,7 +103,7 @@ export const DashboardSidebar = ({
         {/* User Profile Section */}
         <div className='p-6 border-b border-gray-200 dark:border-gray-800'>
           <div className='flex items-center gap-3'>
-            <div className='flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600'>
+            <div className='flex items-center justify-center w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600'>
               <UserIcon className='w-5 h-5 text-white' />
             </div>
             <div className='flex-1 min-w-0'>
@@ -107,7 +111,7 @@ export const DashboardSidebar = ({
                 {userName}
               </h3>
               <p className='text-sm text-gray-600 dark:text-gray-400'>
-                Student
+                {userMode === 'teacher' ? 'Teacher' : 'Student'}
               </p>
             </div>
           </div>
@@ -129,10 +133,10 @@ export const DashboardSidebar = ({
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
-                <Icon className='flex-shrink-0 w-5 h-5' />
+                <Icon className='shrink-0 w-5 h-5' />
                 <span className='flex-1 text-left'>{item.label}</span>
                 {showBadge && (
-                  <span className='bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center'>
+                  <span className='bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-5 text-center'>
                     {unreadCount}
                   </span>
                 )}

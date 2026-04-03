@@ -2,12 +2,11 @@ import {
   FacebookAuthProvider,
   GoogleAuthProvider,
   TwitterAuthProvider,
-  User,
   createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signInWithPopup,
 } from 'firebase/auth';
-import { auth, db } from '../firebase/firebase-config';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth } from '../firebase/firebase-config';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
@@ -16,41 +15,33 @@ export const useFirebaseLogins = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Save user data if new
-  const saveUserIfNew = async (user: User) => {
-    const docRef = doc(db, 'userData', user.uid);
-    const docSnap = await getDoc(docRef);
-
-    const displayName = user.displayName || '';
-    const [firstName = '', lastName = ''] = displayName.split(' ');
-
-    if (!docSnap.exists()) {
-      await setDoc(
-        docRef,
-        {
-          first_name: firstName.toLowerCase(),
-          last_name: lastName.toLowerCase(),
-          role: 'student',
-          classes: [],
-          credits: 0,
-        },
-        { merge: true }
-      );
-    }
-  };
-
   // Register new user with email/password
   const registerWithEmail = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await createUserWithEmailAndPassword(auth, email, password);
-      await saveUserIfNew(res.user);
-      setLoading(false);
-      navigate('/'); // or wherever you want after signup
+      await createUserWithEmailAndPassword(auth, email, password);
+      navigate('/dashboard');
     } catch (err: any) {
-      setLoading(false);
       setError(err.message || 'Registration failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Login with email/password
+  const loginWithEmail = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,14 +50,13 @@ export const useFirebaseLogins = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      await saveUserIfNew(user);
-      setLoading(false);
-      navigate('/');
+      await signInWithPopup(auth, provider);
+      navigate('/dashboard');
     } catch (err: any) {
-      setLoading(false);
       setError(err.message || 'Login failed');
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,6 +66,7 @@ export const useFirebaseLogins = () => {
 
   return {
     registerWithEmail,
+    loginWithEmail,
     loginWithGoogle,
     loginWithFacebook,
     loginWithTwitter,

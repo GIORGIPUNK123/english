@@ -10,7 +10,7 @@ export function Loading() {
           <div className='absolute inset-0 w-24 h-24 border-4 rounded-full border-blue-500/20 border-t-blue-500 animate-spin'></div>
 
           {/* Inner pulsing circle */}
-          <div className='flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 animate-pulse'>
+          <div className='flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-blue-600 to-purple-600 animate-pulse'>
             <BookOpen className='w-12 h-12 text-white' />
           </div>
         </div>

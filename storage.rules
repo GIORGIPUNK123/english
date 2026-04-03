@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    /* ========== HELPERS ========== */
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isLoggedIn() && request.auth.uid == userId;
+    }
+    
+    // File size limit (50MB)
+    function isValidSize() {
+      return request.resource.size <= 50 * 1024 * 1024;
+    }
+
+    function isCvType() {
+      return request.resource.contentType == 'application/pdf'
+          || request.resource.contentType == 'application/msword'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+
+    function isProfileImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isVideoType() {
+      return request.resource.contentType.matches('video/.*');
+    }
+
+    /* ========== USER FILES ========== */
+    // Users can only upload teacher documents in explicit slots.
+    match /users/{userId}/cv/{fileName} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidSize() && isCvType();
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/pfp/{fileName} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidSize() && isProfileImageType();
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/video/{fileName} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidSize() && isVideoType();
+      allow delete: if isOwner(userId);
+    }
+    
+    /* ========== PUBLIC FILES (if needed) ========== */
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

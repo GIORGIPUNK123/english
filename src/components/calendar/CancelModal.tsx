@@ -113,7 +113,7 @@ export const CancelModal = ({
         <div className='p-6 space-y-4'>
           {/* Warning Message */}
           <div className='flex items-start gap-3 p-4 border border-red-200 rounded-lg bg-orange-50 dark:bg-red-900/20 dark:border-red-800/50'>
-            <AlertTriangle className='w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
+            <AlertTriangle className='w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5' />
             <div>
               <p className='mb-1 font-medium text-gray-900 dark:text-white'>
                 Cancel this lesson?
@@ -130,7 +130,7 @@ export const CancelModal = ({
           {/* Error Message */}
           {errorMsg && (
             <div className='flex items-start gap-2 p-3 bg-red-100 border border-red-300 rounded-lg dark:bg-red-900/30 dark:border-red-700'>
-              <AlertTriangle className='w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
+              <AlertTriangle className='w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5' />
               <p className='text-sm text-red-700 dark:text-red-300'>
                 {errorMsg}
               </p>

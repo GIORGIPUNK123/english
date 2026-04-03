@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TopicT } from '../types';
+import { LessonT, TopicT } from '../types';
 import { getWeekDates } from '../components/calendar/utils';
 
 export interface ScheduleModalState {
@@ -11,6 +11,9 @@ export interface ScheduleModalState {
 
 export const useScheduleLessonModal = (topicsArr: TopicT[]) => {
   const [currentWeek, setCurrentWeek] = useState(0);
+  const [rescheduleLesson, setRescheduleLesson] = useState<LessonT | null>(
+    null,
+  );
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleTime, setScheduleTime] = useState<ScheduleModalState | null>(
     null,
@@ -59,6 +62,7 @@ export const useScheduleLessonModal = (topicsArr: TopicT[]) => {
   };
 
   const closeScheduleModal = () => {
+    setRescheduleLesson(null);
     setShowScheduleModal(false);
     setScheduleTime(null);
   };
@@ -77,6 +81,7 @@ export const useScheduleLessonModal = (topicsArr: TopicT[]) => {
     // State
     currentWeek,
     showScheduleModal,
+    setShowScheduleModal,
     scheduleTime,
     selectedTopicId,
     lessonType,
@@ -91,5 +96,7 @@ export const useScheduleLessonModal = (topicsArr: TopicT[]) => {
     openScheduleModalWithDefaultTime,
     openScheduleModalWithTime,
     closeScheduleModal,
+    rescheduleLesson,
+    setRescheduleLesson,
   };
 };

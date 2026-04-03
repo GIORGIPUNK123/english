@@ -39,6 +39,9 @@ export const StudentCalendar = (props: {
     openScheduleModalWithDefaultTime,
     openScheduleModalWithTime,
     closeScheduleModal,
+    rescheduleLesson,
+    setRescheduleLesson,
+    setShowScheduleModal,
   } = useScheduleLessonModal(topicsArr);
 
   const weekDates = getWeekDates(currentWeek);
@@ -81,6 +84,9 @@ export const StudentCalendar = (props: {
       {/* Lesson Detail Modal */}
       {selectedLesson && (
         <LessonDetailModal
+          setRescheduleLesson={setRescheduleLesson}
+          setScheduleModalIsOpen={setShowScheduleModal}
+          setScheduleTime={setScheduleTime}
           lesson={selectedLesson}
           onClose={() => setSelectedLesson(null)}
         />
@@ -106,6 +112,8 @@ export const StudentCalendar = (props: {
           setSelectedDate={setSelectedDate}
           userUid={props.user.uid}
           availableTokens={userData.tokens}
+          rescheduleLesson={rescheduleLesson}
+          setRescheduleLesson={setRescheduleLesson}
         />
       )}
     </div>

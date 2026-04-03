@@ -107,7 +107,7 @@ export function TopUpModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className='sticky top-0 z-10 p-4 rounded-t-lg bg-gradient-to-r from-blue-600 to-purple-600 sm:p-6 sm:rounded-t-xl'>
+        <div className='sticky top-0 z-10 p-4 rounded-t-lg bg-linear-to-r from-blue-600 to-purple-600 sm:p-6 sm:rounded-t-xl'>
           <button
             onClick={onClose}
             className='absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all'
@@ -183,8 +183,8 @@ export function TopUpModal({
                   >
                     {/* Popular Badge */}
                     {bundle.popular && (
-                      <div className='absolute left-0 right-0 flex justify-center -top-0'>
-                        <span className='px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-pink-500 rounded-t-lg'>
+                      <div className='absolute left-0 right-0 flex justify-center top-0'>
+                        <span className='px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-white bg-linear-to-r from-orange-500 to-pink-500 rounded-t-lg'>
                           MOST POPULAR
                         </span>
                       </div>
@@ -341,7 +341,7 @@ export function TopUpModal({
           )}
 
           {/* Summary */}
-          <div className='p-3 border border-blue-200 rounded-lg sm:p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 dark:border-blue-800'>
+          <div className='p-3 border border-blue-200 rounded-lg sm:p-4 bg-linear-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 dark:border-blue-800'>
             <div className='space-y-1.5 sm:space-y-2'>
               <div className='flex justify-between text-xs sm:text-sm'>
                 <span className='text-gray-700 dark:text-gray-300'>
@@ -386,7 +386,7 @@ export function TopUpModal({
             <button
               onClick={handlePurchase}
               disabled={isProcessing}
-              className='flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg'
+              className='flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-white bg-linear-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg'
             >
               {isProcessing
                 ? 'Processing...'

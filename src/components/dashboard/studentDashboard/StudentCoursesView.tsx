@@ -415,7 +415,7 @@ export const StudentCoursesView = () => {
             >
               {/* Course Header */}
               <div
-                className={`h-20 sm:h-24 bg-gradient-to-r ${course.color} p-4 flex items-center justify-between`}
+                className={`h-20 sm:h-24 bg-linear-to-r ${course.color} p-4 flex items-center justify-between`}
               >
                 <div className='flex items-center gap-3'>
                   <Icon className='w-8 h-8 text-white sm:w-10 sm:h-10' />
@@ -441,26 +441,26 @@ export const StudentCoursesView = () => {
 
                 <div className='grid grid-cols-2 gap-3 mb-4'>
                   <div className='flex items-center gap-2 text-sm text-gray-400'>
-                    <BookOpen className='flex-shrink-0 w-4 h-4' />
+                    <BookOpen className='shrink-0 w-4 h-4' />
                     <span className='text-xs sm:text-sm'>
                       {course.totalLessons} lessons
                     </span>
                   </div>
                   <div className='flex items-center gap-2 text-sm text-gray-400'>
-                    <Calendar className='flex-shrink-0 w-4 h-4' />
+                    <Calendar className='shrink-0 w-4 h-4' />
                     <span className='text-xs sm:text-sm'>
                       {course.duration}
                     </span>
                   </div>
                   <div className='flex items-center gap-2 text-sm text-gray-400'>
-                    <Clock className='flex-shrink-0 w-4 h-4' />
+                    <Clock className='shrink-0 w-4 h-4' />
                     <span className='text-xs sm:text-sm'>
                       {course.schedule}
                     </span>
                   </div>
                   <div className='flex items-center justify-between'>
                     <div className='flex items-center gap-2 text-sm text-gray-400'>
-                      <Users className='flex-shrink-0 w-4 h-4' />
+                      <Users className='shrink-0 w-4 h-4' />
                       <span className='text-xs sm:text-sm'>
                         Max {course.groupSize}
                       </span>
@@ -491,7 +491,7 @@ export const StudentCoursesView = () => {
                     </div>
                     <div className='w-full h-2 overflow-hidden bg-gray-700 rounded-full'>
                       <div
-                        className={`h-full bg-gradient-to-r ${course.color} transition-all`}
+                        className={`h-full bg-linear-to-r ${course.color} transition-all`}
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -548,7 +548,7 @@ export const StudentCoursesView = () => {
                           }`}
                         >
                           <div className='flex items-start gap-3'>
-                            <div className='flex-shrink-0 mt-0.5'>
+                            <div className='shrink-0 mt-0.5'>
                               {getStatusIcon(lesson.status)}
                             </div>
                             <div className='flex-1 min-w-0'>
@@ -557,7 +557,7 @@ export const StudentCoursesView = () => {
                                   Lesson {lesson.id}: {lesson.title}
                                 </h5>
                                 <span
-                                  className={`text-xs px-2 py-0.5 rounded flex-shrink-0 ml-2 ${
+                                  className={`text-xs px-2 py-0.5 rounded shrink-0 ml-2 ${
                                     lesson.status === 'completed'
                                       ? 'bg-green-500/20 text-green-400'
                                       : lesson.status === 'upcoming'

@@ -11,11 +11,14 @@ import {
   Video,
 } from 'lucide-react';
 import { BecomeTeacherSchema } from '../schemas/BecomeTeacherSchema';
+import { registerTeacherUser } from '../firebase/firebaseUserUtils';
 
 type FormData = {
   firstName: string;
   lastName: string;
   email: string;
+  password: string;
+  repeatPassword: string;
   phone: string;
   country: string;
   education: string;
@@ -32,7 +35,7 @@ type FormData = {
 type FormErrors = Partial<Record<keyof FormData, string>>;
 
 const REQUIRED_FIELDS_BY_STEP: Record<number, (keyof FormData)[]> = {
-  1: ['firstName', 'lastName', 'email', 'phone', 'country'],
+  1: ['firstName', 'lastName', 'email', 'password', 'repeatPassword', 'phone', 'country'],
   2: ['education', 'yearsExperience', 'nativeLanguage', 'proficiencyLevel'],
   3: ['bio', 'motivation', 'resume'],
 };
@@ -47,6 +50,8 @@ export const BecomeTeacher = () => {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
+    repeatPassword: '',
     phone: '',
     country: '',
 
@@ -89,6 +94,30 @@ export const BecomeTeacher = () => {
   ) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (field === 'resume') {
+        const allowedTypes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+        if (!allowedTypes.includes(file.type)) {
+          setErrors({
+            ...errors,
+            [field]: 'Only PDF, DOC, and DOCX files are allowed',
+          });
+          return;
+        }
+      } else if (field === 'videoIntro') {
+        if (!file.type.startsWith('video/')) {
+          setErrors({
+            ...errors,
+            [field]: 'Only video files are allowed',
+          });
+          return;
+        }
+      }
+
       // Validate file size (max 50MB)
       const maxSize = 50 * 1024 * 1024;
       if (file.size > maxSize) {
@@ -124,6 +153,16 @@ export const BecomeTeacher = () => {
       }
     });
 
+    // Password validation
+    if (step === 1) {
+      if (formData.password && formData.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters';
+      }
+      if (formData.password !== formData.repeatPassword) {
+        newErrors.repeatPassword = 'Passwords do not match';
+      }
+    }
+
     // Validate using Yup schema
     BecomeTeacherSchema.validate(formData, { abortEarly: false }).catch(
       (err) => {
@@ -149,29 +188,42 @@ export const BecomeTeacher = () => {
     setIsSubmitting(true);
 
     try {
-      // TODO: Submit form data to backend
-      // const formDataToSubmit = new FormData();
-      // Object.entries(formData).forEach(([key, value]) => {
-      //   if (value instanceof File) {
-      //     formDataToSubmit.append(key, value);
-      //   } else if (value !== null) {
-      //     formDataToSubmit.append(key, value as string);
-      //   }
-      // });
-      // await submitTeacherApplication(formDataToSubmit);
+      // Validate required files
+      if (!formData.resume) {
+        throw new Error('Resume is required');
+      }
 
-      // eslint-disable-next-line no-console
-      console.log('Teacher application submitted:', formData);
-    } finally {
-      setIsSubmitting(false);
-    }
+      console.log('Registering teacher with files...');
+      
+      // Register teacher (creates account, uploads files, saves all data)
+      const result = await registerTeacherUser(
+        formData.email,
+        formData.password,
+        formData.firstName,
+        formData.lastName,
+        formData.bio,
+        formData.motivation,
+        formData.resume,
+        formData.videoIntro,
+      );
 
-    setTimeout(() => {
+      console.log('Teacher registration successful:', result);
+
+      // Show success message and redirect
       alert(
         'Application submitted successfully! We will review your application and contact you within 3-5 business days.',
       );
-      navigate('/');
-    }, 2000);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error submitting teacher application:', error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to submit application. Please try again.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleNextStep = () => {
@@ -265,6 +317,50 @@ export const BecomeTeacher = () => {
                 />
                 {errors.email && (
                   <p className='mt-1 text-sm text-red-500'>{errors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label className='block mb-2 text-sm font-medium text-foreground'>
+                  Password *
+                </label>
+                <input
+                  type='password'
+                  name='password'
+                  placeholder='Enter password (min 6 characters)'
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className={`w-full px-4 py-3 transition-all border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 ${
+                    errors.password
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-border focus:ring-blue-500'
+                  }`}
+                />
+                {errors.password && (
+                  <p className='mt-1 text-sm text-red-500'>{errors.password}</p>
+                )}
+              </div>
+
+              <div>
+                <label className='block mb-2 text-sm font-medium text-foreground'>
+                  Repeat Password *
+                </label>
+                <input
+                  type='password'
+                  name='repeatPassword'
+                  placeholder='Repeat password'
+                  value={formData.repeatPassword}
+                  onChange={handleChange}
+                  required
+                  className={`w-full px-4 py-3 transition-all border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 ${
+                    errors.repeatPassword
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-border focus:ring-blue-500'
+                  }`}
+                />
+                {errors.repeatPassword && (
+                  <p className='mt-1 text-sm text-red-500'>{errors.repeatPassword}</p>
                 )}
               </div>
 

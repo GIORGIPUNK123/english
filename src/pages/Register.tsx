@@ -8,6 +8,8 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../firebase/firebase-config';
 
 export const Register = () => {
   const navigate = useNavigate();
@@ -49,10 +51,20 @@ export const Register = () => {
 
     setIsSubmitting(true);
     try {
-      // await fakeAuth.register(formData.email, formData.password);
-      navigate('/dashboard');
+      const registerUserFn = httpsCallable(functions, 'registerUser');
+      const result = await registerUserFn({
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+      });
+
+      console.log('Registration successful:', result.data);
+      alert('Account created! You can now login.');
+      navigate('/login');
     } catch (error: any) {
-      alert(error.message || 'Registration failed');
+      console.error('Registration error:', error);
+      alert(error.message || error.code || 'Registration failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -287,7 +299,20 @@ export const Register = () => {
                 Sign in
               </Link>
             </div>
+
+            {/* Become a Teacher */}
+            <div className='mt-3 text-sm text-center'>
+              <span className='text-muted-foreground'>Want to teach?</span>{' '}
+              <button
+                type='button'
+                onClick={() => navigate('/become-teacher')}
+                className='font-medium text-blue-500 transition-colors hover:text-blue-600'
+              >
+                Become a teacher
+              </button>
+            </div>
           </div>
+          {}
         </div>
       </div>
     </div>

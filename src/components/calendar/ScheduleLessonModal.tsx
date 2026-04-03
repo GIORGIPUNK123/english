@@ -34,9 +34,50 @@ interface ScheduleLessonModalProps {
   setSelectedDate: (date: Date) => void;
   userUid: string;
   availableTokens: number;
+  rescheduleLesson?: LessonT | null; // If present, modal is in "reschedule" mode
+  setRescheduleLesson?: (lesson: LessonT | null) => void; // Function to set the lesson being rescheduled, or null to clear it
 }
 
 const hours = Array.from({ length: 24 }, (_, i) => i);
+
+const LessonTypeDisplay = (props: {
+  lessonType: '1on1' | 'group';
+  onLessonTypeChange: (type: '1on1' | 'group') => void;
+  rescheduleLesson?: LessonT;
+}) => {
+  const { lessonType, onLessonTypeChange, rescheduleLesson } = props;
+  return (
+    <div>
+      <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
+        Lesson Type
+      </label>
+      <div className={`grid ${rescheduleLesson && 'grid-cols-2 gap-3'}`}>
+        <button
+          className={` ${!rescheduleLesson && lessonType !== '1on1' && 'hidden'} p-4 ${lessonType === '1on1' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'}`}
+          onClick={() => rescheduleLesson && onLessonTypeChange('1on1')}
+        >
+          <div className='mb-1 font-medium text-gray-900 dark:text-white'>
+            1-on-1 Lesson
+          </div>
+          <div className='text-xs text-gray-600 dark:text-gray-400'>
+            Personal coaching
+          </div>
+        </button>
+        <button
+          className={` ${!rescheduleLesson && lessonType !== 'group' && 'hidden'} p-4 ${lessonType === 'group' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'}`}
+          onClick={() => rescheduleLesson && onLessonTypeChange('group')}
+        >
+          <div className='mb-1 font-medium text-gray-900 dark:text-white'>
+            Group Class
+          </div>
+          <div className='text-xs text-gray-600 dark:text-gray-400'>
+            Learn with others
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export const ScheduleLessonModal = ({
   scheduleTime,
@@ -53,6 +94,7 @@ export const ScheduleLessonModal = ({
   onClose,
   selectedDate,
   availableTokens,
+  rescheduleLesson,
 }: ScheduleLessonModalProps) => {
   const modalWeekDates = getWeekDates(scheduleTime.week);
   selectedDate.setHours(scheduleTime.hour, scheduleTime.minute, 0, 0);
@@ -60,7 +102,11 @@ export const ScheduleLessonModal = ({
   selectedDate.setMonth(modalWeekDates[scheduleTime.day].getMonth());
   selectedDate.setFullYear(modalWeekDates[scheduleTime.day].getFullYear());
   const timestamp = Math.floor(selectedDate.getTime() / 1000);
-  const isConflicting = isTimestampConflicting(timestamp, lessons);
+
+  const filteredLessons = rescheduleLesson
+    ? lessons.filter((lesson) => lesson.id !== rescheduleLesson.id)
+    : lessons;
+  const isConflicting = isTimestampConflicting(timestamp, filteredLessons);
   const isTooSoon = isTimestampTooSoon(timestamp);
   const validationMessages: string[] = [];
   if (availableTokens <= 0) {
@@ -71,6 +117,9 @@ export const ScheduleLessonModal = ({
   }
   if (isConflicting) {
     validationMessages.push('Conflicts with an existing lesson.');
+  }
+  if (rescheduleLesson && timestamp === rescheduleLesson.date) {
+    validationMessages.push('New time must be different from current time.');
   }
   const hasBlockingValidation = validationMessages.length > 0;
   const { addToast } = useToast();
@@ -123,6 +172,55 @@ export const ScheduleLessonModal = ({
       });
     }
   };
+  const handleRescheduleLesson = async () => {
+    if (hasBlockingValidation) {
+      addToast({
+        title: 'Cannot reschedule lesson',
+        message: validationMessages.join(' '),
+        type: 'error',
+      });
+      return;
+    }
+    const date = Math.floor(selectedDate.getTime() / 1000);
+
+    const fn = httpsCallable<
+      { lessonId: string; date: number; topicId: string },
+      { classId: string }
+    >(functions, 'rescheduleLesson');
+
+    try {
+      const res = await fn({
+        lessonId: rescheduleLesson!.id,
+        date,
+        topicId: selectedTopicId,
+      });
+
+      addToast({
+        title: 'Lesson Rescheduled',
+        message: 'Your lesson has been successfully rescheduled.',
+        type: 'success',
+      });
+
+      onClose();
+      return res.data;
+    } catch (err: any) {
+      console.error(err);
+
+      let message = 'Failed to reschedule lesson';
+
+      if (err.code === 'functions/unauthenticated') {
+        message = 'Please log in again';
+      } else if (err.code === 'functions/permission-denied') {
+        message = "You are not allowed to reschedule other people's lessons";
+      }
+
+      addToast({
+        title: 'Rescheduling Failed',
+        message,
+        type: 'error',
+      });
+    }
+  };
 
   return (
     <div
@@ -134,7 +232,7 @@ export const ScheduleLessonModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className='relative p-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-xl'>
+        <div className='relative p-6 bg-linear-to-r from-blue-600 to-purple-600 rounded-t-xl'>
           <button
             onClick={onClose}
             className='absolute p-2 transition-all rounded-lg top-4 right-4 hover:bg-white/10'
@@ -142,7 +240,7 @@ export const ScheduleLessonModal = ({
             <X className='w-5 h-5 text-white' />
           </button>
           <h2 className='pr-10 text-2xl font-semibold text-white'>
-            Schedule New Lesson
+            {rescheduleLesson ? 'Reschedule Lesson' : 'Schedule New Lesson'}
           </h2>
           <div className='flex items-center gap-2 mt-2 text-white/90'>
             <Clock className='w-4 h-4' />
@@ -267,7 +365,7 @@ export const ScheduleLessonModal = ({
                 <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
                   Hour
                 </div>
-                <div className='grid grid-cols-6 gap-1 max-h-[200px] overflow-y-auto bg-gray-50 dark:bg-gray-800/60 p-2 rounded-lg'>
+                <div className='grid grid-cols-6 gap-1 max-h-50 overflow-y-auto bg-gray-50 dark:bg-gray-800/60 p-2 rounded-lg'>
                   {hours.map((hour) => (
                     <button
                       key={hour}
@@ -357,35 +455,10 @@ export const ScheduleLessonModal = ({
           </div>
 
           {/* Lesson Type Selection */}
-          <div>
-            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
-              Lesson Type
-            </label>
-            <div className='grid grid-cols-2 gap-3'>
-              <button
-                className={`p-4 ${lessonType === '1on1' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'}`}
-                onClick={() => onLessonTypeChange('1on1')}
-              >
-                <div className='mb-1 font-medium text-gray-900 dark:text-white'>
-                  1-on-1 Lesson
-                </div>
-                <div className='text-xs text-gray-600 dark:text-gray-400'>
-                  Personal coaching
-                </div>
-              </button>
-              <button
-                className={`p-4 ${lessonType === 'group' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'}`}
-                onClick={() => onLessonTypeChange('group')}
-              >
-                <div className='mb-1 font-medium text-gray-900 dark:text-white'>
-                  Group Class
-                </div>
-                <div className='text-xs text-gray-600 dark:text-gray-400'>
-                  Learn with others
-                </div>
-              </button>
-            </div>
-          </div>
+          <LessonTypeDisplay
+            lessonType={lessonType}
+            onLessonTypeChange={onLessonTypeChange}
+          />
 
           {/* Teacher Selection */}
           {/* <div>
@@ -456,7 +529,9 @@ export const ScheduleLessonModal = ({
           {/* Action Buttons */}
           <div className='flex gap-3 pt-2'>
             <button
-              onClick={handleScheduleLesson}
+              onClick={
+                rescheduleLesson ? handleRescheduleLesson : handleScheduleLesson
+              }
               disabled={hasBlockingValidation}
               className={`flex-1 px-4 py-3 font-medium text-white transition-all rounded-lg ${
                 hasBlockingValidation
@@ -464,7 +539,7 @@ export const ScheduleLessonModal = ({
                   : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
-              Schedule Lesson
+              {rescheduleLesson ? 'Reschedule Lesson' : 'Schedule Lesson'}
             </button>
             <button
               onClick={onClose}

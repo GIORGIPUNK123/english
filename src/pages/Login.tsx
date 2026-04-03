@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Chrome,
@@ -10,8 +10,6 @@ import {
 } from 'lucide-react';
 import { LoginSchema } from '../schemas/LoginSchema';
 import { ValidationError } from 'yup';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase/firebase-config';
 import { useFirebaseLogins } from '../hooks/useFirebaseLogins';
 
 type FormData = {
@@ -24,7 +22,6 @@ type FormErrors = Partial<Record<keyof FormData, string>>;
 // import { fakeAuth } from '../utils/fakeAuth';
 
 export const Login = () => {
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -78,16 +75,7 @@ export const Login = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await signInWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password,
-      );
-
-      // Navigate only if login is successful
-      if (res) {
-        navigate('/dashboard');
-      }
+      await logins.loginWithEmail(formData.email, formData.password);
       // await fakeAuth.login(formData.email, formData.password);
       // navigate('/dashboard');
     } catch (error: any) {
@@ -137,8 +125,8 @@ export const Login = () => {
             <div className='mb-6 space-y-3'>
               <button
                 onClick={() => {
-                  logins.loginWithGoogle().then(() => {
-                    navigate('/dashboard');
+                  logins.loginWithGoogle().catch((error: any) => {
+                    alert(error.message || 'Login failed');
                   });
                 }}
                 className='flex items-center justify-center w-full px-4 py-3 space-x-3 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
@@ -150,8 +138,8 @@ export const Login = () => {
               <div className='grid grid-cols-2 gap-3'>
                 <button
                   onClick={() => {
-                    logins.loginWithFacebook().then(() => {
-                      navigate('/dashboard');
+                    logins.loginWithFacebook().catch((error: any) => {
+                      alert(error.message || 'Login failed');
                     });
                   }}
                   className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
@@ -161,7 +149,11 @@ export const Login = () => {
                 </button>
 
                 <button
-                  // onClick={() => handleSocialLogin('twitter')}
+                  onClick={() => {
+                    logins.loginWithTwitter().catch((error: any) => {
+                      alert(error.message || 'Login failed');
+                    });
+                  }}
                   className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                 >
                   <Twitter className='w-5 h-5' />

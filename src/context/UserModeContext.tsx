@@ -1,0 +1,72 @@
+import { createContext, useContext, useState, ReactNode } from 'react';
+import { UserDataT } from '../types';
+
+type UserMode = 'student' | 'teacher';
+
+interface UserModeContextType {
+  userMode: UserMode;
+  setUserMode: (mode: UserMode) => void;
+  canSwitchToTeacher: boolean;
+  initializeUserMode: (userData: UserDataT | null) => void;
+}
+
+const UserModeContext = createContext<UserModeContextType | undefined>(
+  undefined,
+);
+
+export const UserModeProvider = ({ children }: { children: ReactNode }) => {
+  const [userMode, setUserModeState] = useState<UserMode>('student');
+  const [canSwitchToTeacher, setCanSwitchToTeacher] = useState(false);
+
+  // Initialize user mode based on userData
+  const initializeUserMode = (userData: UserDataT | null) => {
+    if (!userData) {
+      setUserModeState('student');
+      setCanSwitchToTeacher(false);
+      return;
+    }
+
+    // Check if user can be a teacher
+    const isTeacher = userData.roles?.teacher === true;
+    setCanSwitchToTeacher(isTeacher);
+
+    // Get saved preference from localStorage
+    const savedMode = localStorage.getItem('userMode') as UserMode | null;
+
+    // Set default mode: teacher if they have teacher role, otherwise student
+    if (savedMode && (savedMode === 'student' || (savedMode === 'teacher' && isTeacher))) {
+      setUserModeState(savedMode);
+    } else if (isTeacher) {
+      setUserModeState('teacher');
+    } else {
+      setUserModeState('student');
+    }
+  };
+
+  // Update localStorage when mode changes
+  const setUserMode = (mode: UserMode) => {
+    setUserModeState(mode);
+    localStorage.setItem('userMode', mode);
+  };
+
+  return (
+    <UserModeContext.Provider
+      value={{
+        userMode,
+        setUserMode,
+        canSwitchToTeacher,
+        initializeUserMode,
+      }}
+    >
+      {children}
+    </UserModeContext.Provider>
+  );
+};
+
+export const useUserMode = () => {
+  const context = useContext(UserModeContext);
+  if (context === undefined) {
+    throw new Error('useUserMode must be used within a UserModeProvider');
+  }
+  return context;
+};

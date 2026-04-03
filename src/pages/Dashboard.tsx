@@ -2,30 +2,53 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '../firebase/firebase-config';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { ClassesT, LessonT, TeacherT, TopicT, UserDataT } from '../types';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
+import { TopicT, UserDataT } from '../types';
 import { DashboardSidebar } from '../components/dashboard/shared/DashboardSidebar';
 import { Menu } from 'lucide-react';
-import { DashboardView } from '../components/dashboard/views/DashboardView';
-import { NotificationsView } from '../components/dashboard/views/NotificationsView';
+import { StudentDashboardView } from '../components/dashboard/studentDashboard/StudentDashboardView';
+import { TeacherDashboardView } from '../components/dashboard/teacherDashboard/TeacherDashboardView';
+import { StudentNotificationsView } from '../components/dashboard/studentDashboard/StudentNotifications';
 import { StudentCalendar } from '../components/calendar/StudentCalendar';
 import { Loading } from './Loading';
-import { SettingsView } from '../components/dashboard/views/SettingsView';
+import { StudentSettingsView } from '../components/dashboard/studentDashboard/StudentSettingsView';
 import { ToastContainer } from '../components/ToastNotification';
 import { useToast } from '../context/ToastContext';
+import { useUserMode } from '../context/UserModeContext';
 import { useFirebaseNotifications } from '../hooks/useFirebaseNotifications';
+import { useFirebaseLessons } from '../hooks/useFirebaseLessons';
+import StudentHistoryView from '../components/dashboard/studentDashboard/StudentHistoryView';
+import { FinishUserSetup } from '../components/dashboard/shared/FinishUserSetup';
 
-export const StudentDashboard = () => {
+export const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserDataT | null>(null);
   const [loading, setLoading] = useState(true);
-  console.log('User Data:', userData);
+
+  const { userMode, initializeUserMode } = useUserMode();
+
   // ✅ MOVE THESE UP
   const [topicsArr, setTopicsArr] = useState<TopicT[]>([]);
-  const [lessons, setLessons] = useState<LessonT[]>([]);
-
+  const { lessons } =
+    userMode === 'student'
+      ? useFirebaseLessons({
+          classes: userData?.classes,
+          topicsArr,
+          includeCancelled: true,
+        })
+      : useFirebaseLessons({ topicsArr, includeCancelled: true });
+  const unCancelledLessons = lessons.filter(
+    (lesson) => !lesson.status.startsWith('cancelled'),
+  );
+  const acceptedLessonIds = new Set(userData?.teaching_classes || []);
+  const historyLessons =
+    userMode === 'teacher'
+      ? lessons.filter((lesson) => acceptedLessonIds.has(lesson.id))
+      : lessons;
+  console.log('lessons in dashboard:', lessons);
+  console.log('Current user mode:', userMode); // Check current mode
   const navigate = useNavigate();
   const { toasts, removeToast } = useToast();
 
@@ -48,15 +71,19 @@ export const StudentDashboard = () => {
     const userDocRef = doc(db, 'users', user.uid);
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
-        setUserData(docSnap.data() as UserDataT);
+        const data = docSnap.data() as UserDataT;
+        setUserData(data);
+        // Initialize user mode based on userData
+        initializeUserMode(data);
       } else {
         setUserData(null);
+        initializeUserMode(null);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, initializeUserMode]);
 
   // ✅ SAFE: effect still runs but guards inside
   useEffect(() => {
@@ -74,60 +101,6 @@ export const StudentDashboard = () => {
     return () => unsubscribe();
   }, [userData]);
 
-  useEffect(() => {
-    if (!userData || topicsArr.length === 0) return;
-
-    const fetchLessons = async () => {
-      const lessonsPromises = userData.classes.map(async (classId) => {
-        const classRef = doc(db, 'classes', classId);
-        const classSnap = await getDoc(classRef);
-
-        if (!classSnap.exists()) {
-          return {
-            date: 0,
-            status: 'scheduled',
-            topic: null,
-            teacher: null,
-          } as LessonT;
-        }
-
-        const classData = classSnap.data() as ClassesT;
-
-        const topic =
-          topicsArr.find((t) => t.id === classData.topic_id) || null;
-
-        let teacher: TeacherT | null = null;
-        if (classData.teacher_id) {
-          const teacherSnap = await getDoc(
-            doc(db, 'teachers', classData.teacher_id),
-          );
-          if (teacherSnap.exists()) {
-            teacher = teacherSnap.data() as TeacherT;
-          }
-        }
-
-        return {
-          id: classSnap.id,
-          date: classData.date,
-          status: classData.status,
-          topic: topic ? { id: topic.id, heading: topic.heading } : null,
-          teacher: teacher
-            ? {
-                first_name: teacher.first_name,
-                last_name: teacher.last_name,
-                rating: teacher.rating,
-                img: teacher.img,
-              }
-            : null,
-        } as LessonT;
-      });
-
-      setLessons(await Promise.all(lessonsPromises));
-    };
-
-    fetchLessons();
-  }, [userData, topicsArr]);
-
   // ✅ RETURNS COME LAST
   if (loading) return <Loading />;
 
@@ -136,16 +109,23 @@ export const StudentDashboard = () => {
     return null;
   }
 
+  const needsProfileSetup =
+    !userData.first_name?.trim() || !userData.last_name?.trim();
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return (
-          <DashboardView
+        return userMode === 'student' ? (
+          <StudentDashboardView
             user={user!}
             userData={userData}
-            lessons={lessons}
+            lessons={unCancelledLessons}
             topicsArr={topicsArr}
-            userType='student'
+          />
+        ) : (
+          <TeacherDashboardView
+            userData={userData}
+            lessons={unCancelledLessons}
           />
         );
       case 'courses':
@@ -154,13 +134,22 @@ export const StudentDashboard = () => {
             Courses Coming Soon!
           </div>
         );
-      // <StudentCoursesView />;
+      case 'history':
+        return (
+          <StudentHistoryView
+            user={user!}
+            userData={userData}
+            lessons={historyLessons}
+            loading={loading}
+            topicsArr={topicsArr}
+          />
+        );
       case 'calendar':
         return (
           <StudentCalendar
             user={user!}
             userData={userData}
-            lessons={lessons}
+            lessons={unCancelledLessons}
             topicsArr={topicsArr}
           />
         );
@@ -171,24 +160,21 @@ export const StudentDashboard = () => {
           </div>
         );
       case 'notifications':
-        return <NotificationsView userId={user!.uid} userType='student' />;
+        return <StudentNotificationsView user={user!} />;
       case 'settings':
-        return (
-          <SettingsView
-            email={user!.email!}
-            userData={userData}
-            capitalNames={capitalNames}
-            userType='student'
-          />
-        );
+        return <StudentSettingsView email={user!.email!} userData={userData} />;
       default:
-        return (
-          <DashboardView
+        return userMode === 'student' ? (
+          <StudentDashboardView
             user={user!}
             userData={userData}
-            lessons={lessons}
+            lessons={unCancelledLessons}
             topicsArr={topicsArr}
-            userType='student'
+          />
+        ) : (
+          <TeacherDashboardView
+            userData={userData}
+            lessons={unCancelledLessons}
           />
         );
     }
@@ -202,9 +188,11 @@ export const StudentDashboard = () => {
       {user && (
         <div className='min-h-screen dark:bg-[#0f0f0f] flex'>
           <ToastContainer toasts={toasts} onDismiss={removeToast} />
+          <FinishUserSetup isOpen={needsProfileSetup} />
           {/* Sidebar */}
           <DashboardSidebar
             user={user}
+            userMode={userMode}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             userName={`${capitalNames[0]} ${capitalNames[1]}`}

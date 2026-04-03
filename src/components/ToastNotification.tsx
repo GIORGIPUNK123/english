@@ -79,7 +79,7 @@ export function ToastNotification({
       `}
     >
       {/* Icon */}
-      <div className='flex-shrink-0 mt-0.5'>{getIcon()}</div>
+      <div className='shrink-0 mt-0.5'>{getIcon()}</div>
 
       {/* Content */}
       <div className='flex-1 min-w-0'>
@@ -94,7 +94,7 @@ export function ToastNotification({
       {/* Close Button */}
       <button
         onClick={handleDismiss}
-        className='flex-shrink-0 p-1 transition-all rounded hover:bg-gray-200 dark:hover:bg-gray-700'
+        className='shrink-0 p-1 transition-all rounded hover:bg-gray-200 dark:hover:bg-gray-700'
       >
         <X className='w-4 h-4 text-gray-600 dark:text-gray-400' />
       </button>

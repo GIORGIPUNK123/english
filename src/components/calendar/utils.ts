@@ -97,6 +97,34 @@ export const getLessonColor = (lesson: LessonT) => {
   }
 };
 
+// Extract day, hour, minute, and week from a timestamp for scheduling
+export const getScheduleTimeFromTimestamp = (timestamp: number) => {
+  const date = new Date(timestamp * 1000);
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+
+  // Get current week dates to find which day and week
+  const today = new Date();
+  const eventDate = new Date(timestamp * 1000);
+
+  // Find week offset
+  let weekOffset = 0;
+  const currentMonday = new Date(today);
+  const dayOfWeek = today.getDay();
+  const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  currentMonday.setDate(today.getDate() + daysToMonday);
+
+  // Calculate difference in weeks
+  const timeDiff = eventDate.getTime() - currentMonday.getTime();
+  weekOffset = Math.floor(timeDiff / (7 * 24 * 60 * 60 * 1000));
+
+  // Get day of week for the event (0 = Monday, 6 = Sunday)
+  const eventDayOfWeek = eventDate.getDay();
+  const day = eventDayOfWeek === 0 ? 6 : eventDayOfWeek - 1;
+
+  return { day, hour, minute, week: weekOffset };
+};
+
 // Check if an event falls on a specific day and hour
 export const isEventInDayAndHour = (
   event: LessonT,
