@@ -1,4 +1,4 @@
-import { Clock, Calendar, Video, RotateCw } from 'lucide-react';
+import { Clock, Calendar, RotateCw } from 'lucide-react';
 import { LessonT, TopicT, UserDataT } from '../../../types';
 import { LessonDetailModal } from '../../calendar/LessonDetailModal';
 import { useEffect, useState } from 'react';

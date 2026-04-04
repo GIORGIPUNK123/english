@@ -130,8 +130,6 @@ export const LessonDetailModal = ({
                 <div className='font-medium text-gray-900 dark:text-white'>
                   {lesson.teacher
                     ? `${lesson.teacher.first_name} ${lesson.teacher.last_name}`
-                    : lesson.teacherId
-                      ? 'Teacher assigned'
                     : userMode === 'teacher'
                       ? 'Open — any teacher can accept'
                       : 'Not assigned'}
@@ -186,7 +184,7 @@ export const LessonDetailModal = ({
             >
               {userMode === 'teacher' ? (
                 <>
-                  {!assignedToMe && !lesson.teacherId && (
+                  {!assignedToMe && !lesson.teacher && (
                     <>
                       <button
                         onClick={handleAcceptLesson}
