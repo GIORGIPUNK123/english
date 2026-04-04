@@ -1,7 +1,11 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db } from './firebaseAdmin';
 import { addNotificationToUser } from './notificationFunctions';
-import { createZoomMeeting, updateZoomMeeting, deleteZoomMeeting } from './zoomFunctions';
+import {
+  createZoomMeeting,
+  updateZoomMeeting,
+  deleteZoomMeeting,
+} from './zoomFunctions';
 import { FieldValue } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 
@@ -153,7 +157,9 @@ export const rescheduleLesson = onCall<RescheduleLessonData>(
 
       if (zoomMeetingId) {
         const topicSnap = await db.collection('topics').doc(topicId).get();
-        const topicName = topicSnap.exists ? topicSnap.data()?.heading : 'English Lesson';
+        const topicName = topicSnap.exists
+          ? topicSnap.data()?.heading
+          : 'English Lesson';
 
         const updated = await updateZoomMeeting({
           meetingId: zoomMeetingId,
@@ -400,8 +406,13 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
   try {
     const classSnap = await classRef.get();
     const classData = classSnap.data()!;
-    const topicSnap = await db.collection('topics').doc(classData.topic_id).get();
-    const topicName = topicSnap.exists ? topicSnap.data()?.heading : 'English Lesson';
+    const topicSnap = await db
+      .collection('topics')
+      .doc(classData.topic_id)
+      .get();
+    const topicName = topicSnap.exists
+      ? topicSnap.data()?.heading
+      : 'English Lesson';
 
     const zoomMeeting = await createZoomMeeting({
       topic: topicName || 'English Lesson',
@@ -458,7 +469,11 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
     );
   }
 
-  return { success: true, notificationsSent, zoomMeetingCreated: !!zoomMeetingId };
+  return {
+    success: true,
+    notificationsSent,
+    zoomMeetingCreated: !!zoomMeetingId,
+  };
 });
 
 /* =====================================================

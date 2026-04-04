@@ -39,7 +39,7 @@ export const cleanUpOldClasses = onSchedule('every 2 minutes', async () => {
   // Note: Zoom meetings and links are created when teacher accepts the lesson (acceptLesson function).
   // Links are automatically populated via createZoomMeeting and stored in teacher_link and student_link fields.
   // This scheduled function just logs the status of upcoming lessons.
-  
+
   for (const docSnap of upcomingSnapshot.docs) {
     const cls = docSnap.data() as ClassDoc;
     const classId = docSnap.id;

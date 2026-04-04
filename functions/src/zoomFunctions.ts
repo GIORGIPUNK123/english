@@ -16,7 +16,9 @@ export const generateZoomAccessToken = async (): Promise<string | null> => {
     return null;
   }
 
-  const base64Credentials = base64.encode(`${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`);
+  const base64Credentials = base64.encode(
+    `${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`,
+  );
 
   try {
     const response = await axios.post(
@@ -80,7 +82,9 @@ export const createZoomMeeting = async (
   const accessToken = await generateZoomAccessToken();
 
   if (!accessToken) {
-    console.error('[Zoom] Failed to generate access token for meeting creation');
+    console.error(
+      '[Zoom] Failed to generate access token for meeting creation',
+    );
     return null;
   }
 
@@ -104,12 +108,22 @@ export const createZoomMeeting = async (
       settings: {
         host_video: true,
         participant_video: true,
-        join_before_host: true,
+        // Keep participants out until host starts to avoid host-role confusion.
+        join_before_host: false,
         mute_upon_entry: false,
+        // Host admits participants manually from waiting room.
         waiting_room: true,
         auto_recording: 'cloud',
         participant_can_share_screen: true,
         allow_participants_to_annotate: false,
+        breakout_room: {
+          enable: true,
+          // No participant pre-assignment; host moves attendees manually.
+          rooms: [
+            { name: 'Room 1', participants: [] },
+            { name: 'Room 2', participants: [] },
+          ],
+        },
       },
     },
   };
@@ -158,18 +172,26 @@ export const updateZoomMeeting = async (
   if (agenda) data.agenda = agenda;
   if (duration) data.duration = duration;
   if (startTime) data.start_time = getZoomStartTimeFormat(startTime);
+  data.settings = {
+    // Keep behavior consistent with creation rules.
+    join_before_host: false,
+    waiting_room: true,
+    breakout_room: {
+      enable: true,
+      rooms: [
+        { name: 'Room 1', participants: [] },
+        { name: 'Room 2', participants: [] },
+      ],
+    },
+  };
 
   try {
-    await axios.patch(
-      `https://api.zoom.us/v2/meetings/${meetingId}`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+    await axios.patch(`https://api.zoom.us/v2/meetings/${meetingId}`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
       },
-    );
+    });
 
     console.log(`[Zoom] Meeting updated successfully. ID: ${meetingId}`);
     return true;
@@ -186,11 +208,15 @@ export const updateZoomMeeting = async (
 /* =====================================================
    ZOOM: Delete Meeting
    ===================================================== */
-export const deleteZoomMeeting = async (meetingId: number): Promise<boolean> => {
+export const deleteZoomMeeting = async (
+  meetingId: number,
+): Promise<boolean> => {
   const accessToken = await generateZoomAccessToken();
 
   if (!accessToken) {
-    console.error('[Zoom] Failed to generate access token for meeting deletion');
+    console.error(
+      '[Zoom] Failed to generate access token for meeting deletion',
+    );
     return false;
   }
 
