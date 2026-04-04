@@ -36,27 +36,17 @@ export const cleanUpOldClasses = onSchedule('every 2 minutes', async () => {
     `[scheduledFunctions] Upcoming scheduled classes in 10-minute window: ${upcomingSnapshot.size}`,
   );
 
+  // Note: Zoom meetings and links are created when teacher accepts the lesson (acceptLesson function).
+  // Links are automatically populated via createZoomMeeting and stored in teacher_link and student_link fields.
+  // This scheduled function just logs the status of upcoming lessons.
+  
   for (const docSnap of upcomingSnapshot.docs) {
     const cls = docSnap.data() as ClassDoc;
     const classId = docSnap.id;
-    const testStudentLink = `TEST_STUDENT_LINK_${classId}_${now}`;
-
-    await docSnap.ref.update({
-      student_link: testStudentLink,
-      link: testStudentLink,
-      test_scheduler_invoked_at: now,
-      test_scheduler_mode: true,
-    });
 
     console.log(
-      `[scheduledFunctions] TEST student_link written for class ${classId}: ${testStudentLink}`,
+      `[scheduledFunctions] Upcoming lesson ${classId} at ${cls.date}. Teacher link: ${cls.teacher_link ? 'EXISTS' : 'MISSING'}. Student link: ${cls.student_link ? 'EXISTS' : 'MISSING'}`,
     );
-
-    if (cls.teacher_link) {
-      console.log(
-        `[scheduledFunctions] Existing teacher_link preserved for class ${classId}`,
-      );
-    }
   }
 
   const snapshot = await db

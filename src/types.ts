@@ -109,6 +109,7 @@ export interface ClassesT {
   teacher_rating?: number;
   student_link: string | null;
   teacher_link: string | null;
+  zoom_meeting_id?: number | null;
   cancelled_by?: 'student' | 'teacher';
   cancelled_at?: Timestamp;
 }

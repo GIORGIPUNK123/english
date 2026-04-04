@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db } from './firebaseAdmin';
 import { addNotificationToUser } from './notificationFunctions';
+import { createZoomMeeting, updateZoomMeeting, deleteZoomMeeting } from './zoomFunctions';
 import { FieldValue } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 
@@ -65,6 +66,7 @@ export const scheduleLesson = onCall<ScheduleLessonData>(
         teacher_id: '',
         teacher_link: '',
         student_link: '',
+        zoom_meeting_id: null,
       });
 
       tx.update(userRef, {
@@ -143,6 +145,36 @@ export const rescheduleLesson = onCall<RescheduleLessonData>(
       });
     });
 
+    // Update Zoom meeting if it exists
+    try {
+      const classSnap = await classRef.get();
+      const classData = classSnap.data()!;
+      const zoomMeetingId = classData.zoom_meeting_id;
+
+      if (zoomMeetingId) {
+        const topicSnap = await db.collection('topics').doc(topicId).get();
+        const topicName = topicSnap.exists ? topicSnap.data()?.heading : 'English Lesson';
+
+        const updated = await updateZoomMeeting({
+          meetingId: zoomMeetingId,
+          startTime: date,
+          topic: topicName || 'English Lesson',
+        });
+
+        if (updated) {
+          console.log(
+            `[rescheduleLesson] Zoom meeting ${zoomMeetingId} rescheduled for class ${lessonId}`,
+          );
+        } else {
+          console.error(
+            `[rescheduleLesson] Failed to update Zoom meeting ${zoomMeetingId} for class ${lessonId}`,
+          );
+        }
+      }
+    } catch (error) {
+      console.error('[rescheduleLesson] Error updating Zoom meeting:', error);
+    }
+
     return { classId: classRef.id };
   },
 );
@@ -220,6 +252,28 @@ export const cancelLesson = onCall<CancelLessonData>(async ({ auth, data }) => {
       });
     }
   });
+
+  // Delete Zoom meeting if it exists
+  try {
+    const classSnap = await classRef.get();
+    const classData = classSnap.data()!;
+    const zoomMeetingId = classData.zoom_meeting_id;
+
+    if (zoomMeetingId) {
+      const deleted = await deleteZoomMeeting(zoomMeetingId);
+      if (deleted) {
+        console.log(
+          `[cancelLesson] Zoom meeting ${zoomMeetingId} deleted for class ${classId}`,
+        );
+      } else {
+        console.error(
+          `[cancelLesson] Failed to delete Zoom meeting ${zoomMeetingId} for class ${classId}`,
+        );
+      }
+    }
+  } catch (error) {
+    console.error('[cancelLesson] Error deleting Zoom meeting:', error);
+  }
 
   return { success: true };
 });
@@ -338,6 +392,48 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
     });
   });
 
+  // Create Zoom meeting AFTER transaction completes
+  let zoomMeetingId: number | null = null;
+  let teacherLink = '';
+  let studentLink = '';
+
+  try {
+    const classSnap = await classRef.get();
+    const classData = classSnap.data()!;
+    const topicSnap = await db.collection('topics').doc(classData.topic_id).get();
+    const topicName = topicSnap.exists ? topicSnap.data()?.heading : 'English Lesson';
+
+    const zoomMeeting = await createZoomMeeting({
+      topic: topicName || 'English Lesson',
+      startTime: classData.date,
+      duration: 60,
+      agenda: `Lesson with ${classData.student_first_name} ${classData.student_last_name}`,
+    });
+
+    if (zoomMeeting) {
+      zoomMeetingId = zoomMeeting.id;
+      teacherLink = zoomMeeting.start_url; // Host/start URL
+      studentLink = zoomMeeting.join_url; // Participant URL
+
+      // Update class with Zoom URLs and meeting ID
+      await classRef.update({
+        zoom_meeting_id: zoomMeetingId,
+        teacher_link: teacherLink,
+        student_link: studentLink,
+      });
+
+      console.log(
+        `[acceptLesson] Zoom meeting created for class ${classId}. Meeting ID: ${zoomMeetingId}`,
+      );
+    } else {
+      console.error(
+        `[acceptLesson] Failed to create Zoom meeting for class ${classId}. Lesson will proceed without Zoom link.`,
+      );
+    }
+  } catch (error) {
+    console.error('[acceptLesson] Error creating Zoom meeting:', error);
+  }
+
   let notificationsSent = true;
   try {
     await Promise.all([
@@ -362,7 +458,7 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
     );
   }
 
-  return { success: true, notificationsSent };
+  return { success: true, notificationsSent, zoomMeetingCreated: !!zoomMeetingId };
 });
 
 /* =====================================================
