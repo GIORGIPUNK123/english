@@ -16,6 +16,8 @@ export interface LessonT {
   status: StatusT;
   topic: TopicT | null;
   teacher: TeacherT | null;
+  student?: StudentT | null;
+  studentId?: string;
   link: string | null;
 }
 
@@ -98,7 +100,13 @@ export interface ClassesT {
   status: StatusT;
   topic_id: string;
   student_id: string;
+  student_first_name?: string;
+  student_last_name?: string;
   teacher_id: string;
+  teacher_first_name?: string;
+  teacher_last_name?: string;
+  teacher_img?: string;
+  teacher_rating?: number;
   student_link: string | null;
   teacher_link: string | null;
   cancelled_by?: 'student' | 'teacher';
@@ -109,6 +117,11 @@ export interface TeacherT {
   last_name: string;
   img: string;
   rating: number;
+}
+
+export interface StudentT {
+  first_name: string;
+  last_name: string;
 }
 export interface BlockDetailsT {
   date: number;

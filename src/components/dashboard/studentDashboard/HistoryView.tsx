@@ -1,27 +1,32 @@
 import React, { useState } from 'react';
 import { LessonT, StatusT, TopicT, UserDataT } from '../../../types';
 import { LessonDetailModal } from '../../calendar/LessonDetailModal';
-import { Eye } from 'lucide-react';
+import { Eye, RotateCw } from 'lucide-react';
 import { useScheduleLessonModal } from '../../../hooks/useScheduleLessonModal';
 import { ScheduleLessonModal } from '../../calendar/ScheduleLessonModal';
 import { User } from 'firebase/auth';
+import { useUserMode } from '../../../context/UserModeContext';
 
-interface StudentHistoryViewProps {
+interface HistoryViewProps {
   user: User;
   userData: UserDataT;
   lessons: LessonT[];
   loading: boolean;
   topicsArr: TopicT[];
+  onRefresh?: () => void;
 }
 
-const StudentHistoryView: React.FC<StudentHistoryViewProps> = ({
+const HistoryView: React.FC<HistoryViewProps> = ({
   user,
   userData,
   lessons,
   loading,
   topicsArr,
+  onRefresh,
 }) => {
   const [selectedLesson, setSelectedLesson] = useState<LessonT | null>(null);
+  const { userMode } = useUserMode();
+  const teachingClassIds = new Set(userData.teaching_classes || []);
 
   const showDetails = (lesson: LessonT) => {
     setSelectedLesson(lesson);
@@ -117,9 +122,18 @@ const StudentHistoryView: React.FC<StudentHistoryViewProps> = ({
       <div className='flex-1 flex flex-col bg-white border border-gray-200 shadow-lg dark:bg-gray-800/40 rounded-xl dark:border-gray-700 p-6'>
         {/* Header */}
         <div className='mb-6'>
-          <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
-            Lesson History
-          </h2>
+          <div className='flex items-center justify-between gap-3'>
+            <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+              Lesson History
+            </h2>
+            <button
+              onClick={onRefresh}
+              className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+            >
+              <RotateCw className='w-4 h-4' />
+              <span className='hidden sm:inline'>Refresh</span>
+            </button>
+          </div>
           <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
             {lessons.length} lesson{lessons.length !== 1 ? 's' : ''} found
           </p>
@@ -238,10 +252,13 @@ const StudentHistoryView: React.FC<StudentHistoryViewProps> = ({
           setRescheduleLesson={setRescheduleLesson}
           setScheduleModalIsOpen={setShowScheduleModal}
           setScheduleTime={setScheduleTime}
+          assignedToMe={
+            userMode === 'teacher' && teachingClassIds.has(selectedLesson.id)
+          }
         />
       )}
     </>
   );
 };
 
-export default StudentHistoryView;
+export default HistoryView;

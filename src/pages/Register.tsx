@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/firebase-config';
+import { useFirebaseLogins } from '../hooks/useFirebaseLogins';
 
 export const Register = () => {
   const navigate = useNavigate();
@@ -22,18 +23,8 @@ export const Register = () => {
     password: '',
     confirmPassword: '',
   });
+  const logins = useFirebaseLogins();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSocialLogin = async (provider: string) => {
-    try {
-      console.log('Initiating social login with provider:', provider);
-      // await fakeAuth.register(`demo@${provider}.com`, 'password');
-      navigate('/dashboard');
-    } catch (error: any) {
-      alert(error.message || 'Registration failed');
-    }
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -109,7 +100,11 @@ export const Register = () => {
             {/* Social Login Buttons */}
             <div className='mb-6 space-y-3'>
               <button
-                onClick={() => handleSocialLogin('google')}
+                onClick={() => {
+                  logins.loginWithGoogle().catch((error: any) => {
+                    alert(error.message || 'Login failed');
+                  });
+                }}
                 className='flex items-center justify-center w-full px-4 py-3 space-x-3 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
               >
                 <Chrome className='w-5 h-5' />
@@ -118,7 +113,11 @@ export const Register = () => {
 
               <div className='grid grid-cols-2 gap-3'>
                 <button
-                  onClick={() => handleSocialLogin('facebook')}
+                  onClick={() => {
+                    logins.loginWithFacebook().catch((error: any) => {
+                      alert(error.message || 'Login failed');
+                    });
+                  }}
                   className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                 >
                   <Facebook className='w-5 h-5' />
@@ -126,7 +125,11 @@ export const Register = () => {
                 </button>
 
                 <button
-                  onClick={() => handleSocialLogin('twitter')}
+                  onClick={() => {
+                    logins.loginWithTwitter().catch((error: any) => {
+                      alert(error.message || 'Login failed');
+                    });
+                  }}
                   className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                 >
                   <Twitter className='w-5 h-5' />

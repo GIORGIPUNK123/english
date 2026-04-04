@@ -113,7 +113,7 @@ export const ScheduleLessonModal = ({
     validationMessages.push('No tokens available. Please top up to schedule.');
   }
   if (isTooSoon) {
-    validationMessages.push('Must be at least 6 hours in the future.');
+    validationMessages.push('Must be at least 24 hours in the future.');
   }
   if (isConflicting) {
     validationMessages.push('Conflicts with an existing lesson.');

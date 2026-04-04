@@ -17,7 +17,7 @@ import { useUserMode } from '../../../context/UserModeContext';
 import { useNavigate } from 'react-router-dom';
 import { BecomeTeacherModal } from '../shared/BecomeTeacherModal';
 
-export const StudentSettingsView = (props: {
+export const SettingsView = (props: {
   userData: UserDataT | null;
   email: string;
 }) => {
@@ -321,12 +321,6 @@ export const StudentSettingsView = (props: {
 
         {/* Action Buttons */}
         <div className='flex flex-col gap-3 sm:flex-row'>
-          <button className='px-4 py-3 text-sm text-white transition-all bg-blue-600 rounded-lg sm:px-6 hover:bg-blue-700 sm:text-base'>
-            Save Changes
-          </button>
-          <button className='px-4 py-3 text-sm text-gray-700 transition-all bg-gray-200 rounded-lg sm:px-6 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 sm:text-base'>
-            Reset to Default
-          </button>
           <button
             onClick={handleLogout}
             className='flex items-center justify-center gap-2 px-4 py-3 text-sm text-white transition-all bg-red-600 rounded-lg sm:px-6 hover:bg-red-700 sm:text-base'

@@ -66,11 +66,11 @@ export const isTimestampConflicting = (
   });
 };
 
-// Check if a timestamp is at least 6 hours in the future
+// Check if a timestamp is at least 24 hours in the future
 export const isTimestampTooSoon = (timestamp: number) => {
   const now = getCurrentTimestamp();
-  const sixHoursFromNow = now + 21600; // 6 hours = 21600 seconds
-  return timestamp < sixHoursFromNow;
+  const twentyFourHoursFromNow = now + 24 * 3600;
+  return timestamp < twentyFourHoursFromNow;
 };
 
 // Get color based on lesson status

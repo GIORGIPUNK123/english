@@ -14,13 +14,25 @@ import {
   ScheduleModalState,
 } from '../../hooks/useScheduleLessonModal';
 
-export const StudentCalendar = (props: {
+export const LessonsCalendar = (props: {
   user: User;
   userData: UserDataT;
   lessons: LessonT[];
   topicsArr: TopicT[];
+  userMode?: 'student' | 'teacher';
+  teachingClassIds?: string[];
+  onRefresh?: () => void;
 }) => {
-  const { lessons, topicsArr, userData } = props;
+  const {
+    lessons,
+    topicsArr,
+    userData,
+    userMode = 'student',
+    teachingClassIds = [],
+    onRefresh,
+  } = props;
+  const isTeacherCalendar = userMode === 'teacher';
+  const teachingSet = new Set(teachingClassIds);
   const [selectedLesson, setSelectedLesson] = useState<LessonT | null>(null);
   // const [selectedTeacher, setSelectedTeacher] = useState<string>('');
 
@@ -47,6 +59,7 @@ export const StudentCalendar = (props: {
   const weekDates = getWeekDates(currentWeek);
 
   const handleTimeSlotClick = (scheduleState: ScheduleModalState) => {
+    if (isTeacherCalendar) return;
     openScheduleModalWithTime(scheduleState);
   };
 
@@ -58,10 +71,19 @@ export const StudentCalendar = (props: {
         weekDates={weekDates}
         currentWeek={currentWeek}
         setCurrentWeek={setCurrentWeek}
+        variant={isTeacherCalendar ? 'teacher' : 'student'}
+        onRefresh={onRefresh}
       />
 
       {/* Legend */}
-      <CalendarLegend />
+      <CalendarLegend variant={isTeacherCalendar ? 'teacher' : 'student'} />
+
+      {isTeacherCalendar && lessons.length === 0 && (
+        <p className='mb-4 text-sm text-gray-600 dark:text-gray-400'>
+          No open lesson requests or your accepted lessons in this week. Use the
+          arrows to check other weeks.
+        </p>
+      )}
 
       {/* Calendar Grid - Desktop */}
       <div className='flex-1 hidden lg:block'>
@@ -71,15 +93,29 @@ export const StudentCalendar = (props: {
           currentWeek={currentWeek}
           onLessonClick={setSelectedLesson}
           onTimeSlotClick={handleTimeSlotClick}
+          enableEmptySlotScheduling={!isTeacherCalendar}
+          teacherView={isTeacherCalendar}
         />
       </div>
 
       {/* Mobile View */}
-      <MobileCalendarView
-        weekDates={weekDates}
-        lessons={lessons}
-        onLessonClick={setSelectedLesson}
-      />
+      {isTeacherCalendar && lessons.length === 0 ? (
+        <div className='py-12 text-center lg:hidden'>
+          <p className='text-gray-600 dark:text-gray-400'>
+            No open lesson requests or your accepted lessons this week.
+          </p>
+          <p className='mt-2 text-sm text-gray-500 dark:text-gray-500'>
+            Switch weeks to browse other times, or check back later.
+          </p>
+        </div>
+      ) : (
+        <MobileCalendarView
+          weekDates={weekDates}
+          lessons={lessons}
+          onLessonClick={setSelectedLesson}
+          teacherView={isTeacherCalendar}
+        />
+      )}
 
       {/* Lesson Detail Modal */}
       {selectedLesson && (
@@ -89,11 +125,12 @@ export const StudentCalendar = (props: {
           setScheduleTime={setScheduleTime}
           lesson={selectedLesson}
           onClose={() => setSelectedLesson(null)}
+          assignedToMe={teachingSet.has(selectedLesson.id)}
         />
       )}
 
       {/* Schedule New Lesson Modal */}
-      {showScheduleModal && scheduleTime && (
+      {!isTeacherCalendar && showScheduleModal && scheduleTime && (
         <ScheduleLessonModal
           scheduleTime={scheduleTime}
           onScheduleTimeChange={setScheduleTime}

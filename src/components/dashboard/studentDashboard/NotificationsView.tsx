@@ -229,7 +229,7 @@ const ViewNotificationModal = ({
 
 /* ---------- Mark notification as read ---------- */
 
-export const StudentNotificationsView = (props: { user: User }) => {
+export const NotificationsView = (props: { user: User }) => {
   const { user } = props;
   const [notifications, setNotifications] = useState<NotificationT[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');

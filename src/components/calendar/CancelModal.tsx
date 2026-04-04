@@ -18,21 +18,15 @@ export const CancelModal = ({
   additionalCallback,
 }: LessonDetailModalProps) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const isWithin48Hours = (() => {
+  const isWithin24Hours = (() => {
     const now = Date.now();
     const lessonTime = lesson.date * 1000;
     const diffInMs = lessonTime - now;
-    return diffInMs <= 48 * 60 * 60 * 1000;
+    return diffInMs < 24 * 60 * 60 * 1000;
   })();
   const { addToast } = useToast();
   const canCancel = () => {
     const classId = lesson.id;
-    if (lesson.teacher) {
-      if (isWithin48Hours) {
-        setErrorMsg('Cannot cancel class within 48 hours');
-        return false;
-      }
-    }
     if (!classId || !auth.currentUser?.uid) {
       setErrorMsg('Missing class id or user Id, cannot delete');
       return false;
@@ -45,11 +39,6 @@ export const CancelModal = ({
       if (!canCancel()) return; // Check if cancellation is possible
 
       const classId = lesson.id;
-
-      if (lesson.teacher && isWithin48Hours) {
-        setErrorMsg('Cannot cancel class within 48 hours');
-        return;
-      }
 
       if (!classId || !auth.currentUser?.uid) {
         setErrorMsg('Missing class id or user Id, cannot cancel');
@@ -119,11 +108,9 @@ export const CancelModal = ({
                 Cancel this lesson?
               </p>
               <p className='text-sm text-gray-700 dark:text-gray-300'>
-                {lesson.teacher && !isWithin48Hours
-                  ? 'Your token will be refunded to your account.'
-                  : !lesson.teacher
-                    ? 'This will cancel your pending lesson request and refund your token.'
-                    : 'You cannot cancel this lesson as it is within 48 hours of the scheduled time.'}
+                {isWithin24Hours
+                  ? 'You can cancel this lesson, but your token will not be refunded because it is within 24 hours of the scheduled time.'
+                  : 'You can cancel this lesson and your token will be refunded.'}
               </p>
             </div>
           </div>
@@ -146,12 +133,7 @@ export const CancelModal = ({
             </button>
             <button
               onClick={handleCancel}
-              disabled={!!lesson.teacher && !!isWithin48Hours}
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                lesson.teacher && isWithin48Hours
-                  ? 'bg-red-200 dark:bg-red-800/40 text-red-400 dark:text-red-500 cursor-not-allowed'
-                  : 'bg-red-500 dark:bg-red-500 text-white hover:bg-red-600 dark:hover:bg-red-600'
-              }`}
+              className='px-5 py-2.5 text-sm font-medium rounded-lg transition-all bg-red-500 dark:bg-red-500 text-white hover:bg-red-600 dark:hover:bg-red-600'
             >
               Cancel Lesson
             </button>

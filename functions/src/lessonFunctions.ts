@@ -2,6 +2,27 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db } from './firebaseAdmin';
 import { addNotificationToUser } from './notificationFunctions';
 import { FieldValue } from 'firebase-admin/firestore';
+import * as admin from 'firebase-admin';
+
+/* =====================================================
+   HELPER: Convert Storage path to download URL
+   ===================================================== */
+async function getDownloadURLFromPath(storagePath: string): Promise<string> {
+  if (!storagePath) return '';
+  try {
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(storagePath);
+    const [downloadURL] = await file.getSignedUrl({
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 365, // 1 year
+    });
+    return downloadURL;
+  } catch (error) {
+    console.error('Failed to get download URL:', error);
+    return '';
+  }
+}
 
 /* =====================================================
    SCHEDULE LESSON
@@ -39,6 +60,8 @@ export const scheduleLesson = onCall<ScheduleLessonData>(
         status: 'scheduled',
         topic_id: topicId,
         student_id: userId,
+        student_first_name: user.first_name || '',
+        student_last_name: user.last_name || '',
         teacher_id: '',
         teacher_link: '',
         student_link: '',
@@ -71,18 +94,17 @@ export const rescheduleLesson = onCall<RescheduleLessonData>(
     const { lessonId, date, topicId } = data;
     const userId = auth.uid;
     const now = Math.floor(Date.now() / 1000);
-    const minTimeFromNow = 6 * 3600; // 6 hours in seconds
-    const minTimeForAcceptedLesson = 12 * 3600; // 12 hours in seconds
+    const minTimeFromNow = 24 * 3600; // 24 hours in seconds
 
     if (!lessonId || !date || !topicId) {
       throw new HttpsError('invalid-argument', 'Missing fields');
     }
 
-    // Check if new time is at least 6 hours from now
+    // Check if new time is at least 24 hours from now
     if (date < now + minTimeFromNow) {
       throw new HttpsError(
         'failed-precondition',
-        'New lesson must be at least 6 hours from now',
+        'New lesson must be at least 24 hours from now',
       );
     }
 
@@ -115,16 +137,6 @@ export const rescheduleLesson = onCall<RescheduleLessonData>(
         );
       }
 
-      // If teacher has accepted the lesson, check 12-hour constraint
-      if (lesson.teacher_id?.trim()) {
-        if (date < now + minTimeForAcceptedLesson) {
-          throw new HttpsError(
-            'failed-precondition',
-            'For accepted lessons, you must reschedule at least 12 hours in advance',
-          );
-        }
-      }
-
       tx.update(classRef, {
         date,
         topic_id: topicId,
@@ -150,7 +162,7 @@ export const cancelLesson = onCall<CancelLessonData>(async ({ auth, data }) => {
 
   const userId = auth.uid;
   const now = Math.floor(Date.now() / 1000);
-  const minTimeForRefund = 12 * 3600; // 12 hours in seconds
+  const minTimeForRefund = 24 * 3600; // 24 hours in seconds
   const classRef = db.collection('classes').doc(classId);
 
   await db.runTransaction(async (tx) => {
@@ -176,16 +188,15 @@ export const cancelLesson = onCall<CancelLessonData>(async ({ auth, data }) => {
       );
     }
 
+    const timeUntilLesson = lesson.date - now;
+
     const status = isStudent ? 'cancelled_student' : 'cancelled_teacher';
     const studentRef = lesson.student_id
       ? db.collection('users').doc(lesson.student_id)
       : null;
 
-    // Determine if token should be refunded
-    const teacherAccepted = lesson.teacher_id?.trim();
-    const timeUntilLesson = lesson.date - now;
-    const shouldRefundToken =
-      !teacherAccepted || timeUntilLesson >= minTimeForRefund;
+    // Determine if token should be refunded (>=24h before lesson start)
+    const shouldRefundToken = timeUntilLesson >= minTimeForRefund;
 
     // Update class
     tx.update(classRef, {
@@ -194,10 +205,10 @@ export const cancelLesson = onCall<CancelLessonData>(async ({ auth, data }) => {
       cancelled_by: isStudent ? 'student' : 'teacher',
     });
 
-    // Handle student refund (only for student cancellations, and only if applicable)
-    if (isStudent && studentRef) {
+    // Handle student token/account updates when a lesson is cancelled by either side.
+    if (studentRef) {
       if (shouldRefundToken) {
-        // Refund token
+        // Refund token only when cancellation is at least 24 hours early.
         tx.update(studentRef, {
           tokens: FieldValue.increment(1),
           used_tokens: FieldValue.increment(-1),
@@ -234,14 +245,21 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
   let teacherNameForNotification = 'A teacher';
   let topicNameForNotification = 'this lesson';
 
+  // Get user data to fetch image URL before transaction
+  const userSnap = await userRef.get();
+  if (!userSnap.exists) throw new HttpsError('not-found', 'User not found');
+
+  const userData = userSnap.data()!;
+  let teacherImageURL = '';
+  if (userData.pfp_file_path) {
+    teacherImageURL = await getDownloadURLFromPath(userData.pfp_file_path);
+  }
+
   await db.runTransaction(async (tx) => {
-    const userSnap = await tx.get(userRef);
     const classSnap = await tx.get(classRef);
 
-    if (!userSnap.exists) throw new HttpsError('not-found', 'User not found');
     if (!classSnap.exists) throw new HttpsError('not-found', 'Class not found');
 
-    const userData = userSnap.data()!;
     const lesson = classSnap.data()!;
 
     studentIdForNotification = lesson.student_id;
@@ -293,6 +311,13 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
     }
 
     const assignedTeacherId = lesson.teacher_id || null;
+    if (assignedTeacherId === userId) {
+      throw new HttpsError(
+        'failed-precondition',
+        'You already accepted this lesson',
+      );
+    }
+
     if (assignedTeacherId && assignedTeacherId !== userId) {
       throw new HttpsError(
         'failed-precondition',
@@ -302,6 +327,10 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
 
     tx.update(classRef, {
       teacher_id: userId,
+      teacher_first_name: userData.first_name || 'Teacher',
+      teacher_last_name: userData.last_name || '',
+      teacher_img: teacherImageURL || '',
+      teacher_rating: typeof userData.rating === 'number' ? userData.rating : 0,
     });
 
     tx.update(userRef, {
@@ -335,3 +364,57 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
 
   return { success: true, notificationsSent };
 });
+
+/* =====================================================
+   Get USERS PUBLIC NAMES (for legacy class records)
+   ===================================================== */
+
+type GetUsersPublicNamesData = {
+  userIds: string[];
+};
+
+export const getUsersPublicNames = onCall<GetUsersPublicNamesData>(
+  async ({ auth, data }) => {
+    if (!auth) throw new HttpsError('unauthenticated', 'Login required');
+
+    const userIds = Array.isArray(data?.userIds) ? data.userIds : [];
+    if (!userIds.length) {
+      return {
+        users: {} as Record<string, { first_name: string; last_name: string }>,
+      };
+    }
+
+    const callerRef = db.collection('users').doc(auth.uid);
+    const callerSnap = await callerRef.get();
+    if (!callerSnap.exists) {
+      throw new HttpsError('not-found', 'User not found');
+    }
+
+    const caller = callerSnap.data()!;
+    if (caller?.roles?.teacher !== true) {
+      throw new HttpsError(
+        'permission-denied',
+        'Only teachers can request student names',
+      );
+    }
+
+    const uniqueIds = [...new Set(userIds)].filter(Boolean).slice(0, 100);
+
+    const users: Record<string, { first_name: string; last_name: string }> = {};
+
+    await Promise.all(
+      uniqueIds.map(async (uid) => {
+        const snap = await db.collection('users').doc(uid).get();
+        if (!snap.exists) return;
+
+        const row = snap.data() as { first_name?: string; last_name?: string };
+        users[uid] = {
+          first_name: row.first_name || 'Student',
+          last_name: row.last_name || '',
+        };
+      }),
+    );
+
+    return { users };
+  },
+);

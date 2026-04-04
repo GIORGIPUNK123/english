@@ -381,7 +381,7 @@ export const BecomeTeacherModal = ({
               placeholder='Tell students about yourself and your teaching style...'
               value={formData.bio}
               onChange={handleChange}
-              rows={3}
+              rows={2}
               className={`w-full px-4 py-2.5 border rounded-lg resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.bio
                   ? 'border-red-500'
@@ -402,7 +402,7 @@ export const BecomeTeacherModal = ({
               placeholder='Share your motivation for joining our platform...'
               value={formData.motivation}
               onChange={handleChange}
-              rows={3}
+              rows={2}
               className={`w-full px-4 py-2.5 border rounded-lg resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.motivation
                   ? 'border-red-500'
@@ -463,33 +463,35 @@ export const BecomeTeacherModal = ({
 
   return (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/70 backdrop-blur-sm'
+      className='fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/60 dark:bg-black/70 backdrop-blur-sm'
       onClick={handleModalClose}
     >
       <div
-        className='w-full max-w-2xl transition-all transform bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 dark:border-gray-700 rounded-xl'
+        className='w-full max-w-2xl max-h-[min(calc(100dvh-2rem),920px)] my-auto flex flex-col overflow-hidden transition-all transform bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 dark:border-gray-700 rounded-xl'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='relative p-6 bg-linear-to-r from-blue-500 to-purple-600 rounded-t-xl sm:p-8'>
+        <div className='relative shrink-0 p-5 bg-linear-to-r from-blue-500 to-purple-600 rounded-t-xl sm:p-6'>
           <button
             onClick={handleModalClose}
-            className='absolute p-2 transition-all rounded-lg top-4 right-4 hover:bg-white/10'
+            className='absolute p-2 transition-all rounded-lg top-3 right-3 sm:top-4 sm:right-4 hover:bg-white/10'
           >
             <X className='w-5 h-5 text-white' />
           </button>
-          <h1 className='pr-10 text-2xl font-bold text-white sm:text-3xl'>
+          <h1 className='pr-10 text-xl font-bold text-white sm:text-2xl'>
             Become a Teacher
           </h1>
-          <p className='mt-1 text-white/90'>
+          <p className='mt-1 text-sm text-white/90 sm:text-base'>
             Complete your application using your existing account.
           </p>
         </div>
 
-        <div className='p-6 sm:p-8'>
-          {renderStep()}
+        <div className='flex flex-col flex-1 min-h-0'>
+          <div className='flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 sm:p-6'>
+            {renderStep()}
+          </div>
 
-          <div className='pt-6 mt-8 border-t border-gray-200 dark:border-gray-700'>
-            <div className='flex items-center justify-between mb-4'>
+          <div className='shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 sm:p-6 pt-4'>
+            <div className='flex items-center justify-between mb-3'>
               {[1, 2].map((step) => (
                 <div key={step} className='flex items-center flex-1'>
                   <div
@@ -676,7 +678,7 @@ function FilePicker({
       />
       <label
         htmlFor={id}
-        className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
+        className={`flex flex-col items-center justify-center px-4 py-4 sm:py-5 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
           error
             ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
             : 'bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 hover:border-blue-500'

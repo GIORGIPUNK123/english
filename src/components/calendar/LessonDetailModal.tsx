@@ -21,6 +21,8 @@ interface LessonDetailModalProps {
   setScheduleTime: (
     time: { day: number; hour: number; minute: number; week: number } | null,
   ) => void; // Function to set the default time in the schedule modal
+  /** True when this lesson is in the current user's teaching_classes. */
+  assignedToMe?: boolean;
 }
 
 export const LessonDetailModal = ({
@@ -29,6 +31,7 @@ export const LessonDetailModal = ({
   setRescheduleLesson,
   setScheduleModalIsOpen,
   setScheduleTime,
+  assignedToMe = false,
 }: LessonDetailModalProps) => {
   const [isCancelModalOn, setIsCancelModalOn] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
@@ -127,10 +130,27 @@ export const LessonDetailModal = ({
                 <div className='font-medium text-gray-900 dark:text-white'>
                   {lesson.teacher
                     ? `${lesson.teacher.first_name} ${lesson.teacher.last_name}`
-                    : 'Not assigned'}
+                    : lesson.teacherId
+                      ? 'Teacher assigned'
+                    : userMode === 'teacher'
+                      ? 'Open — any teacher can accept'
+                      : 'Not assigned'}
                 </div>
               </div>
             </div>
+
+            {userMode === 'teacher' && (
+              <div className='flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700'>
+                <div className='text-sm text-gray-600 dark:text-gray-400'>
+                  Student
+                </div>
+                <div className='font-medium text-gray-900 dark:text-white'>
+                  {lesson.student
+                    ? `${lesson.student.first_name} ${lesson.student.last_name}`
+                    : 'Unknown student'}
+                </div>
+              </div>
+            )}
             {/* Lesson Type */}
             <div className='flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700'>
               <div className='text-sm text-gray-600 dark:text-gray-400'>
@@ -162,39 +182,62 @@ export const LessonDetailModal = ({
 
             {/* Action Buttons */}
             <div
-              className={`flex gap-3 pt-2 ${lesson.status !== 'scheduled' && lesson.status !== 'in-progress' ? 'hidden' : ''}`}
+              className={`flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap ${lesson.status !== 'scheduled' && lesson.status !== 'in-progress' ? 'hidden' : ''}`}
             >
-              <button
-                onClick={handleJoinLesson}
-                disabled={!lesson.link}
-                className={`flex items-center justify-center flex-1 gap-2 px-4 py-3 dark:text-white text-gray-900 transition-all rounded-lg ${lesson.link ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 cursor-not-allowed'} `}
-              >
-                <Video className='w-4 h-4' />
-                Join Lesson
-              </button>
-
               {userMode === 'teacher' ? (
                 <>
-                  <button
-                    onClick={handleAcceptLesson}
-                    disabled={
-                      isAccepting ||
-                      lesson.status !== 'scheduled' ||
-                      Boolean(lesson.teacher)
-                    }
-                    className='px-4 py-3 text-white transition-all bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
-                  >
-                    {isAccepting ? 'Accepting...' : 'Accept Lesson'}
-                  </button>
-                  <button
-                    onClick={onClose}
-                    className='px-4 py-3 text-gray-900 transition-all bg-gray-200 rounded-lg dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
-                  >
-                    Not Now
-                  </button>
+                  {!assignedToMe && !lesson.teacherId && (
+                    <>
+                      <button
+                        onClick={handleAcceptLesson}
+                        disabled={isAccepting || lesson.status !== 'scheduled'}
+                        className='flex-1 px-4 py-3 text-white transition-all bg-green-600 rounded-lg min-w-[140px] hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                      >
+                        {isAccepting ? 'Accepting...' : 'Accept lesson'}
+                      </button>
+                      <button
+                        onClick={onClose}
+                        className='flex-1 px-4 py-3 text-gray-900 transition-all bg-gray-200 rounded-lg min-w-[100px] dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+                      >
+                        Close
+                      </button>
+                    </>
+                  )}
+                  {assignedToMe && (
+                    <>
+                      <button
+                        onClick={handleJoinLesson}
+                        disabled={!lesson.link}
+                        className={`flex flex-1 items-center justify-center gap-2 px-4 py-3 min-w-[140px] rounded-lg dark:text-white ${lesson.link ? 'text-white bg-blue-600 hover:bg-blue-700' : 'text-gray-500 cursor-not-allowed bg-gray-200 dark:bg-gray-700'}`}
+                      >
+                        <Video className='w-4 h-4' />
+                        Join lesson
+                      </button>
+                      <button
+                        onClick={() => setIsCancelModalOn(true)}
+                        className='flex-1 px-4 py-3 text-red-500 transition-all border rounded-lg min-w-[100px] bg-red-600/20 dark:text-red-400 hover:bg-red-600/30 border-red-600/30'
+                      >
+                        Cancel lesson
+                      </button>
+                      <button
+                        onClick={onClose}
+                        className='flex-1 px-4 py-3 text-gray-900 transition-all bg-gray-200 rounded-lg min-w-[100px] dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+                      >
+                        Close
+                      </button>
+                    </>
+                  )}
                 </>
               ) : (
                 <>
+                  <button
+                    onClick={handleJoinLesson}
+                    disabled={!lesson.link}
+                    className={`flex items-center justify-center flex-1 gap-2 px-4 py-3 dark:text-white text-gray-900 transition-all rounded-lg ${lesson.link ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 cursor-not-allowed'} `}
+                  >
+                    <Video className='w-4 h-4' />
+                    Join Lesson
+                  </button>
                   <button
                     onClick={() => {
                       setScheduleTime(

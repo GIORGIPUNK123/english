@@ -1,4 +1,4 @@
-import { Clock, Calendar, Video } from 'lucide-react';
+import { Clock, Calendar, Video, RotateCw } from 'lucide-react';
 import { LessonT, TopicT, UserDataT } from '../../../types';
 import { LessonDetailModal } from '../../calendar/LessonDetailModal';
 import { useEffect, useState } from 'react';
@@ -18,6 +18,7 @@ interface StudentDashboardViewProps {
   userData: UserDataT;
   lessons: LessonT[];
   topicsArr: TopicT[];
+  onRefresh?: () => void;
 }
 
 export const StudentDashboardView = ({
@@ -25,6 +26,7 @@ export const StudentDashboardView = ({
   userData,
   lessons,
   topicsArr,
+  onRefresh,
 }: StudentDashboardViewProps) => {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [ratingAverage, setRatingAverage] = useState(0);
@@ -64,7 +66,8 @@ export const StudentDashboardView = ({
   const pendingRequests = lessons.filter(
     (lesson) =>
       lesson.status === 'scheduled' &&
-      lesson.date > Math.floor(Date.now() / 1000),
+      lesson.date > Math.floor(Date.now() / 1000) &&
+      lesson.teacher === null,
   );
 
   useEffect(() => {
@@ -124,9 +127,18 @@ export const StudentDashboardView = ({
 
       {/* Welcome Section */}
       <div className='mb-8'>
-        <h1 className='mb-2 text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
-          Welcome back, {capitalNames[0]}! 👋
-        </h1>
+        <div className='flex items-center justify-between gap-3 mb-2'>
+          <h1 className='text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
+            Welcome back, {capitalNames[0]}! 👋
+          </h1>
+          <button
+            onClick={onRefresh}
+            className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+          >
+            <RotateCw className='w-4 h-4' />
+            <span className='hidden sm:inline'>Refresh</span>
+          </button>
+        </div>
         <TipWidget
           tip={`Welcome back to your dashboard! You have ${userData.tokens} tokens available. Each token = 1 lesson.`}
           // min={true}
@@ -179,10 +191,22 @@ export const StudentDashboardView = ({
           </div>
           <div className='space-y-3'>
             {upcomingLessons.map((lesson) => {
+              const lessonDate = new Date(lesson.date * 1000);
+              const formattedDate = lessonDate.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+              });
+              const formattedTime = lessonDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+              });
               return (
                 <div
                   key={lesson.id}
-                  className='p-3 transition-all border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  className='p-3 transition-all border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800'
+                  onClick={() => setSelectedLesson(lesson)}
                 >
                   <div className='flex items-start gap-3'>
                     <div
@@ -204,16 +228,12 @@ export const StudentDashboardView = ({
                       </p>
                       <div className='flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-500'>
                         <Calendar className='w-3 h-3' />
-                        <span>{lesson.date}</span>
+                        <span>{formattedDate}</span>
                         <span>•</span>
                         <Clock className='w-3 h-3' />
-                        {/* <span>{lesson.time}</span> */}
+                        <span>{formattedTime}</span>
                       </div>
                     </div>
-                    <button className='px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-all flex items-center gap-1 shrink-0'>
-                      <Video className='w-3 h-3' />
-                      <span className='hidden sm:inline'>Join</span>
-                    </button>
                   </div>
                 </div>
               );

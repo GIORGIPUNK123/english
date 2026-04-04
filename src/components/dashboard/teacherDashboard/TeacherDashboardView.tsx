@@ -1,18 +1,24 @@
-import { Clock, Calendar, TrendingUp } from 'lucide-react';
+import { Clock, Calendar, TrendingUp, RotateCw } from 'lucide-react';
+import { useState } from 'react';
 import { LessonT, UserDataT } from '../../../types';
 import { InfoWidget } from '../shared/atoms/InfoWidget';
 import { TipWidget } from '../shared/atoms/TipWidget';
 import { PerformanceOverview } from './PerformanceOverview';
+import { LessonDetailModal } from '../../calendar/LessonDetailModal';
 
 interface TeacherDashboardViewProps {
   userData: UserDataT;
   lessons: LessonT[];
+  onRefresh?: () => void;
 }
 
 export const TeacherDashboardView = ({
   userData,
   lessons,
+  onRefresh,
 }: TeacherDashboardViewProps) => {
+  const [selectedLesson, setSelectedLesson] = useState<LessonT | null>(null);
+
   // Computed values
   const capitalNames = [
     userData.first_name.charAt(0).toUpperCase() + userData.first_name.slice(1),
@@ -29,6 +35,7 @@ export const TeacherDashboardView = ({
   const completedLessons = lessons.filter(
     (lesson) => lesson.status === 'finished',
   );
+  const teachingClassIds = new Set(userData.teaching_classes || []);
 
   const totalStudents = new Set(lessons.map((lesson) => lesson.id)).size;
   console.log('lessons: ', lessons);
@@ -36,9 +43,18 @@ export const TeacherDashboardView = ({
     <div className='h-full overflow-y-auto'>
       {/* Welcome Section */}
       <div className='mb-8'>
-        <h1 className='mb-2 text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
-          Welcome back, {capitalNames[0]}! 👨‍🏫
-        </h1>
+        <div className='flex items-center justify-between gap-3 mb-2'>
+          <h1 className='text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
+            Welcome back, {capitalNames[0]}! 👨‍🏫
+          </h1>
+          <button
+            onClick={onRefresh}
+            className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+          >
+            <RotateCw className='w-4 h-4' />
+            <span className='hidden sm:inline'>Refresh</span>
+          </button>
+        </div>
         <TipWidget
           tip={`You're in Teacher Mode. You have ${upcomingLessons.length} upcoming lessons and ${completedLessons.length} completed.`}
         />
@@ -88,7 +104,8 @@ export const TeacherDashboardView = ({
                 return (
                   <div
                     key={lesson.id}
-                    className='p-3 transition-all border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    className='p-3 transition-all border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer'
+                    onClick={() => setSelectedLesson(lesson)}
                   >
                     <div className='flex items-start gap-3'>
                       <div className='flex-1 min-w-0'>
@@ -169,6 +186,17 @@ export const TeacherDashboardView = ({
 
       {/* Performance Overview */}
       <PerformanceOverview lessons={lessons} totalStudents={totalStudents} />
+
+      {selectedLesson && (
+        <LessonDetailModal
+          lesson={selectedLesson}
+          onClose={() => setSelectedLesson(null)}
+          setRescheduleLesson={() => {}}
+          setScheduleModalIsOpen={() => {}}
+          setScheduleTime={() => {}}
+          assignedToMe={teachingClassIds.has(selectedLesson.id)}
+        />
+      )}
     </div>
   );
 };

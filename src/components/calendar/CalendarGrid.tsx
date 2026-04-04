@@ -21,6 +21,9 @@ interface CalendarGridProps {
   currentWeek: number;
   onLessonClick: (lesson: LessonT) => void;
   onTimeSlotClick: (scheduleState: ScheduleModalState) => void;
+  /** When false, empty slots are not clickable (e.g. teacher view). */
+  enableEmptySlotScheduling?: boolean;
+  teacherView?: boolean;
 }
 
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -32,6 +35,8 @@ export function CalendarGrid({
   currentWeek,
   onLessonClick,
   onTimeSlotClick,
+  enableEmptySlotScheduling = true,
+  teacherView = false,
 }: CalendarGridProps) {
   const getEventsForDayAndHour = (day: number, hour: number) => {
     return lessons.filter((event) =>
@@ -115,6 +120,11 @@ export function CalendarGrid({
                   30,
                 );
 
+                const book00 =
+                  enableEmptySlotScheduling && isSlot00Available;
+                const book30 =
+                  enableEmptySlotScheduling && isSlot30Available;
+
                 return (
                   <div
                     key={dayIndex}
@@ -123,12 +133,14 @@ export function CalendarGrid({
                     {/* Top Half (00 minutes) - Clickable */}
                     <div
                       className={`absolute inset-x-0 top-0 h-1/2 p-2 group ${
-                        isSlot00Available
-                          ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/30'
-                          : 'cursor-not-allowed bg-gray-100 dark:bg-gray-800/30'
+                        !enableEmptySlotScheduling
+                          ? 'cursor-default'
+                          : isSlot00Available
+                            ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/30'
+                            : 'cursor-not-allowed bg-gray-100 dark:bg-gray-800/30'
                       }`}
                       onClick={() => {
-                        if (isSlot00Available) {
+                        if (book00) {
                           onTimeSlotClick({
                             day: dayIndex,
                             hour,
@@ -140,26 +152,32 @@ export function CalendarGrid({
                     >
                       <div
                         className={`opacity-0 group-hover:opacity-100 transition-all text-[10px] ${
-                          isSlot00Available
-                            ? 'text-gray-600 dark:text-gray-400'
-                            : 'text-red-500'
+                          !enableEmptySlotScheduling
+                            ? 'text-transparent'
+                            : isSlot00Available
+                              ? 'text-gray-600 dark:text-gray-400'
+                              : 'text-red-500'
                         }`}
                       >
-                        {isSlot00Available
-                          ? `+ ${hour.toString().padStart(2, '0')}:00`
-                          : '✕ Unavailable'}
+                        {!enableEmptySlotScheduling
+                          ? ''
+                          : isSlot00Available
+                            ? `+ ${hour.toString().padStart(2, '0')}:00`
+                            : '✕ Unavailable'}
                       </div>
                     </div>
 
                     {/* Bottom Half (30 minutes) - Clickable */}
                     <div
                       className={`absolute inset-x-0 bottom-0 h-1/2 p-2 group ${
-                        isSlot30Available
-                          ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/30'
-                          : 'cursor-not-allowed bg-gray-100 dark:bg-gray-800/30'
+                        !enableEmptySlotScheduling
+                          ? 'cursor-default'
+                          : isSlot30Available
+                            ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/30'
+                            : 'cursor-not-allowed bg-gray-100 dark:bg-gray-800/30'
                       }`}
                       onClick={() => {
-                        if (isSlot30Available) {
+                        if (book30) {
                           onTimeSlotClick({
                             day: dayIndex,
                             hour,
@@ -171,14 +189,18 @@ export function CalendarGrid({
                     >
                       <div
                         className={`opacity-0 group-hover:opacity-100 transition-all text-[10px] ${
-                          isSlot30Available
-                            ? 'text-gray-600 dark:text-gray-400'
-                            : 'text-red-500'
+                          !enableEmptySlotScheduling
+                            ? 'text-transparent'
+                            : isSlot30Available
+                              ? 'text-gray-600 dark:text-gray-400'
+                              : 'text-red-500'
                         }`}
                       >
-                        {isSlot30Available
-                          ? `+ ${hour.toString().padStart(2, '0')}:30`
-                          : '✕ Unavailable'}
+                        {!enableEmptySlotScheduling
+                          ? ''
+                          : isSlot30Available
+                            ? `+ ${hour.toString().padStart(2, '0')}:30`
+                            : '✕ Unavailable'}
                       </div>
                     </div>
 
@@ -212,11 +234,17 @@ export function CalendarGrid({
                               {formatTime(event.date + 3600)}
                             </span>
                           </div>
-                          {event.teacher && (
+                          {event.teacher ? (
                             <div className='text-white/70 mt-1 text-[10px]'>
                               {event.teacher.first_name}{' '}
                               {event.teacher.last_name}
                             </div>
+                          ) : (
+                            teacherView && (
+                              <div className='mt-1 text-[10px] text-white/85'>
+                                Open — tap to accept
+                              </div>
+                            )
                           )}
                         </div>
                       );

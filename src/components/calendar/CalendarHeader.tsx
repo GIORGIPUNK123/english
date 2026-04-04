@@ -1,12 +1,17 @@
-import { Plus } from 'lucide-react';
+import { Plus, RotateCw } from 'lucide-react';
 import { WeekNavigation } from './WeekNavigation';
 
-export const CalendarHeader = (props: {
+interface CalendarHeaderProps {
   openModal: () => void;
   weekDates: Date[];
   currentWeek: number;
   setCurrentWeek: React.Dispatch<React.SetStateAction<number>>;
-}) => {
+  variant?: 'student' | 'teacher';
+  onRefresh?: () => void;
+}
+
+export const CalendarHeader = (props: CalendarHeaderProps) => {
+  const isTeacher = props.variant === 'teacher';
   return (
     <div className='mb-6'>
       <div className='flex items-center justify-between mb-4'>
@@ -15,16 +20,29 @@ export const CalendarHeader = (props: {
             Calendar
           </h1>
           <p className='text-sm text-gray-600 dark:text-gray-400 sm:text-base'>
-            Schedule your English lessons
+            {isTeacher
+              ? 'Open requests from students and lessons you have accepted'
+              : 'Schedule your English lessons'}
           </p>
         </div>
-        <button
-          className='flex items-center gap-2 px-4 py-2 text-sm text-white transition-all bg-blue-600 rounded-lg hover:bg-blue-700 sm:text-base'
-          onClick={props.openModal}
-        >
-          <Plus className='w-4 h-4' />
-          <span className='hidden sm:inline'>Book Lesson</span>
-        </button>
+        <div className='flex items-center gap-2'>
+          <button
+            className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+            onClick={props.onRefresh}
+          >
+            <RotateCw className='w-4 h-4' />
+            <span className='hidden sm:inline'>Refresh</span>
+          </button>
+          {!isTeacher && (
+            <button
+              className='flex items-center gap-2 px-4 py-2 text-sm text-white transition-all bg-blue-600 rounded-lg hover:bg-blue-700 sm:text-base'
+              onClick={props.openModal}
+            >
+              <Plus className='w-4 h-4' />
+              <span className='hidden sm:inline'>Book Lesson</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Week Navigation */}

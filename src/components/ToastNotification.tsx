@@ -57,13 +57,13 @@ export function ToastNotification({
   const getColorClasses = () => {
     switch (toast.type) {
       case 'success':
-        return 'border-green-500/30 bg-green-50 dark:bg-green-900/20';
+        return 'border-green-500/30 bg-green-50 dark:bg-green-900/50';
       case 'error':
-        return 'border-red-500/30 bg-red-50 dark:bg-red-900/20';
+        return 'border-red-500/30 bg-red-50 dark:bg-red-900/50';
       case 'warning':
-        return 'border-orange-500/30 bg-orange-50 dark:bg-orange-900/20';
+        return 'border-orange-500/30 bg-orange-50 dark:bg-orange-900/50';
       default:
-        return 'border-blue-500/30 bg-blue-50 dark:bg-blue-900/20';
+        return 'border-blue-500/30 bg-blue-50 dark:bg-blue-900/50';
     }
   };
 

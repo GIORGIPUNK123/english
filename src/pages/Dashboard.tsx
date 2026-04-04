@@ -8,16 +8,16 @@ import { DashboardSidebar } from '../components/dashboard/shared/DashboardSideba
 import { Menu } from 'lucide-react';
 import { StudentDashboardView } from '../components/dashboard/studentDashboard/StudentDashboardView';
 import { TeacherDashboardView } from '../components/dashboard/teacherDashboard/TeacherDashboardView';
-import { StudentNotificationsView } from '../components/dashboard/studentDashboard/StudentNotifications';
-import { StudentCalendar } from '../components/calendar/StudentCalendar';
+import { NotificationsView } from '../components/dashboard/studentDashboard/NotificationsView';
+import { LessonsCalendar } from '../components/calendar/LessonsCalendar';
 import { Loading } from './Loading';
-import { StudentSettingsView } from '../components/dashboard/studentDashboard/StudentSettingsView';
+import { SettingsView } from '../components/dashboard/studentDashboard/SettingsView';
 import { ToastContainer } from '../components/ToastNotification';
 import { useToast } from '../context/ToastContext';
 import { useUserMode } from '../context/UserModeContext';
 import { useFirebaseNotifications } from '../hooks/useFirebaseNotifications';
 import { useFirebaseLessons } from '../hooks/useFirebaseLessons';
-import StudentHistoryView from '../components/dashboard/studentDashboard/StudentHistoryView';
+import HistoryView from '../components/dashboard/studentDashboard/HistoryView';
 import { FinishUserSetup } from '../components/dashboard/shared/FinishUserSetup';
 
 export const Dashboard = () => {
@@ -26,23 +26,34 @@ export const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserDataT | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refetchCounter, setRefetchCounter] = useState(0);
 
   const { userMode, initializeUserMode } = useUserMode();
 
   // ✅ MOVE THESE UP
   const [topicsArr, setTopicsArr] = useState<TopicT[]>([]);
-  const { lessons } =
-    userMode === 'student'
-      ? useFirebaseLessons({
-          classes: userData?.classes,
-          topicsArr,
-          includeCancelled: true,
-        })
-      : useFirebaseLessons({ topicsArr, includeCancelled: true });
+  const { lessons } = useFirebaseLessons({
+    classes: userMode === 'student' ? userData?.classes : undefined,
+    topicsArr,
+    includeCancelled: true,
+    linkForViewer: userMode === 'teacher' ? 'teacher' : 'student',
+    refetchWhenKey:
+      userMode === 'teacher'
+        ? `${(userData?.teaching_classes || []).join(',')}-${refetchCounter}`
+        : `${(userData?.classes || []).join(',')}-${refetchCounter}`,
+  });
   const unCancelledLessons = lessons.filter(
     (lesson) => !lesson.status.startsWith('cancelled'),
   );
   const acceptedLessonIds = new Set(userData?.teaching_classes || []);
+  const calendarLessons =
+    userMode === 'teacher'
+      ? unCancelledLessons.filter((l) => {
+          const openRequest = l.status === 'scheduled' && l.teacher === null;
+          const myLesson = acceptedLessonIds.has(l.id);
+          return openRequest || myLesson;
+        })
+      : unCancelledLessons;
   const historyLessons =
     userMode === 'teacher'
       ? lessons.filter((lesson) => acceptedLessonIds.has(lesson.id))
@@ -121,11 +132,13 @@ export const Dashboard = () => {
             userData={userData}
             lessons={unCancelledLessons}
             topicsArr={topicsArr}
+            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
           />
         ) : (
           <TeacherDashboardView
             userData={userData}
             lessons={unCancelledLessons}
+            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
           />
         );
       case 'courses':
@@ -136,21 +149,25 @@ export const Dashboard = () => {
         );
       case 'history':
         return (
-          <StudentHistoryView
+          <HistoryView
             user={user!}
             userData={userData}
             lessons={historyLessons}
             loading={loading}
             topicsArr={topicsArr}
+            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
           />
         );
       case 'calendar':
         return (
-          <StudentCalendar
+          <LessonsCalendar
             user={user!}
             userData={userData}
-            lessons={unCancelledLessons}
+            lessons={calendarLessons}
             topicsArr={topicsArr}
+            userMode={userMode}
+            teachingClassIds={userData.teaching_classes || []}
+            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
           />
         );
       case 'assignments':
@@ -160,9 +177,9 @@ export const Dashboard = () => {
           </div>
         );
       case 'notifications':
-        return <StudentNotificationsView user={user!} />;
+        return <NotificationsView user={user!} />;
       case 'settings':
-        return <StudentSettingsView email={user!.email!} userData={userData} />;
+        return <SettingsView email={user!.email!} userData={userData} />;
       default:
         return userMode === 'student' ? (
           <StudentDashboardView
@@ -170,11 +187,13 @@ export const Dashboard = () => {
             userData={userData}
             lessons={unCancelledLessons}
             topicsArr={topicsArr}
+            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
           />
         ) : (
           <TeacherDashboardView
             userData={userData}
             lessons={unCancelledLessons}
+            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
           />
         );
     }

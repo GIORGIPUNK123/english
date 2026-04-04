@@ -6,6 +6,8 @@ interface MobileCalendarViewProps {
   weekDates: Date[];
   lessons: LessonT[];
   onLessonClick: (lesson: LessonT) => void;
+  /** When true, show hint for unassigned lessons (teacher calendar). */
+  teacherView?: boolean;
 }
 
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -14,6 +16,7 @@ export function MobileCalendarView({
   weekDates,
   lessons,
   onLessonClick,
+  teacherView = false,
 }: MobileCalendarViewProps) {
   const getEventsForDay = (dayIndex: number) => {
     return lessons.filter((event) => {
@@ -65,10 +68,16 @@ export function MobileCalendarView({
                         {formatTime(event.date + 3600)}
                       </span>
                     </div>
-                    {event.teacher && (
+                    {event.teacher ? (
                       <div className='text-sm text-white/70'>
                         {event.teacher.first_name} {event.teacher.last_name}
                       </div>
+                    ) : (
+                      teacherView && (
+                        <div className='text-sm text-white/80'>
+                          Open request — tap to accept
+                        </div>
+                      )
                     )}
                   </div>
                 ))}

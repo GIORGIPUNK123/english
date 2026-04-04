@@ -21,10 +21,11 @@ dashboard/
 │   ├── NotificationsView.tsx # Notifications page
 │   └── SettingsView.tsx      # Settings page
 └── studentDashboard/         # Student-specific components (legacy)
+  ├── HistoryView.tsx
+  ├── NotificationsView.tsx
+  ├── SettingsView.tsx
     ├── StudentCoursesView.tsx
     ├── StudentDashboardView.tsx  # ⚠️ Deprecated - use DashboardView
-    ├── StudentNotifications.tsx  # ⚠️ Deprecated - use NotificationsView
-    ├── StudentSettingsView.tsx   # ⚠️ Deprecated - use SettingsView
     └── TopUpModal.tsx
 ```
 
@@ -94,8 +95,8 @@ import {
 The StudentDashboard.tsx already uses the new views:
 
 - ✅ Uses `DashboardView` instead of `StudentDashboardView`
-- ✅ Uses `NotificationsView` instead of `StudentNotificationsView`
-- ✅ Uses `SettingsView` instead of `StudentSettingsView`
+- ✅ Uses `NotificationsView` directly
+- ✅ Uses `SettingsView` directly
 
 ### For Teacher Dashboard (Coming Soon)
 

@@ -8,6 +8,7 @@ export {
   rescheduleLesson,
   cancelLesson,
   acceptLesson,
+  getUsersPublicNames,
 } from './lessonFunctions';
 export {
   markNotificationAsRead,
