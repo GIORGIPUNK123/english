@@ -10,12 +10,14 @@ interface TeacherDashboardViewProps {
   userData: UserDataT;
   lessons: LessonT[];
   onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const TeacherDashboardView = ({
   userData,
   lessons,
   onRefresh,
+  isRefreshing = false,
 }: TeacherDashboardViewProps) => {
   const [selectedLesson, setSelectedLesson] = useState<LessonT | null>(null);
 
@@ -49,10 +51,15 @@ export const TeacherDashboardView = ({
           </h1>
           <button
             onClick={onRefresh}
-            className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+            disabled={isRefreshing}
+            className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-60 disabled:cursor-not-allowed'
           >
-            <RotateCw className='w-4 h-4' />
-            <span className='hidden sm:inline'>Refresh</span>
+            <RotateCw
+              className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
+            />
+            <span className='hidden sm:inline'>
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </span>
           </button>
         </div>
         <TipWidget

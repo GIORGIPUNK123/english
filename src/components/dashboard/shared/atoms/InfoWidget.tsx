@@ -8,6 +8,7 @@ import {
   Users,
 } from 'lucide-react';
 import { LessonT, UserDataT } from '../../../../types';
+import { getTokenBalances } from '../../../../utils/tokenUtils';
 
 export const InfoWidget = (props: {
   type:
@@ -42,11 +43,12 @@ export const InfoWidget = (props: {
   const safeRatingAverage =
     typeof ratingAverage === 'number' ? ratingAverage : 0;
   const safeRatingCount = typeof ratingCount === 'number' ? ratingCount : 0;
+  const tokenBalances = getTokenBalances(userData);
   const stats = [
     {
       id: 'tokens',
       label: 'Available Tokens',
-      value: userData.tokens,
+      value: tokenBalances.total,
       icon: Coins,
       color: 'bg-yellow-500',
     },
@@ -134,6 +136,12 @@ export const InfoWidget = (props: {
       <p className='text-xs text-gray-600 sm:text-sm dark:text-gray-400'>
         {stat.label}
       </p>
+      {stat.id === 'tokens' && (
+        <p className='mt-1 text-[11px] text-gray-500 dark:text-gray-400'>
+          1-on-1: {tokenBalances.oneOnOne} | Group: {tokenBalances.group} |
+          Flexible: {tokenBalances.legacy}
+        </p>
+      )}
     </div>
   );
 };

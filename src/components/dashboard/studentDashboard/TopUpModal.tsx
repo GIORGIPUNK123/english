@@ -1,71 +1,34 @@
 import { X, CreditCard, Wallet, Check, Smartphone } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../../firebase/firebase-config';
+import { useToast } from '../../../context/ToastContext';
+import {
+  TokenBalancesT,
+  TokenPurchaseType,
+  TOKEN_BUNDLES_BY_TYPE,
+  getDefaultBundleId,
+  getPurchaseTokenTypeLabel,
+} from '../../../utils/tokenUtils';
 
 interface TopUpModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentTokens: number;
+  tokenBalances: TokenBalancesT;
 }
 
-interface TokenBundle {
-  id: string;
-  tokens: number;
+interface PurchaseTokensRequest {
+  tokenType: TokenPurchaseType;
+  bundleId: string;
+}
+
+interface PurchaseTokensResponse {
+  success: boolean;
+  tokenType: TokenPurchaseType;
+  tokensAdded: number;
+  newBalance: number;
   price: number;
-  originalPrice?: number;
-  discount?: string;
-  popular?: boolean;
-  isCustom?: boolean;
 }
-
-const tokenBundles: TokenBundle[] = [
-  // Custom amounts
-  {
-    id: 'custom-1',
-    tokens: 1,
-    price: 17,
-    isCustom: true,
-  },
-  {
-    id: 'custom-2',
-    tokens: 2,
-    price: 34,
-    isCustom: true,
-  },
-  {
-    id: 'custom-3',
-    tokens: 3,
-    price: 51,
-    isCustom: true,
-  },
-  {
-    id: 'custom-4',
-    tokens: 4,
-    price: 68,
-    isCustom: true,
-  },
-  // Bundles with discounts
-  {
-    id: 'bundle-5',
-    tokens: 5,
-    price: 85,
-    originalPrice: 85,
-  },
-  {
-    id: 'bundle-10',
-    tokens: 10,
-    price: 153,
-    originalPrice: 170,
-    discount: '10% OFF',
-    popular: true,
-  },
-  {
-    id: 'bundle-15',
-    tokens: 15,
-    price: 216.75,
-    originalPrice: 255,
-    discount: '15% OFF',
-  },
-];
 
 const paymentMethods = [
   { id: 'card', name: 'Credit / Debit Card', icon: CreditCard },
@@ -76,24 +39,70 @@ const paymentMethods = [
 export function TopUpModal({
   isOpen,
   onClose,
-  currentTokens,
+  tokenBalances,
 }: TopUpModalProps) {
-  const [selectedBundle, setSelectedBundle] = useState<string>('bundle-10');
+  const [selectedTokenType, setSelectedTokenType] =
+    useState<TokenPurchaseType>('group');
+  const [selectedBundle, setSelectedBundle] = useState<string>(
+    getDefaultBundleId('group'),
+  );
   const [selectedPayment, setSelectedPayment] = useState<string>('card');
   const [isProcessing, setIsProcessing] = useState(false);
+  const { addToast } = useToast();
+
+  const tokenBundles = TOKEN_BUNDLES_BY_TYPE[selectedTokenType];
+  const selectedBundleData =
+    tokenBundles.find((b) => b.id === selectedBundle) || tokenBundles[0];
+
+  useEffect(() => {
+    setSelectedBundle(getDefaultBundleId(selectedTokenType));
+  }, [selectedTokenType]);
+
+  const formatEur = (amount: number) => `EUR ${amount.toFixed(2)}`;
 
   const handlePurchase = async () => {
-    setIsProcessing(true);
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false);
-      // Here you would integrate with actual payment gateway
-      console.log('Purchase:', { selectedBundle, selectedPayment });
-      onClose();
-    }, 2000);
-  };
+    if (!selectedBundleData) {
+      return;
+    }
 
-  const selectedBundleData = tokenBundles.find((b) => b.id === selectedBundle);
+    setIsProcessing(true);
+
+    try {
+      const purchaseFn = httpsCallable<PurchaseTokensRequest, PurchaseTokensResponse>(
+        functions,
+        'purchaseTokens',
+      );
+
+      const result = await purchaseFn({
+        tokenType: selectedTokenType,
+        bundleId: selectedBundleData.id,
+      });
+
+      addToast({
+        title: 'Purchase Successful',
+        message: `Added ${result.data.tokensAdded} ${getPurchaseTokenTypeLabel(result.data.tokenType).toLowerCase()}.`,
+        type: 'success',
+      });
+
+      onClose();
+    } catch (error: any) {
+      let message = 'Could not complete token purchase.';
+
+      if (error?.code === 'functions/unauthenticated') {
+        message = 'Please log in again and retry.';
+      } else if (error?.code === 'functions/invalid-argument') {
+        message = 'Invalid token bundle selected. Please retry.';
+      }
+
+      addToast({
+        title: 'Purchase Failed',
+        message,
+        type: 'error',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -118,18 +127,49 @@ export function TopUpModal({
             Buy Tokens
           </h2>
           <p className='text-xs text-white/90 sm:text-sm'>
-            Current Balance:{' '}
-            <span className='font-semibold'>{currentTokens} tokens</span>
+            Total Balance: <span className='font-semibold'>{tokenBalances.total} tokens</span>
+          </p>
+          <p className='text-[11px] text-white/85 sm:text-xs mt-1'>
+            1-on-1: {tokenBalances.oneOnOne} | Group: {tokenBalances.group} |
+            Flexible: {tokenBalances.legacy}
           </p>
         </div>
 
         <div className='p-4 space-y-4 sm:p-6 sm:space-y-6'>
+          <div>
+            <h3 className='mb-3 text-base font-semibold text-gray-900 sm:text-lg dark:text-white sm:mb-4'>
+              Token Type
+            </h3>
+            <div className='grid grid-cols-2 gap-3'>
+              <button
+                onClick={() => setSelectedTokenType('group')}
+                className={`p-3 rounded-lg border-2 transition-all text-sm sm:text-base ${
+                  selectedTokenType === 'group'
+                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/20'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-blue-400 dark:hover:border-blue-500'
+                }`}
+              >
+                Group Tokens
+              </button>
+              <button
+                onClick={() => setSelectedTokenType('1on1')}
+                className={`p-3 rounded-lg border-2 transition-all text-sm sm:text-base ${
+                  selectedTokenType === '1on1'
+                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/20'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-blue-400 dark:hover:border-blue-500'
+                }`}
+              >
+                1-on-1 Tokens
+              </button>
+            </div>
+          </div>
+
           {/* Custom Token Amounts */}
           <div>
             <h3 className='mb-3 text-base font-semibold text-gray-900 sm:text-lg dark:text-white sm:mb-4'>
-              Buy Custom Amount
+              Buy Custom Amount (1-3 tokens)
             </h3>
-            <div className='grid grid-cols-4 gap-2 sm:gap-3'>
+            <div className='grid grid-cols-3 gap-2 sm:gap-3'>
               {tokenBundles
                 .filter((b) => b.isCustom)
                 .map((bundle) => (
@@ -156,7 +196,7 @@ export function TopUpModal({
                       {bundle.tokens === 1 ? 'Token' : 'Tokens'}
                     </div>
                     <div className='text-xs font-semibold text-gray-900 sm:text-sm dark:text-white'>
-                      ${bundle.price}
+                      {formatEur(bundle.price)}
                     </div>
                   </button>
                 ))}
@@ -168,7 +208,7 @@ export function TopUpModal({
             <h3 className='mb-3 text-base font-semibold text-gray-900 sm:text-lg dark:text-white sm:mb-4'>
               Save with Bundles
             </h3>
-            <div className='grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4'>
+            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 sm:gap-4'>
               {tokenBundles
                 .filter((b) => !b.isCustom)
                 .map((bundle) => (
@@ -222,12 +262,12 @@ export function TopUpModal({
                     <div className='mb-1.5 sm:mb-2'>
                       <div className='flex items-baseline gap-1.5 sm:gap-2'>
                         <span className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white'>
-                          ${bundle.price}
+                          {formatEur(bundle.price)}
                         </span>
                         {bundle.originalPrice &&
                           bundle.originalPrice !== bundle.price && (
                             <span className='text-xs text-gray-500 line-through sm:text-sm dark:text-gray-400'>
-                              ${bundle.originalPrice}
+                              {formatEur(bundle.originalPrice)}
                             </span>
                           )}
                       </div>
@@ -235,13 +275,13 @@ export function TopUpModal({
 
                     {/* Per Token Price */}
                     <div className='text-[10px] sm:text-xs text-gray-600 dark:text-gray-400'>
-                      ${(bundle.price / bundle.tokens).toFixed(2)} per token
+                      {formatEur(bundle.price / bundle.tokens)} per token
                     </div>
 
                     {/* Savings Info */}
                     {bundle.discount && bundle.originalPrice && (
                       <div className='mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium text-green-600 dark:text-green-400'>
-                        Save ${(bundle.originalPrice - bundle.price).toFixed(2)}
+                        Save {formatEur(bundle.originalPrice - bundle.price)}
                       </div>
                     )}
                   </button>
@@ -348,7 +388,7 @@ export function TopUpModal({
                   Selected Bundle:
                 </span>
                 <span className='font-medium text-gray-900 dark:text-white'>
-                  {selectedBundleData?.tokens} Tokens
+                  {selectedBundleData?.tokens} {getPurchaseTokenTypeLabel(selectedTokenType)}
                 </span>
               </div>
               {selectedBundleData?.discount && (
@@ -367,7 +407,9 @@ export function TopUpModal({
                     Total:
                   </span>
                   <span className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white'>
-                    ${selectedBundleData?.price}
+                    {selectedBundleData
+                      ? formatEur(selectedBundleData.price)
+                      : 'EUR 0.00'}
                   </span>
                 </div>
               </div>
@@ -390,7 +432,7 @@ export function TopUpModal({
             >
               {isProcessing
                 ? 'Processing...'
-                : `Pay $${selectedBundleData?.price}`}
+                : `Pay ${selectedBundleData ? formatEur(selectedBundleData.price) : 'EUR 0.00'}`}
             </button>
           </div>
 

@@ -6,6 +6,9 @@ export const mockLessons: LessonT[] = [
     id: '1',
     date: 1768545600, // Jan 13, 2026 09:00 (Monday)
     status: 'scheduled',
+    lessonType: '1on1',
+    participantCount: 1,
+    maxParticipants: 1,
     topic: {
       id: 'topic-1',
       heading: 'Business English',
@@ -22,6 +25,9 @@ export const mockLessons: LessonT[] = [
     id: '2',
     date: 1768581600, // Jan 13, 2026 19:00 (Monday)
     status: 'scheduled',
+    lessonType: 'group',
+    participantCount: 4,
+    maxParticipants: 5,
     topic: {
       id: 'topic-2',
       heading: 'B1.1 Group Class',
@@ -38,6 +44,9 @@ export const mockLessons: LessonT[] = [
     id: '3',
     date: 1768637400, // Jan 14, 2026 10:30 (Tuesday)
     status: 'scheduled',
+    lessonType: 'group',
+    participantCount: 1,
+    maxParticipants: 5,
     topic: {
       id: 'topic-3',
       heading: 'Conversation Practice',
@@ -49,6 +58,9 @@ export const mockLessons: LessonT[] = [
     id: '4',
     date: 1768722000, // Jan 15, 2026 14:00 (Wednesday)
     status: 'finished',
+    lessonType: '1on1',
+    participantCount: 1,
+    maxParticipants: 1,
     topic: {
       id: 'topic-4',
       heading: 'Grammar & Writing',
@@ -65,6 +77,9 @@ export const mockLessons: LessonT[] = [
     id: '5',
     date: 1768668000, // Jan 14, 2026 19:00 (Tuesday)
     status: 'scheduled',
+    lessonType: 'group',
+    participantCount: 3,
+    maxParticipants: 5,
     topic: {
       id: 'topic-2',
       heading: 'B1.1 Group Class',
@@ -81,6 +96,9 @@ export const mockLessons: LessonT[] = [
     id: '6',
     date: 1768811400, // Jan 16, 2026 18:30 (Thursday)
     status: 'scheduled',
+    lessonType: '1on1',
+    participantCount: 1,
+    maxParticipants: 1,
     topic: {
       id: 'topic-5',
       heading: 'IELTS Preparation',
@@ -97,6 +115,9 @@ export const mockLessons: LessonT[] = [
     id: '7',
     date: 1768893600, // Jan 17, 2026 17:00 (Friday)
     status: 'in-progress',
+    lessonType: '1on1',
+    participantCount: 1,
+    maxParticipants: 1,
     topic: {
       id: 'topic-6',
       heading: 'General Speaking',
@@ -113,6 +134,9 @@ export const mockLessons: LessonT[] = [
     id: '8',
     date: 1768974600, // Jan 18, 2026 13:30 (Saturday)
     status: 'scheduled',
+    lessonType: '1on1',
+    participantCount: 1,
+    maxParticipants: 1,
     topic: {
       id: 'topic-7',
       heading: 'Listening Practice',
@@ -124,6 +148,9 @@ export const mockLessons: LessonT[] = [
     id: '9',
     date: 1768538400, // Jan 13, 2026 07:30 (Monday)
     status: 'finished',
+    lessonType: '1on1',
+    participantCount: 1,
+    maxParticipants: 1,
     topic: {
       id: 'topic-8',
       heading: 'Morning Conversation',
@@ -140,6 +167,9 @@ export const mockLessons: LessonT[] = [
     id: '10',
     date: 1768910400, // Jan 17, 2026 22:00 (Friday)
     status: 'scheduled',
+    lessonType: '1on1',
+    participantCount: 1,
+    maxParticipants: 1,
     topic: {
       id: 'topic-9',
       heading: 'Late Night Study',

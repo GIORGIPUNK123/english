@@ -20,6 +20,11 @@ interface CalendarGridProps {
   lessons: LessonT[];
   currentWeek: number;
   onLessonClick: (lesson: LessonT) => void;
+  onOverlappingLessonsClick?: (
+    lessons: LessonT[],
+    dayIndex: number,
+    hour: number,
+  ) => void;
   onTimeSlotClick: (scheduleState: ScheduleModalState) => void;
   /** When false, empty slots are not clickable (e.g. teacher view). */
   enableEmptySlotScheduling?: boolean;
@@ -34,14 +39,15 @@ export function CalendarGrid({
   lessons,
   currentWeek,
   onLessonClick,
+  onOverlappingLessonsClick,
   onTimeSlotClick,
   enableEmptySlotScheduling = true,
   teacherView = false,
 }: CalendarGridProps) {
   const getEventsForDayAndHour = (day: number, hour: number) => {
-    return lessons.filter((event) =>
-      isEventInDayAndHour(event, day, hour, weekDates),
-    );
+    return lessons
+      .filter((event) => isEventInDayAndHour(event, day, hour, weekDates))
+      .sort((a, b) => a.date - b.date);
   };
 
   const isTimeSlotAvailable = (
@@ -109,6 +115,14 @@ export function CalendarGrid({
               {/* Day Cells */}
               {days.map((_, dayIndex) => {
                 const dayEvents = getEventsForDayAndHour(dayIndex, hour);
+                const hasOverlappingEvents = dayEvents.length > 1;
+                const overlapPreview = dayEvents
+                  .slice(0, 2)
+                  .map(
+                    (event) =>
+                      `${formatTime(event.date)} ${event.topic?.heading || 'Lesson'}`,
+                  )
+                  .join(' • ');
                 const isSlot00Available = isTimeSlotAvailable(
                   dayIndex,
                   hour,
@@ -120,10 +134,8 @@ export function CalendarGrid({
                   30,
                 );
 
-                const book00 =
-                  enableEmptySlotScheduling && isSlot00Available;
-                const book30 =
-                  enableEmptySlotScheduling && isSlot30Available;
+                const book00 = enableEmptySlotScheduling && isSlot00Available;
+                const book30 = enableEmptySlotScheduling && isSlot30Available;
 
                 return (
                   <div
@@ -205,50 +217,81 @@ export function CalendarGrid({
                     </div>
 
                     {/* Events */}
-                    {dayEvents.map((event) => {
-                      const eventStartDate = new Date(event.date * 1000);
-                      const eventMinute = eventStartDate.getMinutes();
-                      const isHalfHour = eventMinute === 30;
-
-                      return (
-                        <div
-                          key={event.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onLessonClick(event);
-                          }}
-                          className={`${getLessonColor(event)} text-white p-2 rounded text-xs cursor-pointer hover:opacity-90 transition-all absolute left-2 right-2 ${
-                            isHalfHour ? 'bottom-0 translate-y-1/2' : 'top-2'
-                          }`}
-                          style={{
-                            zIndex: isHalfHour ? 2 : 1,
-                          }}
-                        >
-                          <div className='mb-1 font-medium'>
-                            {event.topic?.heading}
+                    {hasOverlappingEvents && onOverlappingLessonsClick ? (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOverlappingLessonsClick(dayEvents, dayIndex, hour);
+                        }}
+                        className='absolute inset-x-2 top-2 bottom-2 z-[3] rounded-lg bg-indigo-600 p-2 text-white shadow-md cursor-pointer hover:bg-indigo-700 transition-all'
+                      >
+                        <div className='flex items-center justify-between gap-2'>
+                          <div className='text-xs font-semibold'>
+                            {dayEvents.length} classes in this slot
                           </div>
-                          <div className='flex items-center gap-1 text-white/80'>
-                            <Clock className='w-3 h-3' />
-                            <span>
-                              {formatTime(event.date)} -{' '}
-                              {formatTime(event.date + 3600)}
-                            </span>
+                          <div className='text-[10px] text-white/85'>
+                            Tap to view
                           </div>
-                          {event.teacher ? (
-                            <div className='text-white/70 mt-1 text-[10px]'>
-                              {event.teacher.first_name}{' '}
-                              {event.teacher.last_name}
-                            </div>
-                          ) : (
-                            teacherView && (
-                              <div className='mt-1 text-[10px] text-white/85'>
-                                Open — tap to accept
-                              </div>
-                            )
-                          )}
                         </div>
-                      );
-                    })}
+                        <div className='mt-1 text-[10px] text-white/85 truncate'>
+                          {overlapPreview}
+                          {dayEvents.length > 2 ? ' • ...' : ''}
+                        </div>
+                      </div>
+                    ) : (
+                      dayEvents.map((event) => {
+                        const eventStartDate = new Date(event.date * 1000);
+                        const eventMinute = eventStartDate.getMinutes();
+                        const isHalfHour = eventMinute === 30;
+
+                        return (
+                          <div
+                            key={event.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onLessonClick(event);
+                            }}
+                            className={`${getLessonColor(event)} text-white p-2 rounded text-xs cursor-pointer hover:opacity-90 transition-all absolute left-2 right-2 ${
+                              isHalfHour ? 'bottom-0 translate-y-1/2' : 'top-2'
+                            }`}
+                            style={{
+                              zIndex: isHalfHour ? 2 : 1,
+                            }}
+                          >
+                            <div className='mb-1 font-medium'>
+                              {event.topic?.heading}
+                            </div>
+                            <div className='flex items-center gap-1 text-white/80'>
+                              <Clock className='w-3 h-3' />
+                              <span>
+                                {formatTime(event.date)} -{' '}
+                                {formatTime(event.date + 3600)}
+                              </span>
+                            </div>
+                            {event.teacher ? (
+                              <div className='text-white/70 mt-1 text-[10px]'>
+                                {event.teacher.first_name}{' '}
+                                {event.teacher.last_name}
+                              </div>
+                            ) : (
+                              teacherView && (
+                                <div className='mt-1 text-[10px] text-white/85'>
+                                  {event.lessonType === 'group'
+                                    ? `Open ${event.participantCount}/${event.maxParticipants} - tap to accept`
+                                    : 'Open - tap to accept'}
+                                </div>
+                              )
+                            )}
+                            {!teacherView && event.lessonType === 'group' && (
+                              <div className='mt-1 text-[10px] text-white/85'>
+                                {event.participantCount}/{event.maxParticipants}{' '}
+                                joined
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 );
               })}

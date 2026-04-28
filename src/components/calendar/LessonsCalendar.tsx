@@ -5,6 +5,7 @@ import { getWeekDates } from './utils';
 import { CalendarLegend } from './CalendarLegend';
 import { CalendarGrid } from './CalendarGrid';
 import { LessonDetailModal } from './LessonDetailModal';
+import { OverlappingLessonsModal } from './OverlappingLessonsModal';
 import { ScheduleLessonModal } from './ScheduleLessonModal';
 import { MobileCalendarView } from './MobileCalendarView';
 import { User } from 'firebase/auth';
@@ -13,27 +14,42 @@ import {
   useScheduleLessonModal,
   ScheduleModalState,
 } from '../../hooks/useScheduleLessonModal';
+import { getTokenBalances } from '../../utils/tokenUtils';
+
+interface OverlappingLessonsState {
+  lessons: LessonT[];
+  slotDate: Date;
+}
 
 export const LessonsCalendar = (props: {
   user: User;
   userData: UserDataT;
   lessons: LessonT[];
+  openGroupLessons?: LessonT[];
   topicsArr: TopicT[];
   userMode?: 'student' | 'teacher';
   teachingClassIds?: string[];
   onRefresh?: () => void;
+  isRefreshing?: boolean;
 }) => {
   const {
     lessons,
+    openGroupLessons = [],
     topicsArr,
     userData,
     userMode = 'student',
     teachingClassIds = [],
     onRefresh,
+    isRefreshing = false,
   } = props;
   const isTeacherCalendar = userMode === 'teacher';
   const teachingSet = new Set(teachingClassIds);
+  const tokenBalances = getTokenBalances(userData);
   const [selectedLesson, setSelectedLesson] = useState<LessonT | null>(null);
+  const [selectedLessonIsDiscoverable, setSelectedLessonIsDiscoverable] =
+    useState(false);
+  const [overlappingLessonsState, setOverlappingLessonsState] =
+    useState<OverlappingLessonsState | null>(null);
   // const [selectedTeacher, setSelectedTeacher] = useState<string>('');
 
   const {
@@ -56,7 +72,40 @@ export const LessonsCalendar = (props: {
     setShowScheduleModal,
   } = useScheduleLessonModal(topicsArr);
 
+  const discoverableIds = new Set(openGroupLessons.map((lesson) => lesson.id));
+  const visibleLessons = isTeacherCalendar
+    ? lessons
+    : Array.from(
+        new Map(
+          [...lessons, ...openGroupLessons].map((lesson) => [
+            lesson.id,
+            lesson,
+          ]),
+        ).values(),
+      );
+
+  const handleLessonClick = (lesson: LessonT) => {
+    setSelectedLesson(lesson);
+    setSelectedLessonIsDiscoverable(
+      !isTeacherCalendar && discoverableIds.has(lesson.id),
+    );
+  };
+
   const weekDates = getWeekDates(currentWeek);
+
+  const handleOverlappingLessonsClick = (
+    slotLessons: LessonT[],
+    dayIndex: number,
+    hour: number,
+  ) => {
+    const slotDate = new Date(weekDates[dayIndex]);
+    slotDate.setHours(hour, 0, 0, 0);
+
+    setOverlappingLessonsState({
+      lessons: [...slotLessons].sort((a, b) => a.date - b.date),
+      slotDate,
+    });
+  };
 
   const handleTimeSlotClick = (scheduleState: ScheduleModalState) => {
     if (isTeacherCalendar) return;
@@ -73,6 +122,7 @@ export const LessonsCalendar = (props: {
         setCurrentWeek={setCurrentWeek}
         variant={isTeacherCalendar ? 'teacher' : 'student'}
         onRefresh={onRefresh}
+        isRefreshing={isRefreshing}
       />
 
       {/* Legend */}
@@ -89,9 +139,10 @@ export const LessonsCalendar = (props: {
       <div className='flex-1 hidden lg:block'>
         <CalendarGrid
           weekDates={weekDates}
-          lessons={lessons}
+          lessons={visibleLessons}
           currentWeek={currentWeek}
-          onLessonClick={setSelectedLesson}
+          onLessonClick={handleLessonClick}
+          onOverlappingLessonsClick={handleOverlappingLessonsClick}
           onTimeSlotClick={handleTimeSlotClick}
           enableEmptySlotScheduling={!isTeacherCalendar}
           teacherView={isTeacherCalendar}
@@ -111,9 +162,23 @@ export const LessonsCalendar = (props: {
       ) : (
         <MobileCalendarView
           weekDates={weekDates}
-          lessons={lessons}
-          onLessonClick={setSelectedLesson}
+          lessons={visibleLessons}
+          onLessonClick={handleLessonClick}
           teacherView={isTeacherCalendar}
+        />
+      )}
+
+      {/* Overlapping Slot Lessons Modal */}
+      {overlappingLessonsState && (
+        <OverlappingLessonsModal
+          lessons={overlappingLessonsState.lessons}
+          slotDate={overlappingLessonsState.slotDate}
+          teacherView={isTeacherCalendar}
+          onClose={() => setOverlappingLessonsState(null)}
+          onLessonClick={(lesson) => {
+            setOverlappingLessonsState(null);
+            handleLessonClick(lesson);
+          }}
         />
       )}
 
@@ -124,6 +189,11 @@ export const LessonsCalendar = (props: {
           setScheduleModalIsOpen={setShowScheduleModal}
           setScheduleTime={setScheduleTime}
           lesson={selectedLesson}
+          allowGroupJoin={selectedLessonIsDiscoverable}
+          onJoinedGroupLesson={() => {
+            onRefresh?.();
+            setSelectedLessonIsDiscoverable(false);
+          }}
           onClose={() => setSelectedLesson(null)}
           assignedToMe={teachingSet.has(selectedLesson.id)}
         />
@@ -148,7 +218,7 @@ export const LessonsCalendar = (props: {
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           userUid={props.user.uid}
-          availableTokens={userData.tokens}
+          tokenBalances={tokenBalances}
           rescheduleLesson={rescheduleLesson}
           setRescheduleLesson={setRescheduleLesson}
         />

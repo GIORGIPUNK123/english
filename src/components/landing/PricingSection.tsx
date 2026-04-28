@@ -3,53 +3,69 @@ import { Link } from 'react-router-dom';
 
 const pricingPlans = [
   {
-    name: '5 Tokens',
-    price: '$85',
-    originalPrice: '$85',
-    tokens: 5,
+    name: '4 Tokens',
+    price: 44.99,
+    originalPrice: 44.99,
+    tokens: 4,
     savings: null,
     popular: false,
     features: [
-      '5 individual lessons',
+      '4 live group lessons',
       'Flexible scheduling',
       'Progress tracking',
-      'Valid for 3 months',
+      'Balanced weekly pace',
       'Lesson reminders',
     ],
   },
   {
-    name: '10 Tokens',
-    price: '$160',
-    originalPrice: '$170',
-    tokens: 10,
-    savings: '$10',
-    popular: true,
-    features: [
-      '10 individual lessons',
-      'Flexible scheduling',
-      'Detailed progress reports',
-      'Valid for 6 months',
-      'Lesson reminders',
-    ],
-  },
-  {
-    name: '15 Tokens',
-    price: '$230',
-    originalPrice: '$255',
-    tokens: 15,
-    savings: '$25',
+    name: '8 Tokens',
+    price: 59.99,
+    originalPrice: 74.99,
+    tokens: 8,
+    savings: 15,
     popular: false,
     features: [
-      '15 individual lessons',
-      'Premium teacher access',
+      '8 live group lessons',
+      '20% discounted tier',
+      'Flexible scheduling',
+      'Detailed progress reports',
+      'Lesson reminders',
+    ],
+  },
+  {
+    name: '16 Tokens',
+    price: 103.99,
+    originalPrice: 129.99,
+    tokens: 16,
+    savings: 26,
+    popular: true,
+    features: [
+      '16 live group lessons',
+      'Most popular Lingoda tier',
+      '20% discounted tier',
       'Flexible scheduling',
       'Comprehensive feedback',
-      'Valid for 9 months',
-      'Lesson reminders',
+      'Priority support',
+    ],
+  },
+  {
+    name: '32 Tokens',
+    price: 151.99,
+    originalPrice: 189.99,
+    tokens: 32,
+    savings: 38,
+    popular: false,
+    features: [
+      '32 live group lessons',
+      '20% discounted tier',
+      'Intensive learning schedule',
+      'Comprehensive feedback',
       'Priority support',
     ],
   },
 ];
+
+const formatEur = (amount: number) => `EUR ${amount.toFixed(2)}`;
 
 const PricingCard = ({ plan }: { plan: (typeof pricingPlans)[0] }) => {
   return (
@@ -70,22 +86,21 @@ const PricingCard = ({ plan }: { plan: (typeof pricingPlans)[0] }) => {
         <h3 className='mb-2 text-2xl font-bold text-foreground'>{plan.name}</h3>
         <div className='flex items-end justify-center space-x-2'>
           <span className='text-5xl font-bold text-foreground'>
-            {plan.price}
+            {formatEur(plan.price)}
           </span>
         </div>
         {plan.savings && (
           <div className='mt-2 text-sm font-medium text-green-500'>
-            Save {plan.savings}
+            Save {formatEur(plan.savings)}
           </div>
         )}
         {plan.originalPrice !== plan.price && (
           <div className='text-sm line-through text-muted-foreground'>
-            {plan.originalPrice}
+            {formatEur(plan.originalPrice)}
           </div>
         )}
         <div className='mt-2 text-sm text-muted-foreground'>
-          ${(parseInt(plan.price.replace('$', '')) / plan.tokens).toFixed(2)}{' '}
-          per lesson
+          {formatEur(plan.price / plan.tokens)} per lesson
         </div>
       </div>
 
@@ -140,7 +155,7 @@ export const PricingSection = () => {
         </div>
 
         {/* Pricing Cards */}
-        <div className='grid max-w-6xl gap-8 mx-auto md:grid-cols-2 lg:grid-cols-3'>
+        <div className='grid max-w-6xl gap-8 mx-auto md:grid-cols-2 xl:grid-cols-4'>
           {pricingPlans.map((plan, index) => (
             <PricingCard key={index} plan={plan} />
           ))}
@@ -149,7 +164,7 @@ export const PricingSection = () => {
         {/* Additional Info */}
         <div className='mt-16 text-center'>
           <p className='mb-4 text-sm text-muted-foreground'>
-            All prices in USD. Tokens never expire during their validity period.
+            Lingoda-aligned prices shown in EUR for group classes.
           </p>
           <p className='text-sm text-muted-foreground'>
             Need a custom plan?{' '}

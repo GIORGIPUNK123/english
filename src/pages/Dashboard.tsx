@@ -3,7 +3,7 @@ import { auth, db } from '../firebase/firebase-config';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
-import { TopicT, UserDataT } from '../types';
+import { LessonT, TopicT, UserDataT } from '../types';
 import { DashboardSidebar } from '../components/dashboard/shared/DashboardSidebar';
 import { Menu } from 'lucide-react';
 import { StudentDashboardView } from '../components/dashboard/studentDashboard/StudentDashboardView';
@@ -27,12 +27,14 @@ export const Dashboard = () => {
   const [userData, setUserData] = useState<UserDataT | null>(null);
   const [loading, setLoading] = useState(true);
   const [refetchCounter, setRefetchCounter] = useState(0);
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [hasSeenRefreshLoading, setHasSeenRefreshLoading] = useState(false);
 
   const { userMode, initializeUserMode } = useUserMode();
 
   // ✅ MOVE THESE UP
   const [topicsArr, setTopicsArr] = useState<TopicT[]>([]);
-  const { lessons } = useFirebaseLessons({
+  const { lessons, loading: lessonsLoading } = useFirebaseLessons({
     classes: userMode === 'student' ? userData?.classes : undefined,
     topicsArr,
     includeCancelled: true,
@@ -42,9 +44,45 @@ export const Dashboard = () => {
         ? `${(userData?.teaching_classes || []).join(',')}-${refetchCounter}`
         : `${(userData?.classes || []).join(',')}-${refetchCounter}`,
   });
+
+  const { lessons: globallyVisibleLessons, loading: globalLessonsLoading } =
+    useFirebaseLessons({
+      classes: userMode === 'student' ? undefined : [],
+      topicsArr,
+      includeCancelled: false,
+      linkForViewer: 'student',
+      refetchWhenKey: `global-student-${refetchCounter}-${userMode}`,
+    });
+
   const unCancelledLessons = lessons.filter(
     (lesson) => !lesson.status.startsWith('cancelled'),
   );
+
+  const openGroupLessons: LessonT[] =
+    userMode === 'student'
+      ? globallyVisibleLessons.filter((lesson) => {
+          const now = Math.floor(Date.now() / 1000);
+          const inFuture = lesson.date > now;
+          const hasCapacity = lesson.participantCount < lesson.maxParticipants;
+          const isGroup = lesson.lessonType === 'group';
+          const isAlreadyInMyClasses = (userData?.classes || []).includes(
+            lesson.id,
+          );
+          const isAlreadyParticipant = (lesson.participantIds || []).includes(
+            user?.uid || '',
+          );
+
+          return (
+            isGroup &&
+            lesson.status === 'scheduled' &&
+            inFuture &&
+            hasCapacity &&
+            !isAlreadyInMyClasses &&
+            !isAlreadyParticipant
+          );
+        })
+      : [];
+
   const acceptedLessonIds = new Set(userData?.teaching_classes || []);
   const calendarLessons =
     userMode === 'teacher'
@@ -112,6 +150,48 @@ export const Dashboard = () => {
     return () => unsubscribe();
   }, [userData]);
 
+  useEffect(() => {
+    if (!isManualRefreshing) return;
+
+    if (topicsArr.length === 0) {
+      setIsManualRefreshing(false);
+      setHasSeenRefreshLoading(false);
+      return;
+    }
+
+    if (lessonsLoading || globalLessonsLoading) {
+      setHasSeenRefreshLoading(true);
+      return;
+    }
+
+    if (hasSeenRefreshLoading) {
+      setIsManualRefreshing(false);
+      setHasSeenRefreshLoading(false);
+    }
+  }, [
+    isManualRefreshing,
+    hasSeenRefreshLoading,
+    lessonsLoading,
+    globalLessonsLoading,
+  ]);
+
+  useEffect(() => {
+    if (!isManualRefreshing) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setIsManualRefreshing(false);
+      setHasSeenRefreshLoading(false);
+    }, 10000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isManualRefreshing]);
+
+  const handleManualRefresh = () => {
+    setIsManualRefreshing(true);
+    setHasSeenRefreshLoading(false);
+    setRefetchCounter((prev) => prev + 1);
+  };
+
   // ✅ RETURNS COME LAST
   if (loading) return <Loading />;
 
@@ -131,14 +211,17 @@ export const Dashboard = () => {
             user={user!}
             userData={userData}
             lessons={unCancelledLessons}
+            openGroupLessons={openGroupLessons}
             topicsArr={topicsArr}
-            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
+            onRefresh={handleManualRefresh}
+            isRefreshing={isManualRefreshing}
           />
         ) : (
           <TeacherDashboardView
             userData={userData}
             lessons={unCancelledLessons}
-            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
+            onRefresh={handleManualRefresh}
+            isRefreshing={isManualRefreshing}
           />
         );
       case 'courses':
@@ -155,7 +238,8 @@ export const Dashboard = () => {
             lessons={historyLessons}
             loading={loading}
             topicsArr={topicsArr}
-            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
+            onRefresh={handleManualRefresh}
+            isRefreshing={isManualRefreshing}
           />
         );
       case 'calendar':
@@ -164,10 +248,12 @@ export const Dashboard = () => {
             user={user!}
             userData={userData}
             lessons={calendarLessons}
+            openGroupLessons={openGroupLessons}
             topicsArr={topicsArr}
             userMode={userMode}
             teachingClassIds={userData.teaching_classes || []}
-            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
+            onRefresh={handleManualRefresh}
+            isRefreshing={isManualRefreshing}
           />
         );
       case 'assignments':
@@ -186,14 +272,17 @@ export const Dashboard = () => {
             user={user!}
             userData={userData}
             lessons={unCancelledLessons}
+            openGroupLessons={openGroupLessons}
             topicsArr={topicsArr}
-            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
+            onRefresh={handleManualRefresh}
+            isRefreshing={isManualRefreshing}
           />
         ) : (
           <TeacherDashboardView
             userData={userData}
             lessons={unCancelledLessons}
-            onRefresh={() => setRefetchCounter((prev) => prev + 1)}
+            onRefresh={handleManualRefresh}
+            isRefreshing={isManualRefreshing}
           />
         );
     }

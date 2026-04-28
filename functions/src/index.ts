@@ -5,6 +5,7 @@ export const ZOOM_CLIENT_SECRET = process.env.ZOOM_CLIENT_SECRET;
 export { cleanUpOldClasses } from './scheduledFunctions';
 export {
   scheduleLesson,
+  joinGroupLesson,
   rescheduleLesson,
   cancelLesson,
   acceptLesson,
@@ -26,3 +27,4 @@ export {
   getStudentRatingAverage,
   getTeacherRatingAverage,
 } from './ratingFunctions';
+export { purchaseTokens } from './tokenFunctions';

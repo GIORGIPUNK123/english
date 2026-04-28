@@ -18,6 +18,12 @@ export function CalendarLegend({
             Your accepted lessons
           </span>
         </div>
+        <div className='flex items-center gap-2'>
+          <div className='w-3 h-3 bg-indigo-600 rounded'></div>
+          <span className='text-xs text-gray-600 dark:text-gray-400'>
+            Multiple classes in one slot (tap to view)
+          </span>
+        </div>
       </div>
     );
   }
@@ -35,6 +41,12 @@ export function CalendarLegend({
       <div className='flex items-center gap-2'>
         <div className='w-3 h-3 bg-orange-500 rounded'></div>
         <span className='text-xs text-gray-400'>Pending</span>
+      </div>
+      <div className='flex items-center gap-2'>
+        <div className='w-3 h-3 bg-indigo-600 rounded'></div>
+        <span className='text-xs text-gray-400'>
+          Multiple classes in one slot
+        </span>
       </div>
     </div>
   );

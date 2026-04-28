@@ -1,4 +1,4 @@
-import { X, Clock, User, Video } from 'lucide-react';
+import { X, Clock, User, Users, Video } from 'lucide-react';
 import { LessonT } from '../../types';
 import {
   getLessonColor,
@@ -23,6 +23,9 @@ interface LessonDetailModalProps {
   ) => void; // Function to set the default time in the schedule modal
   /** True when this lesson is in the current user's teaching_classes. */
   assignedToMe?: boolean;
+  /** True when lesson is discoverable in calendar but not joined by current student. */
+  allowGroupJoin?: boolean;
+  onJoinedGroupLesson?: () => void;
 }
 
 export const LessonDetailModal = ({
@@ -32,9 +35,12 @@ export const LessonDetailModal = ({
   setScheduleModalIsOpen,
   setScheduleTime,
   assignedToMe = false,
+  allowGroupJoin = false,
+  onJoinedGroupLesson,
 }: LessonDetailModalProps) => {
   const [isCancelModalOn, setIsCancelModalOn] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [isJoiningGroup, setIsJoiningGroup] = useState(false);
   const { addToast } = useToast();
   const { userMode } = useUserMode();
 
@@ -74,6 +80,54 @@ export const LessonDetailModal = ({
       setIsAccepting(false);
     }
   };
+
+  const handleJoinGroupLesson = async () => {
+    if (!allowGroupJoin || lesson.lessonType !== 'group') {
+      return;
+    }
+
+    setIsJoiningGroup(true);
+    try {
+      const fn = httpsCallable<
+        { classId: string },
+        {
+          success: boolean;
+          alreadyJoined: boolean;
+          participantCount: number;
+          maxParticipants: number;
+        }
+      >(functions, 'joinGroupLesson');
+
+      const result = await fn({ classId: lesson.id });
+      const payload = result.data;
+
+      addToast({
+        title: payload.alreadyJoined ? 'Already Joined' : 'Joined Group Class',
+        message: payload.alreadyJoined
+          ? 'You are already in this group class.'
+          : `Joined successfully (${payload.participantCount}/${payload.maxParticipants} students).`,
+        type: 'success',
+      });
+
+      onJoinedGroupLesson?.();
+      onClose();
+    } catch (err: any) {
+      let message = err?.message || 'Could not join this lesson.';
+      if (err?.code === 'functions/failed-precondition') {
+        message =
+          'This class is full, unavailable, or no longer open for joining.';
+      }
+
+      addToast({
+        title: 'Join Failed',
+        message,
+        type: 'error',
+      });
+    } finally {
+      setIsJoiningGroup(false);
+    }
+  };
+
   return (
     <>
       {isCancelModalOn && (
@@ -137,7 +191,18 @@ export const LessonDetailModal = ({
               </div>
             </div>
 
-            {userMode === 'teacher' && (
+            {(userMode === 'teacher' || allowGroupJoin) && (
+              <div className='flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700'>
+                <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400'>
+                  <Users className='w-4 h-4' />
+                  <span>Joined Students</span>
+                </div>
+                <div className='font-medium text-gray-900 dark:text-white'>
+                  {lesson.participantCount}/{lesson.maxParticipants}
+                </div>
+              </div>
+            )}
+            {userMode === 'teacher' && lesson.lessonType === '1on1' && (
               <div className='flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700'>
                 <div className='text-sm text-gray-600 dark:text-gray-400'>
                   Student
@@ -149,10 +214,20 @@ export const LessonDetailModal = ({
                 </div>
               </div>
             )}
+            <div className='flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700'>
+              <div className='text-sm text-gray-600 dark:text-gray-400'>
+                Class Format
+              </div>
+              <div className='font-medium text-gray-900 capitalize dark:text-white'>
+                {lesson.lessonType === 'group'
+                  ? 'Group Class'
+                  : '1-on-1 Lesson'}
+              </div>
+            </div>
             {/* Lesson Type */}
             <div className='flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700'>
               <div className='text-sm text-gray-600 dark:text-gray-400'>
-                Lesson Type
+                Lesson Status
               </div>
               <div className='font-medium text-gray-900 capitalize dark:text-white'>
                 {lesson.status === 'scheduled' && 'Scheduled Lesson'}
@@ -191,7 +266,11 @@ export const LessonDetailModal = ({
                         disabled={isAccepting || lesson.status !== 'scheduled'}
                         className='flex-1 px-4 py-3 text-white transition-all bg-green-600 rounded-lg min-w-[140px] hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
                       >
-                        {isAccepting ? 'Accepting...' : 'Accept lesson'}
+                        {isAccepting
+                          ? 'Accepting...'
+                          : lesson.lessonType === 'group'
+                            ? `Accept group (${lesson.participantCount}/${lesson.maxParticipants})`
+                            : 'Accept lesson'}
                       </button>
                       <button
                         onClick={onClose}
@@ -225,6 +304,22 @@ export const LessonDetailModal = ({
                       </button>
                     </>
                   )}
+                </>
+              ) : allowGroupJoin ? (
+                <>
+                  <button
+                    onClick={handleJoinGroupLesson}
+                    disabled={isJoiningGroup || lesson.status !== 'scheduled'}
+                    className='flex-1 px-4 py-3 text-white transition-all bg-blue-600 rounded-lg min-w-[140px] hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                  >
+                    {isJoiningGroup ? 'Joining...' : 'Join Group Class'}
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className='flex-1 px-4 py-3 text-gray-900 transition-all bg-gray-200 rounded-lg min-w-[100px] dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+                  >
+                    Close
+                  </button>
                 </>
               ) : (
                 <>

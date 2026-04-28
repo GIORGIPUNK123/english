@@ -8,6 +8,7 @@ interface CalendarHeaderProps {
   setCurrentWeek: React.Dispatch<React.SetStateAction<number>>;
   variant?: 'student' | 'teacher';
   onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const CalendarHeader = (props: CalendarHeaderProps) => {
@@ -27,11 +28,16 @@ export const CalendarHeader = (props: CalendarHeaderProps) => {
         </div>
         <div className='flex items-center gap-2'>
           <button
-            className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+            className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-60 disabled:cursor-not-allowed'
             onClick={props.onRefresh}
+            disabled={props.isRefreshing}
           >
-            <RotateCw className='w-4 h-4' />
-            <span className='hidden sm:inline'>Refresh</span>
+            <RotateCw
+              className={`w-4 h-4 ${props.isRefreshing ? 'animate-spin' : ''}`}
+            />
+            <span className='hidden sm:inline'>
+              {props.isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </span>
           </button>
           {!isTeacher && (
             <button

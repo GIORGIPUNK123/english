@@ -6,6 +6,7 @@ import { useScheduleLessonModal } from '../../../hooks/useScheduleLessonModal';
 import { ScheduleLessonModal } from '../../calendar/ScheduleLessonModal';
 import { User } from 'firebase/auth';
 import { useUserMode } from '../../../context/UserModeContext';
+import { getTokenBalances } from '../../../utils/tokenUtils';
 
 interface HistoryViewProps {
   user: User;
@@ -14,6 +15,7 @@ interface HistoryViewProps {
   loading: boolean;
   topicsArr: TopicT[];
   onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 const HistoryView: React.FC<HistoryViewProps> = ({
@@ -23,10 +25,12 @@ const HistoryView: React.FC<HistoryViewProps> = ({
   loading,
   topicsArr,
   onRefresh,
+  isRefreshing = false,
 }) => {
   const [selectedLesson, setSelectedLesson] = useState<LessonT | null>(null);
   const { userMode } = useUserMode();
   const teachingClassIds = new Set(userData.teaching_classes || []);
+  const tokenBalances = getTokenBalances(userData);
 
   const showDetails = (lesson: LessonT) => {
     setSelectedLesson(lesson);
@@ -128,10 +132,15 @@ const HistoryView: React.FC<HistoryViewProps> = ({
             </h2>
             <button
               onClick={onRefresh}
-              className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+              disabled={isRefreshing}
+              className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-60 disabled:cursor-not-allowed'
             >
-              <RotateCw className='w-4 h-4' />
-              <span className='hidden sm:inline'>Refresh</span>
+              <RotateCw
+                className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
+              />
+              <span className='hidden sm:inline'>
+                {isRefreshing ? 'Refreshing...' : 'Refresh'}
+              </span>
             </button>
           </div>
           <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
@@ -156,7 +165,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             userUid={user.uid}
-            availableTokens={userData.tokens}
+            tokenBalances={tokenBalances}
             rescheduleLesson={rescheduleLesson}
             setRescheduleLesson={setRescheduleLesson}
           />

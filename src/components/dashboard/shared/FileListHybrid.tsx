@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../firebase/firebase-config';
+import { RotateCw } from 'lucide-react';
 import {
   useFileUploadHybrid,
   FileMetadataT,
@@ -200,13 +201,14 @@ export const FileListHybrid: React.FC<FileListHybridProps> = ({ userId }) => {
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className={`px-4 py-2 text-sm font-semibold text-white transition-colors rounded-lg ${
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition-colors rounded-lg ${
             refreshing
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {refreshing ? '⏳ Refreshing...' : '🔄 Refresh'}
+          <RotateCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
         </button>
       </div>
 

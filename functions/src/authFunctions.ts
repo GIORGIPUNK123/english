@@ -15,6 +15,10 @@ export interface UserDataT {
   classes: string[]; // Classes the user is taking
   tokens: number;
   used_tokens: number;
+  group_tokens: number;
+  used_group_tokens: number;
+  one_on_one_tokens: number;
+  used_one_on_one_tokens: number;
   student_ratings?: {
     [raterId: string]: { rating: number; comment?: string }[];
   }; // ⚠️ SUBCOLLECTION: users/{userId}/student_ratings
@@ -44,6 +48,10 @@ export const createFirestoreUser = functions.auth
         classes: [],
         tokens: 0,
         used_tokens: 0,
+        group_tokens: 0,
+        used_group_tokens: 0,
+        one_on_one_tokens: 0,
+        used_one_on_one_tokens: 0,
         teaching_classes: [],
       })
       .then(() => {
@@ -119,6 +127,10 @@ export const registerUser = onCall<{
         classes: [],
         tokens: 0,
         used_tokens: 0,
+        group_tokens: 0,
+        used_group_tokens: 0,
+        one_on_one_tokens: 0,
+        used_one_on_one_tokens: 0,
         teaching_classes: [],
       });
 
@@ -372,6 +384,10 @@ export const registerSocialUser = onCall<{
         classes: [],
         tokens: 0,
         used_tokens: 0,
+        group_tokens: 0,
+        used_group_tokens: 0,
+        one_on_one_tokens: 0,
+        used_one_on_one_tokens: 0,
         teaching_classes: [],
       });
 

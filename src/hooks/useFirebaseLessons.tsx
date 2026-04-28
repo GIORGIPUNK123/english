@@ -55,15 +55,46 @@ export const useFirebaseLessons = ({
               id: classId,
               date: 0,
               status: 'scheduled' as const,
+              lessonType: '1on1' as const,
+              participantIds: [],
+              participantCount: 0,
+              maxParticipants: 1,
               topic: null,
               teacher: null,
               student: null,
               studentId: '',
+              createdBy: '',
               link: null,
             };
           }
 
           const classData = classSnap.data() as ClassesT;
+
+          const lessonType =
+            classData.lesson_type ||
+            (typeof classData.max_students === 'number' &&
+            classData.max_students > 1
+              ? 'group'
+              : '1on1');
+
+          const participantIds = Array.isArray(classData.participant_ids)
+            ? classData.participant_ids.filter((id) => !!id)
+            : classData.student_id
+              ? [classData.student_id]
+              : [];
+
+          const participantCount =
+            typeof classData.participant_count === 'number'
+              ? classData.participant_count
+              : participantIds.length;
+
+          const maxParticipants =
+            typeof classData.max_students === 'number' &&
+            classData.max_students > 0
+              ? classData.max_students
+              : lessonType === 'group'
+                ? 5
+                : 1;
 
           if (isGlobalFetch && classData.student_id === classData.teacher_id) {
             return null;
@@ -118,6 +149,10 @@ export const useFirebaseLessons = ({
             id: classSnap.id,
             date: classData.date,
             status: classData.status,
+            lessonType,
+            participantIds,
+            participantCount,
+            maxParticipants,
             topic: topic ? { id: topic.id, heading: topic.heading } : null,
             teacher: teacher
               ? {
@@ -129,6 +164,7 @@ export const useFirebaseLessons = ({
               : null,
             student,
             studentId: classData.student_id || '',
+            createdBy: classData.created_by || classData.student_id || '',
             link,
           };
         },
@@ -150,7 +186,7 @@ export const useFirebaseLessons = ({
         string,
         { first_name: string; last_name: string }
       > = {};
-      if (missingStudentIds.length) {
+      if (missingStudentIds.length && linkForViewer === 'teacher') {
         try {
           const getUsersPublicNames = httpsCallable<
             { userIds: string[] },

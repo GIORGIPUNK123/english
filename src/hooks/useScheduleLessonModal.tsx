@@ -77,6 +77,11 @@ export const useScheduleLessonModal = (topicsArr: TopicT[]) => {
     }
   }, [topicsArr, selectedTopicId]);
 
+  useEffect(() => {
+    if (!rescheduleLesson) return;
+    setLessonType(rescheduleLesson.lessonType || '1on1');
+  }, [rescheduleLesson]);
+
   return {
     // State
     currentWeek,

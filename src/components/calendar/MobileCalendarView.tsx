@@ -75,9 +75,16 @@ export function MobileCalendarView({
                     ) : (
                       teacherView && (
                         <div className='text-sm text-white/80'>
-                          Open request — tap to accept
+                          {event.lessonType === 'group'
+                            ? `Open request (${event.participantCount}/${event.maxParticipants}) - tap to accept`
+                            : 'Open request - tap to accept'}
                         </div>
                       )
+                    )}
+                    {!teacherView && event.lessonType === 'group' && (
+                      <div className='text-sm text-white/80'>
+                        {event.participantCount}/{event.maxParticipants} joined
+                      </div>
                     )}
                   </div>
                 ))}

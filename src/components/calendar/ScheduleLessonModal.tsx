@@ -8,6 +8,11 @@ import {
 import { functions } from '../../firebase/firebase-config';
 import { useToast } from '../../context/ToastContext';
 import { httpsCallable } from 'firebase/functions';
+import {
+  TokenBalancesT,
+  getAvailableTokensForLessonType,
+  getLessonTokenLabel,
+} from '../../utils/tokenUtils';
 
 interface ScheduleModalState {
   day: number;
@@ -33,7 +38,7 @@ interface ScheduleLessonModalProps {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   userUid: string;
-  availableTokens: number;
+  tokenBalances: TokenBalancesT;
   rescheduleLesson?: LessonT | null; // If present, modal is in "reschedule" mode
   setRescheduleLesson?: (lesson: LessonT | null) => void; // Function to set the lesson being rescheduled, or null to clear it
 }
@@ -51,10 +56,11 @@ const LessonTypeDisplay = (props: {
       <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
         Lesson Type
       </label>
-      <div className={`grid ${rescheduleLesson && 'grid-cols-2 gap-3'}`}>
+      <div className='grid grid-cols-2 gap-3'>
         <button
-          className={` ${!rescheduleLesson && lessonType !== '1on1' && 'hidden'} p-4 ${lessonType === '1on1' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'}`}
-          onClick={() => rescheduleLesson && onLessonTypeChange('1on1')}
+          className={`p-4 ${lessonType === '1on1' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'} ${rescheduleLesson ? 'opacity-70 cursor-not-allowed' : ''}`}
+          onClick={() => !rescheduleLesson && onLessonTypeChange('1on1')}
+          disabled={!!rescheduleLesson}
         >
           <div className='mb-1 font-medium text-gray-900 dark:text-white'>
             1-on-1 Lesson
@@ -64,17 +70,21 @@ const LessonTypeDisplay = (props: {
           </div>
         </button>
         <button
-          className={` ${!rescheduleLesson && lessonType !== 'group' && 'hidden'} p-4 ${lessonType === 'group' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'}`}
-          onClick={() => rescheduleLesson && onLessonTypeChange('group')}
+          className={`p-4 ${lessonType === 'group' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'} ${rescheduleLesson ? 'opacity-70 cursor-not-allowed' : ''}`}
+          onClick={() => !rescheduleLesson && onLessonTypeChange('group')}
+          disabled={!!rescheduleLesson}
         >
           <div className='mb-1 font-medium text-gray-900 dark:text-white'>
             Group Class
           </div>
           <div className='text-xs text-gray-600 dark:text-gray-400'>
-            Learn with others
+            Up to 5 students
           </div>
         </button>
       </div>
+      <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
+        Group classes proceed when at least 2 students are joined.
+      </p>
     </div>
   );
 };
@@ -93,7 +103,7 @@ export const ScheduleLessonModal = ({
   lessons,
   onClose,
   selectedDate,
-  availableTokens,
+  tokenBalances,
   rescheduleLesson,
 }: ScheduleLessonModalProps) => {
   const modalWeekDates = getWeekDates(scheduleTime.week);
@@ -108,9 +118,16 @@ export const ScheduleLessonModal = ({
     : lessons;
   const isConflicting = isTimestampConflicting(timestamp, filteredLessons);
   const isTooSoon = isTimestampTooSoon(timestamp);
+  const lessonTokenLabel = getLessonTokenLabel(lessonType);
+  const availableTokensForType = getAvailableTokensForLessonType(
+    tokenBalances,
+    lessonType,
+  );
   const validationMessages: string[] = [];
-  if (availableTokens <= 0) {
-    validationMessages.push('No tokens available. Please top up to schedule.');
+  if (!rescheduleLesson && availableTokensForType <= 0) {
+    validationMessages.push(
+      `No ${lessonTokenLabel.toLowerCase()} available. Please top up to schedule.`,
+    );
   }
   if (isTooSoon) {
     validationMessages.push('Must be at least 24 hours in the future.');
@@ -136,14 +153,20 @@ export const ScheduleLessonModal = ({
     const date = Math.floor(selectedDate.getTime() / 1000);
 
     const fn = httpsCallable<
-      { date: number; topicId: string },
-      { classId: string }
+      { date: number; topicId: string; lessonType: '1on1' | 'group' },
+      {
+        classId: string;
+        lessonType: '1on1' | 'group';
+        participantCount: number;
+        maxParticipants: number;
+      }
     >(functions, 'scheduleLesson');
 
     try {
       const res = await fn({
         date,
         topicId: selectedTopicId,
+        lessonType,
       });
 
       addToast({
@@ -160,7 +183,13 @@ export const ScheduleLessonModal = ({
       let message = 'Failed to schedule lesson';
 
       if (err.code === 'functions/failed-precondition') {
-        message = 'You do not have enough tokens';
+        const backendMessage =
+          typeof err?.message === 'string'
+            ? err.message.replace('functions/failed-precondition: ', '')
+            : '';
+        message =
+          backendMessage ||
+          `You do not have enough ${lessonTokenLabel.toLowerCase()}s`;
       } else if (err.code === 'functions/unauthenticated') {
         message = 'Please log in again';
       }
@@ -458,6 +487,7 @@ export const ScheduleLessonModal = ({
           <LessonTypeDisplay
             lessonType={lessonType}
             onLessonTypeChange={onLessonTypeChange}
+            rescheduleLesson={rescheduleLesson || undefined}
           />
 
           {/* Teacher Selection */}
@@ -521,10 +551,14 @@ export const ScheduleLessonModal = ({
                 T
               </div>
               <span className='font-semibold text-gray-900 dark:text-white'>
-                1 Token
+                1 {lessonTokenLabel}
               </span>
             </div>
           </div>
+          <p className='text-xs text-gray-500 dark:text-gray-400 -mt-3'>
+            Available for this lesson type: {availableTokensForType} (including
+            flexible tokens)
+          </p>
 
           {/* Action Buttons */}
           <div className='flex gap-3 pt-2'>

@@ -109,8 +109,8 @@ export const CancelModal = ({
               </p>
               <p className='text-sm text-gray-700 dark:text-gray-300'>
                 {isWithin24Hours
-                  ? 'You can cancel this lesson, but your token will not be refunded because it is within 24 hours of the scheduled time.'
-                  : 'You can cancel this lesson and your token will be refunded.'}
+                  ? 'You can cancel this lesson, but your lesson token will not be refunded because it is within 24 hours of the scheduled time.'
+                  : 'You can cancel this lesson and your lesson token will be refunded.'}
               </p>
             </div>
           </div>

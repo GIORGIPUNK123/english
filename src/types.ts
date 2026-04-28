@@ -10,14 +10,21 @@ export type StatusT =
   | 'cancelled_teacher'
   | 'cancelled_system';
 
+export type LessonTypeT = '1on1' | 'group';
+
 export interface LessonT {
   id: string;
   date: number;
   status: StatusT;
+  lessonType: LessonTypeT;
+  participantIds?: string[];
+  participantCount: number;
+  maxParticipants: number;
   topic: TopicT | null;
   teacher: TeacherT | null;
   student?: StudentT | null;
   studentId?: string;
+  createdBy?: string;
   link: string | null;
 }
 
@@ -71,8 +78,12 @@ export interface UserDataT {
 
   // Student fields
   classes: string[]; // Classes the user is taking
-  tokens: number;
-  used_tokens: number;
+  tokens: number; // Legacy flexible tokens (backward compatibility)
+  used_tokens: number; // Legacy flexible token usage
+  group_tokens?: number;
+  used_group_tokens?: number;
+  one_on_one_tokens?: number;
+  used_one_on_one_tokens?: number;
   student_ratings?: {
     [raterId: string]: { rating: number; comment?: string }[];
   }; // ⚠️ SUBCOLLECTION: users/{userId}/student_ratings
@@ -99,6 +110,13 @@ export interface ClassesT {
   date: number;
   status: StatusT;
   topic_id: string;
+  lesson_type?: LessonTypeT;
+  max_students?: number;
+  participant_ids?: string[];
+  participant_token_sources?: Record<string, 'group' | '1on1' | 'legacy'>;
+  participant_count?: number;
+  created_by?: string;
+  valid_min_students?: number;
   student_id: string;
   student_first_name?: string;
   student_last_name?: string;
@@ -110,8 +128,9 @@ export interface ClassesT {
   student_link: string | null;
   teacher_link: string | null;
   zoom_meeting_id?: number | null;
-  cancelled_by?: 'student' | 'teacher';
+  cancelled_by?: 'student' | 'teacher' | 'system';
   cancelled_at?: Timestamp;
+  cancelled_reason?: string;
 }
 export interface TeacherT {
   first_name: string;
