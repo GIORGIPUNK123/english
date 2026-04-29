@@ -1,73 +1,74 @@
 import { Check, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { TOKEN_BUNDLES_BY_TYPE } from '../../utils/tokenUtils';
 
-const pricingPlans = [
-  {
-    name: '4 Tokens',
-    price: 44.99,
-    originalPrice: 44.99,
-    tokens: 4,
-    savings: null,
-    popular: false,
-    features: [
-      '4 live group lessons',
-      'Flexible scheduling',
-      'Progress tracking',
-      'Balanced weekly pace',
-      'Lesson reminders',
-    ],
-  },
-  {
-    name: '8 Tokens',
-    price: 59.99,
-    originalPrice: 74.99,
-    tokens: 8,
-    savings: 15,
-    popular: false,
-    features: [
-      '8 live group lessons',
-      '20% discounted tier',
-      'Flexible scheduling',
-      'Detailed progress reports',
-      'Lesson reminders',
-    ],
-  },
-  {
-    name: '16 Tokens',
-    price: 103.99,
-    originalPrice: 129.99,
-    tokens: 16,
-    savings: 26,
-    popular: true,
-    features: [
-      '16 live group lessons',
-      'Most popular Lingoda tier',
-      '20% discounted tier',
-      'Flexible scheduling',
-      'Comprehensive feedback',
-      'Priority support',
-    ],
-  },
-  {
-    name: '32 Tokens',
-    price: 151.99,
-    originalPrice: 189.99,
-    tokens: 32,
-    savings: 38,
-    popular: false,
-    features: [
-      '32 live group lessons',
-      '20% discounted tier',
-      'Intensive learning schedule',
-      'Comprehensive feedback',
-      'Priority support',
-    ],
-  },
-];
+type PricingPlan = {
+  name: string;
+  price: number;
+  originalPrice: number;
+  tokens: number;
+  savings: number | null;
+  popular: boolean;
+  features: string[];
+};
+
+const featureByTokens: Record<number, string[]> = {
+  4: [
+    '4 live group lessons',
+    'Flexible scheduling',
+    'Progress tracking',
+    'Balanced weekly pace',
+    'Lesson reminders',
+  ],
+  8: [
+    '8 live group lessons',
+    '20% discounted tier',
+    'Flexible scheduling',
+    'Detailed progress reports',
+    'Lesson reminders',
+  ],
+  16: [
+    '16 live group lessons',
+    'Most popular Lingoda tier',
+    '20% discounted tier',
+    'Flexible scheduling',
+    'Comprehensive feedback',
+    'Priority support',
+  ],
+  32: [
+    '32 live group lessons',
+    '20% discounted tier',
+    'Intensive learning schedule',
+    'Comprehensive feedback',
+    'Priority support',
+  ],
+};
+
+const pricingPlans: PricingPlan[] = TOKEN_BUNDLES_BY_TYPE.group
+  .filter((bundle) => !bundle.isCustom)
+  .map((bundle) => {
+    const originalPrice = bundle.originalPrice ?? bundle.price;
+    const savings =
+      originalPrice > bundle.price
+        ? Math.round((originalPrice - bundle.price) * 100) / 100
+        : null;
+
+    return {
+      name: `${bundle.tokens} Tokens`,
+      price: bundle.price,
+      originalPrice,
+      tokens: bundle.tokens,
+      savings,
+      popular: Boolean(bundle.popular),
+      features:
+        featureByTokens[bundle.tokens] ??
+        [`${bundle.tokens} live group lessons`, 'Flexible scheduling'],
+    };
+  });
 
 const formatEur = (amount: number) => `EUR ${amount.toFixed(2)}`;
 
-const PricingCard = ({ plan }: { plan: (typeof pricingPlans)[0] }) => {
+const PricingCard = ({ plan }: { plan: PricingPlan }) => {
   return (
     <div
       className={`relative bg-card border ${plan.popular ? 'border-blue-500 shadow-xl scale-105' : 'border-border'} rounded-2xl p-8 hover:shadow-xl transition-all duration-300`}
