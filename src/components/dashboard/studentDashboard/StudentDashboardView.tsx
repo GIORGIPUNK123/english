@@ -11,7 +11,6 @@ import { useScheduleLessonModal } from '../../../hooks/useScheduleLessonModal';
 import { TopUpModal } from '../studentDashboard/TopUpModal';
 import { InfoWidget } from '../shared/atoms/InfoWidget';
 import { PendingRequests } from './PendingRequests';
-import { FavoriteTeachers } from './FavoriteTeachers';
 import { TipWidget } from '../shared/atoms/TipWidget';
 import { getStudentRatingAverage } from '../../../firebase/firebaseUserUtils';
 import { useToast } from '../../../context/ToastContext';
@@ -400,9 +399,6 @@ export const StudentDashboardView = ({
           </div>
         )}
       </div>
-
-      {/* Favorite Teachers */}
-      <FavoriteTeachers />
 
       {/* Top Up Modal */}
       {showTopUpModal && (
