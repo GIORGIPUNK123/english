@@ -46,6 +46,7 @@ type FirestoreClassDoc = {
   date?: number;
   status?: ClassStatusT | string;
   topic_id?: string;
+  level?: string;
   student_id?: string;
   student_first_name?: string;
   student_last_name?: string;
@@ -244,6 +245,7 @@ async function getDownloadURLFromPath(storagePath: string): Promise<string> {
 type ScheduleLessonData = {
   date: number;
   topicId: string;
+  level: string;
   lessonType?: LessonType;
 };
 
@@ -251,10 +253,10 @@ export const scheduleLesson = onCall<ScheduleLessonData>(
   async ({ auth, data }) => {
     if (!auth) throw new HttpsError('unauthenticated', 'Login required');
 
-    const { date, topicId, lessonType } = data;
+    const { date, topicId, level, lessonType } = data;
     const userId = auth.uid;
 
-    if (!date || !topicId) {
+    if (!date || !topicId || !level) {
       throw new HttpsError('invalid-argument', 'Missing fields');
     }
 
@@ -289,6 +291,7 @@ export const scheduleLesson = onCall<ScheduleLessonData>(
         date,
         status: 'scheduled',
         topic_id: topicId,
+        level,
         lesson_type: normalizedLessonType,
         max_students: maxParticipants,
         participant_ids: [userId],
@@ -476,18 +479,19 @@ type RescheduleLessonData = {
   lessonId: string;
   date: number;
   topicId: string;
+  level: string;
 };
 
 export const rescheduleLesson = onCall<RescheduleLessonData>(
   async ({ auth, data }) => {
     if (!auth) throw new HttpsError('unauthenticated', 'Login required');
 
-    const { lessonId, date, topicId } = data;
+    const { lessonId, date, topicId, level } = data;
     const userId = auth.uid;
     const now = Math.floor(Date.now() / 1000);
     const minTimeFromNow = 24 * 3600; // 24 hours in seconds
 
-    if (!lessonId || !date || !topicId) {
+    if (!lessonId || !date || !topicId || !level) {
       throw new HttpsError('invalid-argument', 'Missing fields');
     }
 
@@ -529,6 +533,7 @@ export const rescheduleLesson = onCall<RescheduleLessonData>(
       tx.update(classRef, {
         date,
         topic_id: topicId,
+        level,
       });
     });
 

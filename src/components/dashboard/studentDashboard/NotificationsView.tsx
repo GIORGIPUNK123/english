@@ -19,6 +19,7 @@ import { db } from '../../../firebase/firebase-config';
 import { NotificationT } from '../../../types';
 import { useTimeAgo } from '../../../hooks/useTimeAgo';
 import { useMarkAsRead } from '../../../hooks/useMarkAsRead';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const iconMap = {
   info: Info,
@@ -56,6 +57,7 @@ const NotificationCard = (props: {
 }) => {
   const { notification, markAsRead } = props;
   const [isOn, setIsOn] = useState(false);
+  const { t } = useLanguage();
   const Icon = iconMap[notification.message_type] || DefaultIcon;
   const colorClass = colorMap[notification.message_type] || defaultColor;
   return (
@@ -88,7 +90,7 @@ const NotificationCard = (props: {
                   <span>{notification.heading}</span>
                   {!notification.read && (
                     <span className='bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap'>
-                      New
+                      {t('notifications.newBadge')}
                     </span>
                   )}
                 </h4>
@@ -121,6 +123,7 @@ const ViewNotificationModal = ({
 }) => {
   const Icon = iconMap[notification.message_type] || DefaultIcon;
   const colorClass = colorMap[notification.message_type] || defaultColor;
+  const { t } = useLanguage();
 
   return (
     <>
@@ -159,19 +162,19 @@ const ViewNotificationModal = ({
             {notification.teacher && (
               <div className='p-3 mb-4 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700'>
                 <p className='mb-1 text-xs text-gray-600 dark:text-gray-400'>
-                  From
+                  {t('notifications.from')}
                 </p>
                 <p className='text-sm text-gray-900 dark:text-white'>
                   {notification.teacher
                     ? `${notification.teacher.first_name} ${notification.teacher.last_name}`
-                    : 'Teacher'}
+                    : t('sidebar.teacher')}
                 </p>
               </div>
             )}
 
             <div className='mb-6'>
-              <p className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
-                Message
+                <p className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
+                {t('notifications.messageLabel')}
               </p>
               <p className='text-sm leading-relaxed text-gray-700 whitespace-pre-wrap sm:text-base dark:text-gray-300'>
                 {notification.message}
@@ -182,12 +185,12 @@ const ViewNotificationModal = ({
               {!notification.read ? (
                 <span className='inline-flex items-center gap-2 text-xs sm:text-sm text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10 px-3 py-1.5 rounded-lg'>
                   <span className='w-2 h-2 bg-blue-500 rounded-full dark:bg-blue-400 animate-pulse'></span>
-                  Unread
+                  {t('notifications.unread')}
                 </span>
               ) : (
                 <span className='inline-flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/40 px-3 py-1.5 rounded-lg'>
                   <CheckCircle className='w-3 h-3' />
-                  Read
+                  {t('notifications.read')}
                 </span>
               )}
 
@@ -206,7 +209,7 @@ const ViewNotificationModal = ({
               onClick={() => setIsOn(false)}
               className='flex-1 px-4 py-2 text-sm text-gray-900 transition-all bg-gray-200 rounded-lg dark:bg-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 sm:text-base'
             >
-              Close
+              {t('notifications.close')}
             </button>
             {!notification.read && (
               <button
@@ -217,7 +220,7 @@ const ViewNotificationModal = ({
                 className='flex items-center justify-center flex-1 gap-2 px-4 py-2 text-sm text-white transition-all bg-blue-600 rounded-lg hover:bg-blue-700 sm:text-base'
               >
                 <CheckCircle className='w-4 h-4' />
-                Mark as Read
+                {t('notifications.markAsRead')}
               </button>
             )}
           </div>
@@ -271,16 +274,17 @@ export const NotificationsView = (props: { user: User }) => {
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
   };
+  const { t } = useLanguage();
+
   return (
     <div className='flex flex-col h-full'>
       {/* Header */}
       <div className='mb-6'>
         <h1 className='mb-2 text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
-          Notifications
+          {t('notifications.title')}
         </h1>
         <p className='text-sm text-gray-600 dark:text-gray-400 sm:text-base'>
-          You have {unreadCount} unread{' '}
-          {unreadCount === 1 ? 'notification' : 'notifications'}
+          {t('notifications.youHave')} {unreadCount} {unreadCount === 1 ? t('notifications.notificationSingular') : t('notifications.notificationPlural')}
         </p>
       </div>
 
@@ -297,8 +301,8 @@ export const NotificationsView = (props: { user: User }) => {
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
-            >
-              All
+              >
+              {t('notifications.all')}
             </button>
             <button
               onClick={() => setFilter('unread')}
@@ -308,7 +312,7 @@ export const NotificationsView = (props: { user: User }) => {
                   : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
-              Unread
+              {t('notifications.unread')}
             </button>
             <button
               onClick={() => setFilter('read')}
@@ -318,26 +322,26 @@ export const NotificationsView = (props: { user: User }) => {
                   : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
-              Read
+              {t('notifications.read')}
             </button>
           </div>
         </div>
 
         {/* Sort Button */}
-        <button
+          <button
           onClick={toggleSortOrder}
           className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-200 rounded-lg sm:px-4 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200 sm:text-base'
-          title={sortOrder === 'desc' ? 'Newest first' : 'Oldest first'}
+          title={sortOrder === 'desc' ? t('notifications.newest') + ' first' : t('notifications.oldest') + ' first'}
         >
           {sortOrder === 'desc' ? (
             <>
               <ArrowDown className='w-4 h-4' />
-              <span className='hidden sm:inline'>Newest</span>
+              <span className='hidden sm:inline'>{t('notifications.newest')}</span>
             </>
           ) : (
             <>
               <ArrowUp className='w-4 h-4' />
-              <span className='hidden sm:inline'>Oldest</span>
+              <span className='hidden sm:inline'>{t('notifications.oldest')}</span>
             </>
           )}
         </button>
@@ -348,12 +352,12 @@ export const NotificationsView = (props: { user: User }) => {
           <div className='flex items-center justify-center h-64'>
             <div className='text-center'>
               <p className='mb-1 text-sm text-gray-600 dark:text-gray-400 sm:text-base'>
-                No notifications
+                {t('notifications.noNotifications')}
               </p>
               <p className='text-xs text-gray-500 sm:text-sm'>
-                {filter === 'unread' && "You're all caught up!"}
-                {filter === 'read' && 'No read notifications yet'}
-                {filter === 'all' && 'Check back later for updates'}
+                {filter === 'unread' && t('notifications.caughtUp')}
+                {filter === 'read' && t('notifications.noRead')}
+                {filter === 'all' && t('notifications.checkBack')}
               </p>
             </div>
           </div>

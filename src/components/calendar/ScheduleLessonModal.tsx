@@ -1,5 +1,5 @@
 import { X, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
-import { TopicT, LessonT } from '../../types';
+import { LEVEL_OPTIONS, LessonT, LevelT, TopicT } from '../../types';
 import {
   getWeekDates,
   isTimestampConflicting,
@@ -13,6 +13,7 @@ import {
   getAvailableTokensForLessonType,
   getLessonTokenLabel,
 } from '../../utils/tokenUtils';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ScheduleModalState {
   day: number;
@@ -26,6 +27,8 @@ interface ScheduleLessonModalProps {
   onScheduleTimeChange: (state: ScheduleModalState) => void;
   selectedTopicId: string;
   onTopicChange: (topicId: string) => void;
+  selectedLevel: LevelT;
+  onLevelChange: (level: LevelT) => void;
   // selectedTeacher: string;
   // onTeacherChange: (teacher: string) => void;
   lessonType: '1on1' | 'group';
@@ -51,10 +54,11 @@ const LessonTypeDisplay = (props: {
   rescheduleLesson?: LessonT;
 }) => {
   const { lessonType, onLessonTypeChange, rescheduleLesson } = props;
+  const { t } = useLanguage();
   return (
     <div>
       <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
-        Lesson Type
+        {t('calendar.lessonType')}
       </label>
       <div className='grid grid-cols-2 gap-3'>
         <button
@@ -63,10 +67,10 @@ const LessonTypeDisplay = (props: {
           disabled={!!rescheduleLesson}
         >
           <div className='mb-1 font-medium text-gray-900 dark:text-white'>
-            1-on-1 Lesson
+            {t('calendar.oneOnOneLesson')}
           </div>
           <div className='text-xs text-gray-600 dark:text-gray-400'>
-            Personal coaching
+            {t('calendar.personalCoaching')}
           </div>
         </button>
         <button
@@ -75,15 +79,15 @@ const LessonTypeDisplay = (props: {
           disabled={!!rescheduleLesson}
         >
           <div className='mb-1 font-medium text-gray-900 dark:text-white'>
-            Group Class
+            {t('calendar.groupClass')}
           </div>
           <div className='text-xs text-gray-600 dark:text-gray-400'>
-            Up to 5 students
+            {t('calendar.upToStudents')}
           </div>
         </button>
       </div>
       <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
-        Group classes proceed when at least 2 students are joined.
+        {t('calendar.groupClassesInfo')}
       </p>
     </div>
   );
@@ -98,6 +102,8 @@ export const ScheduleLessonModal = ({
   // onTeacherChange,
   lessonType,
   onLessonTypeChange,
+  selectedLevel,
+  onLevelChange,
   availableTopics,
   // availableTeachers,
   lessons,
@@ -106,6 +112,7 @@ export const ScheduleLessonModal = ({
   tokenBalances,
   rescheduleLesson,
 }: ScheduleLessonModalProps) => {
+  const { t, language } = useLanguage();
   const modalWeekDates = getWeekDates(scheduleTime.week);
   selectedDate.setHours(scheduleTime.hour, scheduleTime.minute, 0, 0);
   selectedDate.setDate(modalWeekDates[scheduleTime.day].getDate());
@@ -126,24 +133,25 @@ export const ScheduleLessonModal = ({
   const validationMessages: string[] = [];
   if (!rescheduleLesson && availableTokensForType <= 0) {
     validationMessages.push(
-      `No ${lessonTokenLabel.toLowerCase()} available. Please top up to schedule.`,
+      `${t('calendar.noTokenAvailablePrefix')} ${lessonTokenLabel.toLowerCase()} ${t('calendar.noTokenAvailableSuffix')}`,
     );
   }
   if (isTooSoon) {
-    validationMessages.push('Must be at least 24 hours in the future.');
+    validationMessages.push(t('calendar.mustBeAtLeast24Hours'));
   }
   if (isConflicting) {
-    validationMessages.push('Conflicts with an existing lesson.');
+    validationMessages.push(t('calendar.conflictsWithExistingLesson'));
   }
   if (rescheduleLesson && timestamp === rescheduleLesson.date) {
-    validationMessages.push('New time must be different from current time.');
+    validationMessages.push(t('calendar.newTimeMustBeDifferent'));
   }
   const hasBlockingValidation = validationMessages.length > 0;
   const { addToast } = useToast();
+  const dateLocale = language === 'ka' ? 'ka-GE' : 'en-US';
   const handleScheduleLesson = async () => {
     if (hasBlockingValidation) {
       addToast({
-        title: 'Cannot schedule lesson',
+        title: t('calendar.cannotScheduleLesson'),
         message: validationMessages.join(' '),
         type: 'error',
       });
@@ -153,7 +161,7 @@ export const ScheduleLessonModal = ({
     const date = Math.floor(selectedDate.getTime() / 1000);
 
     const fn = httpsCallable<
-      { date: number; topicId: string; lessonType: '1on1' | 'group' },
+      { date: number; topicId: string; level: LevelT; lessonType: '1on1' | 'group' },
       {
         classId: string;
         lessonType: '1on1' | 'group';
@@ -166,12 +174,13 @@ export const ScheduleLessonModal = ({
       const res = await fn({
         date,
         topicId: selectedTopicId,
+        level: selectedLevel,
         lessonType,
       });
 
       addToast({
-        title: 'Lesson Scheduled',
-        message: 'Your lesson has been successfully scheduled.',
+        title: t('calendar.lessonScheduled'),
+        message: t('calendar.lessonScheduledMessage'),
         type: 'success',
       });
 
@@ -180,7 +189,7 @@ export const ScheduleLessonModal = ({
     } catch (err: any) {
       console.error(err);
 
-      let message = 'Failed to schedule lesson';
+      let message = t('calendar.failedToScheduleLesson');
 
       if (err.code === 'functions/failed-precondition') {
         const backendMessage =
@@ -189,13 +198,13 @@ export const ScheduleLessonModal = ({
             : '';
         message =
           backendMessage ||
-          `You do not have enough ${lessonTokenLabel.toLowerCase()}s`;
+          `${t('calendar.notEnoughTokensPrefix')} ${lessonTokenLabel.toLowerCase()}${t('calendar.notEnoughTokensSuffix')}`;
       } else if (err.code === 'functions/unauthenticated') {
-        message = 'Please log in again';
+        message = t('auth.loginFailed');
       }
 
       addToast({
-        title: 'Scheduling Failed',
+        title: t('calendar.schedulingFailed'),
         message,
         type: 'error',
       });
@@ -204,7 +213,7 @@ export const ScheduleLessonModal = ({
   const handleRescheduleLesson = async () => {
     if (hasBlockingValidation) {
       addToast({
-        title: 'Cannot reschedule lesson',
+        title: t('calendar.cannotRescheduleLesson'),
         message: validationMessages.join(' '),
         type: 'error',
       });
@@ -213,7 +222,7 @@ export const ScheduleLessonModal = ({
     const date = Math.floor(selectedDate.getTime() / 1000);
 
     const fn = httpsCallable<
-      { lessonId: string; date: number; topicId: string },
+      { lessonId: string; date: number; topicId: string; level: LevelT },
       { classId: string }
     >(functions, 'rescheduleLesson');
 
@@ -222,11 +231,12 @@ export const ScheduleLessonModal = ({
         lessonId: rescheduleLesson!.id,
         date,
         topicId: selectedTopicId,
+        level: selectedLevel,
       });
 
       addToast({
-        title: 'Lesson Rescheduled',
-        message: 'Your lesson has been successfully rescheduled.',
+        title: t('calendar.lessonRescheduled'),
+        message: t('calendar.lessonRescheduledMessage'),
         type: 'success',
       });
 
@@ -235,16 +245,16 @@ export const ScheduleLessonModal = ({
     } catch (err: any) {
       console.error(err);
 
-      let message = 'Failed to reschedule lesson';
+      let message = t('calendar.failedToRescheduleLesson');
 
       if (err.code === 'functions/unauthenticated') {
-        message = 'Please log in again';
+        message = t('auth.loginFailed');
       } else if (err.code === 'functions/permission-denied') {
-        message = "You are not allowed to reschedule other people's lessons";
+        message = t('calendar.reschedulePermissionDenied');
       }
 
       addToast({
-        title: 'Rescheduling Failed',
+        title: t('calendar.reschedulingFailed'),
         message,
         type: 'error',
       });
@@ -269,17 +279,17 @@ export const ScheduleLessonModal = ({
             <X className='w-5 h-5 text-white' />
           </button>
           <h2 className='pr-10 text-2xl font-semibold text-white'>
-            {rescheduleLesson ? 'Reschedule Lesson' : 'Schedule New Lesson'}
+            {rescheduleLesson ? t('calendar.rescheduleLesson') : t('calendar.scheduleNewLesson')}
           </h2>
           <div className='flex items-center gap-2 mt-2 text-white/90'>
             <Clock className='w-4 h-4' />
             <span>
-              {modalWeekDates[scheduleTime.day].toLocaleDateString('en-US', {
+              {modalWeekDates[scheduleTime.day].toLocaleDateString(dateLocale, {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
               })}{' '}
-              at {scheduleTime.hour.toString().padStart(2, '0')}:
+              {t('calendar.timePrefix')} {scheduleTime.hour.toString().padStart(2, '0')}:
               {scheduleTime.minute.toString().padStart(2, '0')}
             </span>
           </div>
@@ -290,7 +300,7 @@ export const ScheduleLessonModal = ({
           {/* Week Selector for Date Picking */}
           <div>
             <label className='block mb-3 text-sm text-gray-600 dark:text-gray-400'>
-              Select Date
+              {t('calendar.selectDate')}
             </label>
 
             {/* Week Navigation */}
@@ -309,12 +319,12 @@ export const ScheduleLessonModal = ({
                 <ChevronLeft className='w-4 h-4' />
               </button>
               <div className='text-sm font-medium text-gray-900 dark:text-white'>
-                {modalWeekDates[0].toLocaleDateString('en-US', {
+                {modalWeekDates[0].toLocaleDateString(dateLocale, {
                   month: 'short',
                   day: 'numeric',
                 })}{' '}
                 -{' '}
-                {modalWeekDates[6].toLocaleDateString('en-US', {
+                {modalWeekDates[6].toLocaleDateString(dateLocale, {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
@@ -386,13 +396,13 @@ export const ScheduleLessonModal = ({
           {/* Time Selector */}
           <div>
             <label className='block mb-3 text-sm text-gray-600 dark:text-gray-400'>
-              Select Time
+              {t('calendar.selectTime')}
             </label>
             <div className='grid grid-cols-2 gap-3'>
               {/* Hour Selector */}
               <div>
                 <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
-                  Hour
+                  {t('calendar.hour')}
                 </div>
                 <div className='grid grid-cols-6 gap-1 max-h-50 overflow-y-auto bg-gray-50 dark:bg-gray-800/60 p-2 rounded-lg'>
                   {hours.map((hour) => (
@@ -417,7 +427,7 @@ export const ScheduleLessonModal = ({
               {/* Minute Selector */}
               <div>
                 <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
-                  Minute
+                  {t('calendar.minute')}
                 </div>
                 <div className='grid grid-cols-2 gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/60'>
                   <button
@@ -451,12 +461,12 @@ export const ScheduleLessonModal = ({
             </div>
 
             {/* Selected Time Display */}
-            <div className='p-3 mt-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-600/30'>
+              <div className='p-3 mt-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-600/30'>
               <div className='flex items-center gap-2'>
                 <Clock className='w-4 h-4 text-blue-600 dark:text-blue-400' />
                 <span className='text-sm text-gray-900 dark:text-white'>
                   {modalWeekDates[scheduleTime.day].toLocaleDateString(
-                    'en-US',
+                    dateLocale,
                     {
                       weekday: 'long',
                       month: 'long',
@@ -464,7 +474,7 @@ export const ScheduleLessonModal = ({
                       year: 'numeric',
                     },
                   )}{' '}
-                  at {scheduleTime.hour.toString().padStart(2, '0')}:
+                  {t('calendar.timePrefix')} {scheduleTime.hour.toString().padStart(2, '0')}:
                   {scheduleTime.minute.toString().padStart(2, '0')}
                 </span>
               </div>
@@ -513,7 +523,7 @@ export const ScheduleLessonModal = ({
           {/* Topic Selection */}
           <div>
             <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
-              Lesson Topic
+              {t('calendar.lessonTopic')}
             </label>
 
             <select
@@ -529,22 +539,41 @@ export const ScheduleLessonModal = ({
             </select>
           </div>
 
+          {/* Level Selection */}
+          <div>
+            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
+              {t('calendar.level')}
+            </label>
+
+            <select
+              value={selectedLevel}
+              onChange={(e) => onLevelChange(e.target.value as LevelT)}
+              className='w-full p-3 text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
+            >
+              {LEVEL_OPTIONS.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Lesson Focus (Optional) */}
           <div>
             <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
-              Lesson Focus (Optional)
+              {t('calendar.lessonFocus')}
             </label>
             <textarea
               className='w-full p-3 text-gray-900 placeholder-gray-500 bg-white border border-gray-200 rounded-lg resize-none dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
               rows={3}
-              placeholder='What would you like to focus on in this lesson?'
+              placeholder={t('calendar.lessonFocusPlaceholder')}
             />
           </div>
 
           {/* Token Cost */}
           <div className='flex items-center justify-between p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-600/30'>
             <div className='text-sm text-gray-600 dark:text-gray-400'>
-              Token Cost
+              {t('calendar.tokenCost')}
             </div>
             <div className='flex items-center gap-2'>
               <div className='flex items-center justify-center w-6 h-6 text-xs font-bold bg-yellow-500 rounded-full'>
@@ -556,8 +585,7 @@ export const ScheduleLessonModal = ({
             </div>
           </div>
           <p className='text-xs text-gray-500 dark:text-gray-400 -mt-3'>
-            Available for this lesson type: {availableTokensForType} (including
-            flexible tokens)
+            {t('calendar.availableTokensForThisLessonTypePrefix')} {availableTokensForType} {t('calendar.availableTokensForThisLessonTypeSuffix')}
           </p>
 
           {/* Action Buttons */}
@@ -573,13 +601,13 @@ export const ScheduleLessonModal = ({
                   : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
-              {rescheduleLesson ? 'Reschedule Lesson' : 'Schedule Lesson'}
+              {rescheduleLesson ? t('calendar.reschedule') : t('calendar.scheduleLesson')}
             </button>
             <button
               onClick={onClose}
               className='px-4 py-3 text-gray-900 transition-all bg-gray-200 rounded-lg dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
             >
-              Cancel
+              {t('calendar.cancel')}
             </button>
           </div>
         </div>

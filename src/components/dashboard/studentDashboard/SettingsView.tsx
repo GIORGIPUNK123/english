@@ -13,6 +13,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
+import { Language, useLanguage } from '../../../context/LanguageContext';
 import { useUserMode } from '../../../context/UserModeContext';
 import { useNavigate } from 'react-router-dom';
 import { BecomeTeacherModal } from '../shared/BecomeTeacherModal';
@@ -22,11 +23,85 @@ export const SettingsView = (props: {
   email: string;
 }) => {
   const { isDarkMode, toggleTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
   const [becomeTeacherIsOn, setBecomeTeacherIsOn] = useState(false);
   const { userMode, setUserMode, canSwitchToTeacher } = useUserMode();
   const navigate = useNavigate();
   const [advertisementEmails, setAdvertisementEmails] = useState(false);
   const { email, userData } = props;
+
+  const copy = {
+    en: {
+      settings: 'Settings',
+      subtitle: 'Manage your account preferences and settings',
+      emailPushTitle: 'Email & Push Notifications',
+      emailPushBody:
+        'Email notifications and push notifications are always enabled to ensure you never miss important updates about your lessons, assignments, and platform announcements.',
+      theme: 'Theme',
+      darkMode: 'Dark Mode',
+      lightMode: 'Light Mode',
+      userMode: 'User Mode',
+      accessText:
+        'You have access to both Student and Teacher modes. Switch between them to access different features.',
+      currentModeTeacher: 'Teacher Mode',
+      currentModeStudent: 'Student Mode',
+      notificationPreferences: 'Notification Preferences',
+      adsEmails: 'Advertisement & Sales Emails',
+      becomeTeacher: 'Become a Teacher',
+      becomeTeacherBody:
+        'Ready to share your teaching experience? Apply to become a teacher on our platform and start earning money by teaching students worldwide.',
+      applicationPending: 'Your application is currently under review.',
+      applicationApproved: 'You are already approved as a teacher.',
+      applicationRejected:
+        'Your application was not approved. Contact support to reapply.',
+      applyButton: 'Apply to be a Teacher',
+      profileSettings: 'Profile Settings',
+      fullName: 'Full Name',
+      email: 'Email',
+      phone: 'Phone',
+      preferences: 'Preferences',
+      language: 'Language',
+      timeZone: 'Time Zone',
+      logout: 'Logout',
+      english: 'English',
+      georgian: 'Georgian',
+    },
+    ka: {
+      settings: 'პარამეტრები',
+      subtitle: 'მართე შენი ანგარიშის პარამეტრები და მორგებები',
+      emailPushTitle: 'ელფოსტა და Push შეტყობინებები',
+      emailPushBody:
+        'ელფოსტით და push შეტყობინებებით მუდმივად იქნები ინფორმირებული გაკვეთილებზე, დავალებებსა და პლატფორმის მნიშვნელოვან განახლებებზე.',
+      theme: 'თემა',
+      darkMode: 'მუქი რეჟიმი',
+      lightMode: 'ღია რეჟიმი',
+      userMode: 'მომხმარებლის რეჟიმი',
+      accessText:
+        'გაქვს წვდომა როგორც სტუდენტის, ისე მასწავლებლის რეჟიმზე. გადაერთე მათ შორის სხვადასხვა ფუნქციის გამოსაყენებლად.',
+      currentModeTeacher: 'მასწავლებლის რეჟიმი',
+      currentModeStudent: 'სტუდენტის რეჟიმი',
+      notificationPreferences: 'შეტყობინებების პარამეტრები',
+      adsEmails: 'სარეკლამო და შეთავაზებების ელფოსტები',
+      becomeTeacher: 'გახდი მასწავლებელი',
+      becomeTeacherBody:
+        'მზად ხარ შენი გამოცდილების გასაზიარებლად? შეავსე განაცხადი და დაიწყე სწავლება ჩვენს პლატფორმაზე მსოფლიოს მასშტაბით.',
+      applicationPending: 'შენი განაცხადი განხილვის პროცესშია.',
+      applicationApproved: 'შენ უკვე დამტკიცებული მასწავლებელი ხარ.',
+      applicationRejected:
+        'შენი განაცხადი არ დამტკიცდა. ხელახლა გასაგზავნად დაუკავშირდი მხარდაჭერას.',
+      applyButton: 'მასწავლებლად განაცხადი',
+      profileSettings: 'პროფილის პარამეტრები',
+      fullName: 'სრული სახელი',
+      email: 'ელფოსტა',
+      phone: 'ტელეფონი',
+      preferences: 'მორგებები',
+      language: 'ენა',
+      timeZone: 'დროის სარტყელი',
+      logout: 'გასვლა',
+      english: 'ინგლისური',
+      georgian: 'ქართული',
+    },
+  }[language];
 
   const capitalNames = userData
     ? [
@@ -39,23 +114,15 @@ export const SettingsView = (props: {
 
   const sections = [
     {
-      title: 'Profile Settings',
+      title: copy.profileSettings,
       icon: UserImg,
       items: [
-        { label: 'Full Name', value: capitalNames[0] + ' ' + capitalNames[1] },
+        { label: copy.fullName, value: capitalNames[0] + ' ' + capitalNames[1] },
         {
-          label: 'Email',
+          label: copy.email,
           value: email,
         },
-        { label: 'Phone', value: '' },
-      ],
-    },
-    {
-      title: 'Preferences',
-      icon: Globe,
-      items: [
-        { label: 'Language', value: 'English' },
-        { label: 'Time Zone', value: 'EST (UTC-5)' },
+        { label: copy.phone, value: '' },
       ],
     },
   ];
@@ -89,10 +156,10 @@ export const SettingsView = (props: {
       />
       <div className='mb-6'>
         <h1 className='mb-2 text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
-          Settings
+          {copy.settings}
         </h1>
         <p className='text-sm text-gray-600 dark:text-gray-400 sm:text-base'>
-          Manage your account preferences and settings
+          {copy.subtitle}
         </p>
       </div>
 
@@ -103,14 +170,38 @@ export const SettingsView = (props: {
             <Mail className='w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5' />
             <div>
               <h3 className='mb-1 text-sm font-medium text-blue-700 dark:text-blue-300 sm:text-base'>
-                Email & Push Notifications
+                {copy.emailPushTitle}
               </h3>
               <p className='text-xs text-blue-600/80 dark:text-blue-200/70 sm:text-sm'>
-                Email notifications and push notifications are always enabled to
-                ensure you never miss important updates about your lessons,
-                assignments, and platform announcements.
+                {copy.emailPushBody}
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Language Selector */}
+        <div className='p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
+          <div className='flex items-center gap-3 mb-4'>
+            <div className='flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg sm:w-10 sm:h-10 dark:bg-gray-700'>
+              <Globe className='w-4 h-4 text-gray-700 sm:w-5 sm:h-5 dark:text-gray-300' />
+            </div>
+            <h2 className='text-base text-gray-900 dark:text-white sm:text-lg lg:text-xl'>
+              {copy.language}
+            </h2>
+          </div>
+
+          <div className='flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/60'>
+            <p className='text-xs text-gray-700 sm:text-sm dark:text-gray-300'>
+              {language === 'ka' ? copy.georgian : copy.english}
+            </p>
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as Language)}
+              className='px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
+            >
+              <option value='en'>{copy.english}</option>
+              <option value='ka'>{copy.georgian}</option>
+            </select>
           </div>
         </div>
 
@@ -125,7 +216,7 @@ export const SettingsView = (props: {
               )}
             </div>
             <h2 className='text-base text-gray-900 dark:text-white sm:text-lg lg:text-xl'>
-              Theme
+              {copy.theme}
             </h2>
           </div>
 
@@ -137,7 +228,7 @@ export const SettingsView = (props: {
                 <Sun className='w-4 h-4 text-gray-600 dark:text-gray-400' />
               )}
               <p className='text-xs text-gray-700 sm:text-sm dark:text-gray-300'>
-                {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                {isDarkMode ? copy.darkMode : copy.lightMode}
               </p>
             </div>
             <button
@@ -167,15 +258,14 @@ export const SettingsView = (props: {
                 )}
               </div>
               <h2 className='text-base text-gray-900 dark:text-white sm:text-lg lg:text-xl'>
-                User Mode
+                {copy.userMode}
               </h2>
             </div>
 
             <div className='space-y-3'>
               <div className='p-3 rounded-lg bg-blue-50 dark:bg-blue-600/10 border border-blue-200 dark:border-blue-500/30'>
                 <p className='text-xs text-blue-600 dark:text-blue-300 sm:text-sm'>
-                  You have access to both Student and Teacher modes. Switch
-                  between them to access different features.
+                  {copy.accessText}
                 </p>
               </div>
 
@@ -187,7 +277,9 @@ export const SettingsView = (props: {
                     <BookOpen className='w-4 h-4 text-gray-600 dark:text-gray-400' />
                   )}
                   <p className='text-xs text-gray-700 sm:text-sm dark:text-gray-300'>
-                    {userMode === 'teacher' ? 'Teacher Mode' : 'Student Mode'}
+                    {userMode === 'teacher'
+                      ? copy.currentModeTeacher
+                      : copy.currentModeStudent}
                   </p>
                 </div>
                 <button
@@ -218,13 +310,13 @@ export const SettingsView = (props: {
               <Mail className='w-4 h-4 text-gray-700 sm:w-5 sm:h-5 dark:text-gray-300' />
             </div>
             <h2 className='text-base text-gray-900 dark:text-white sm:text-lg lg:text-xl'>
-              Notification Preferences
+              {copy.notificationPreferences}
             </h2>
           </div>
 
           <div className='flex items-center justify-between gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/60'>
             <p className='text-xs text-gray-700 sm:text-sm dark:text-gray-300'>
-              Advertisement & Sales Emails
+              {copy.adsEmails}
             </p>
             <button
               onClick={() => setAdvertisementEmails(!advertisementEmails)}
@@ -250,24 +342,22 @@ export const SettingsView = (props: {
               <GraduationCap className='w-4 h-4 text-gray-700 sm:w-5 sm:h-5 dark:text-gray-300' />
             </div>
             <h2 className='text-base text-gray-900 dark:text-white sm:text-lg lg:text-xl'>
-              Become a Teacher
+              {copy.becomeTeacher}
             </h2>
           </div>
 
           <div className='space-y-3'>
             <p className='text-xs text-gray-700 sm:text-sm dark:text-gray-300'>
-              Ready to share your teaching experience? Apply to become a teacher
-              on our platform and start earning money by teaching students
-              worldwide.
+              {copy.becomeTeacherBody}
             </p>
             {userData?.teacher_status && (
               <div className='p-3 text-xs text-blue-700 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-500/30 dark:text-blue-300 sm:text-sm'>
                 {userData.teacher_status === 'pending' &&
-                  'Your application is currently under review.'}
+                  copy.applicationPending}
                 {userData.teacher_status === 'approved' &&
-                  'You are already approved as a teacher.'}
+                  copy.applicationApproved}
                 {userData.teacher_status === 'rejected' &&
-                  'Your application was not approved. Contact support to reapply.'}
+                  copy.applicationRejected}
               </div>
             )}
             <button
@@ -279,7 +369,7 @@ export const SettingsView = (props: {
                   : 'text-white bg-purple-600 hover:bg-purple-700'
               }`}
             >
-              Apply to be a Teacher
+              {copy.applyButton}
             </button>
           </div>
         </div>
@@ -296,7 +386,7 @@ export const SettingsView = (props: {
                   <Icon className='w-4 h-4 text-gray-700 sm:w-5 sm:h-5 dark:text-gray-300' />
                 </div>
                 <h2 className='text-base text-gray-900 dark:text-white sm:text-lg lg:text-xl'>
-                  {section.title}
+                    {section.title}
                 </h2>
               </div>
 
@@ -326,7 +416,7 @@ export const SettingsView = (props: {
             className='flex items-center justify-center gap-2 px-4 py-3 text-sm text-white transition-all bg-red-600 rounded-lg sm:px-6 hover:bg-red-700 sm:text-base'
           >
             <LogOut className='w-4 h-4' />
-            Logout
+            {copy.logout}
           </button>
         </div>
       </div>

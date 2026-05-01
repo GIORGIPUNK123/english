@@ -1,6 +1,7 @@
 import { Check, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TOKEN_BUNDLES_BY_TYPE } from '../../utils/tokenUtils';
+import { useLanguage } from '../../context/LanguageContext';
 
 type PricingPlan = {
   name: string;
@@ -9,38 +10,38 @@ type PricingPlan = {
   tokens: number;
   savings: number | null;
   popular: boolean;
-  features: string[];
+  featureKeys: string[];
 };
 
 const featureByTokens: Record<number, string[]> = {
   4: [
-    '4 live group lessons',
-    'Flexible scheduling',
-    'Progress tracking',
-    'Balanced weekly pace',
-    'Lesson reminders',
+    'pricing.features.fourLessons',
+    'pricing.features.flexibleScheduling',
+    'pricing.features.progressTracking',
+    'pricing.features.balancedWeeklyPace',
+    'pricing.features.lessonReminders',
   ],
   8: [
-    '8 live group lessons',
-    '20% discounted tier',
-    'Flexible scheduling',
-    'Detailed progress reports',
-    'Lesson reminders',
+    'pricing.features.eightLessons',
+    'pricing.features.discountedTier',
+    'pricing.features.flexibleScheduling',
+    'pricing.features.detailedProgressReports',
+    'pricing.features.lessonReminders',
   ],
   16: [
-    '16 live group lessons',
-    'Most popular Lingoda tier',
-    '20% discounted tier',
-    'Flexible scheduling',
-    'Comprehensive feedback',
-    'Priority support',
+    'pricing.features.sixteenLessons',
+    'pricing.features.mostPopularTier',
+    'pricing.features.discountedTier',
+    'pricing.features.flexibleScheduling',
+    'pricing.features.comprehensiveFeedback',
+    'pricing.features.prioritySupport',
   ],
   32: [
-    '32 live group lessons',
-    '20% discounted tier',
-    'Intensive learning schedule',
-    'Comprehensive feedback',
-    'Priority support',
+    'pricing.features.thirtyTwoLessons',
+    'pricing.features.discountedTier',
+    'pricing.features.intensiveSchedule',
+    'pricing.features.comprehensiveFeedback',
+    'pricing.features.prioritySupport',
   ],
 };
 
@@ -60,15 +61,17 @@ const pricingPlans: PricingPlan[] = TOKEN_BUNDLES_BY_TYPE.group
       tokens: bundle.tokens,
       savings,
       popular: Boolean(bundle.popular),
-      features:
+      featureKeys:
         featureByTokens[bundle.tokens] ??
-        [`${bundle.tokens} live group lessons`, 'Flexible scheduling'],
+        [`pricing.features.${bundle.tokens}Lessons`, 'pricing.features.flexibleScheduling'],
     };
   });
 
 const formatEur = (amount: number) => `EUR ${amount.toFixed(2)}`;
 
 const PricingCard = ({ plan }: { plan: PricingPlan }) => {
+  const { t } = useLanguage();
+
   return (
     <div
       className={`relative bg-card border ${plan.popular ? 'border-blue-500 shadow-xl scale-105' : 'border-border'} rounded-2xl p-8 hover:shadow-xl transition-all duration-300`}
@@ -78,7 +81,7 @@ const PricingCard = ({ plan }: { plan: PricingPlan }) => {
         <div className='absolute -translate-x-1/2 -top-4 left-1/2'>
           <div className='px-4 py-1.5 bg-linear-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold rounded-full flex items-center space-x-1'>
             <Sparkles className='w-4 h-4' />
-            <span>Most Popular</span>
+            <span>{t('pricing.mostPopular')}</span>
           </div>
         </div>
       )}
@@ -92,7 +95,7 @@ const PricingCard = ({ plan }: { plan: PricingPlan }) => {
         </div>
         {plan.savings && (
           <div className='mt-2 text-sm font-medium text-green-500'>
-            Save {formatEur(plan.savings)}
+            {t('pricing.save')} {formatEur(plan.savings)}
           </div>
         )}
         {plan.originalPrice !== plan.price && (
@@ -101,17 +104,17 @@ const PricingCard = ({ plan }: { plan: PricingPlan }) => {
           </div>
         )}
         <div className='mt-2 text-sm text-muted-foreground'>
-          {formatEur(plan.price / plan.tokens)} per lesson
+          {formatEur(plan.price / plan.tokens)} {t('pricing.perLesson')}
         </div>
       </div>
 
       <ul className='mb-8 space-y-4'>
-        {plan.features.map((feature, index) => (
+        {plan.featureKeys.map((feature, index) => (
           <li key={index} className='flex items-start space-x-3'>
             <div className='shrink-0 w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center mt-0.5'>
               <Check className='w-3 h-3 text-green-500' />
             </div>
-            <span className='text-muted-foreground'>{feature}</span>
+            <span className='text-muted-foreground'>{t(feature)}</span>
           </li>
         ))}
       </ul>
@@ -124,7 +127,7 @@ const PricingCard = ({ plan }: { plan: PricingPlan }) => {
               : 'bg-accent text-foreground hover:bg-accent/80'
           }`}
         >
-          Get Started
+          {t('pricing.getStarted')}
         </button>
       </Link>
     </div>
@@ -132,6 +135,8 @@ const PricingCard = ({ plan }: { plan: PricingPlan }) => {
 };
 
 export const PricingSection = () => {
+  const { t } = useLanguage();
+
   return (
     <section id='pricing' className='py-20 sm:py-32'>
       <div className='px-4 mx-auto max-w-7xl sm:px-6 lg:px-8'>
@@ -139,19 +144,18 @@ export const PricingSection = () => {
         <div className='max-w-3xl mx-auto mb-16 text-center'>
           <div className='inline-flex items-center px-4 py-2 mb-6 space-x-2 rounded-full bg-accent'>
             <span className='text-sm font-medium text-muted-foreground'>
-              Pricing
+              {t('landing.pricingBadge')}
             </span>
           </div>
           <h2 className='mb-6 text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
-            Simple, transparent
+            {t('landing.pricingTitlePre')}
             <span className='text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
               {' '}
-              pricing
+              {t('landing.pricingTitleEmphasis')}
             </span>
           </h2>
           <p className='text-lg text-muted-foreground'>
-            Choose the plan that fits your learning goals. All plans include
-            access to certified teachers and our full platform features.
+            {t('landing.pricingSubtitle')}
           </p>
         </div>
 
@@ -165,12 +169,12 @@ export const PricingSection = () => {
         {/* Additional Info */}
         <div className='mt-16 text-center'>
           <p className='mb-4 text-sm text-muted-foreground'>
-            Lingoda-aligned prices shown in EUR for group classes.
+            {t('pricing.alignedNote')}
           </p>
           <p className='text-sm text-muted-foreground'>
-            Need a custom plan?{' '}
+            {t('pricing.needCustomPlan')} {' '}
             <a href='#' className='text-blue-500 hover:underline'>
-              Contact us
+              {t('pricing.contactUs')}
             </a>
           </p>
         </div>

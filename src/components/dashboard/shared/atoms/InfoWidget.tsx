@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { LessonT, UserDataT } from '../../../../types';
 import { getTokenBalances } from '../../../../utils/tokenUtils';
+import { useLanguage } from '../../../../context/LanguageContext';
 
 export const InfoWidget = (props: {
   type:
@@ -44,24 +45,26 @@ export const InfoWidget = (props: {
     typeof ratingAverage === 'number' ? ratingAverage : 0;
   const safeRatingCount = typeof ratingCount === 'number' ? ratingCount : 0;
   const tokenBalances = getTokenBalances(userData);
+  const { t } = useLanguage();
+
   const stats = [
     {
       id: 'tokens',
-      label: 'Available Tokens',
+      label: t('dashboard.availableTokens'),
       value: tokenBalances.total,
       icon: Coins,
       color: 'bg-yellow-500',
     },
     {
       id: 'upcomingLessons',
-      label: 'Upcoming Lessons',
+      label: t('dashboard.upcomingLessons'),
       value: upcommingLessons ? upcommingLessons.length : 0,
       icon: Calendar,
       color: 'bg-green-500',
     },
     {
       id: 'hoursCompleted',
-      label: 'Hours Completed',
+      label: t('dashboard.hoursCompleted'),
       value: lessons
         ? lessons.filter((lesson) => lesson.status === 'finished').length
         : 0,
@@ -70,7 +73,7 @@ export const InfoWidget = (props: {
     },
     {
       id: 'completedLessons',
-      label: 'Completed',
+      label: t('dashboard.completedLessons'),
       value: lessons
         ? lessons.filter((lesson) => lesson.status === 'finished').length
         : 0,
@@ -79,28 +82,28 @@ export const InfoWidget = (props: {
     },
     {
       id: 'pendingRequests',
-      label: 'Pending Requests',
+      label: t('dashboard.pendingRequests'),
       value: pendingRequests ? pendingRequests.length : 0,
       icon: AlertCircle,
       color: 'bg-orange-500',
     },
     {
       id: 'availableLessons',
-      label: 'Available Lessons',
+      label: t('dashboard.availableLessons'),
       value: availableLessons ? availableLessons.length : 0,
       icon: AlertCircle,
       color: 'bg-orange-500',
     },
     {
       id: 'totalStudents',
-      label: 'Total Students',
+      label: t('dashboard.totalStudents'),
       value: lessons ? new Set(lessons.map((lesson) => lesson.id)).size : 0,
       icon: Users,
       color: 'bg-blue-500',
     },
     {
       id: 'averageRating',
-      label: `Avg Rating (${safeRatingCount})`,
+      label: `${t('dashboard.avgRatingLabel')} (${safeRatingCount})`,
       value: safeRatingAverage.toFixed(1),
       icon: Star,
       color: 'bg-indigo-500',
@@ -138,8 +141,7 @@ export const InfoWidget = (props: {
       </p>
       {stat.id === 'tokens' && (
         <p className='mt-1 text-[11px] text-gray-500 dark:text-gray-400'>
-          1-on-1: {tokenBalances.oneOnOne} | Group: {tokenBalances.group} |
-          Flexible: {tokenBalances.legacy}
+          {t('dashboard.tokenDetailsOneOnOne')}: {tokenBalances.oneOnOne} | {t('dashboard.tokenDetailsGroup')}: {tokenBalances.group} | {t('dashboard.tokenDetailsFlexible')}: {tokenBalances.legacy}
         </p>
       )}
     </div>

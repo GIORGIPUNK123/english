@@ -11,6 +11,7 @@ import {
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/firebase-config';
 import { useFirebaseLogins } from '../hooks/useFirebaseLogins';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Register = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export const Register = () => {
   });
   const logins = useFirebaseLogins();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useLanguage();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -36,7 +38,7 @@ export const Register = () => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      alert(t('auth.passwordsDoNotMatch'));
       return;
     }
 
@@ -51,11 +53,11 @@ export const Register = () => {
       });
 
       console.log('Registration successful:', result.data);
-      alert('Account created! You can now login.');
+      alert(t('auth.accountCreated'));
       navigate('/login');
     } catch (error: any) {
       console.error('Registration error:', error);
-      alert(error.message || error.code || 'Registration failed');
+      alert(error.message || error.code || t('auth.registrationFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -70,7 +72,7 @@ export const Register = () => {
           className='inline-flex items-center space-x-2 transition-colors text-muted-foreground hover:text-foreground'
         >
           <ArrowLeft className='w-5 h-5' />
-          <span>Back to home</span>
+          <span>{t('auth.backToHome')}</span>
         </Link>
       </div>
 
@@ -89,24 +91,23 @@ export const Register = () => {
                 </span>
               </div>
               <h1 className='mb-3 text-3xl font-bold text-foreground'>
-                Create an account
+                {t('auth.registerTitle')}
               </h1>
               <p className='mb-6 text-muted-foreground'>
-                Start your learning journey today with curated lessons and
-                expert teachers.
+                {t('auth.registerSubtitle')}
               </p>
               <div className='space-y-3 text-sm text-muted-foreground'>
                 <div className='flex items-start justify-center gap-3 lg:justify-start'>
                   <span className='mt-1 inline-block h-2 w-2 rounded-full bg-blue-500'></span>
-                  <span>Personalized study plans for faster progress</span>
+                  <span>{t('landing.featureProgressDescription')}</span>
                 </div>
                 <div className='flex items-start justify-center gap-3 lg:justify-start'>
                   <span className='mt-1 inline-block h-2 w-2 rounded-full bg-blue-500'></span>
-                  <span>Flexible scheduling that fits your routine</span>
+                  <span>{t('landing.featureFlexibleDescription')}</span>
                 </div>
                 <div className='flex items-start justify-center gap-3 lg:justify-start'>
                   <span className='mt-1 inline-block h-2 w-2 rounded-full bg-blue-500'></span>
-                  <span>Track milestones with weekly progress insights</span>
+                  <span>{t('landing.featureProgressTitle')}</span>
                 </div>
               </div>
             </div>
@@ -118,38 +119,38 @@ export const Register = () => {
                 <button
                   onClick={() => {
                     logins.loginWithGoogle().catch((error: any) => {
-                      alert(error.message || 'Login failed');
+                      alert(error.message || t('auth.loginFailed'));
                     });
                   }}
                   className='flex items-center justify-center w-full px-4 py-3 space-x-3 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                 >
                   <Chrome className='w-5 h-5' />
-                  <span className='text-foreground'>Continue with Google</span>
+                  <span className='text-foreground'>{t('auth.continueWithGoogle')}</span>
                 </button>
 
                 <div className='grid grid-cols-2 gap-3'>
                   <button
                     onClick={() => {
                       logins.loginWithFacebook().catch((error: any) => {
-                        alert(error.message || 'Login failed');
+                        alert(error.message || t('auth.loginFailed'));
                       });
                     }}
                     className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                   >
                     <Facebook className='w-5 h-5' />
-                    <span className='text-foreground'>Facebook</span>
+                    <span className='text-foreground'>{t('auth.facebook')}</span>
                   </button>
 
                   <button
                     onClick={() => {
                       logins.loginWithTwitter().catch((error: any) => {
-                        alert(error.message || 'Login failed');
+                        alert(error.message || t('auth.loginFailed'));
                       });
                     }}
                     className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                   >
                     <Twitter className='w-5 h-5' />
-                    <span className='text-foreground'>Twitter</span>
+                    <span className='text-foreground'>{t('auth.twitter')}</span>
                   </button>
                 </div>
               </div>
@@ -161,7 +162,7 @@ export const Register = () => {
                 </div>
                 <div className='relative flex justify-center text-sm'>
                   <span className='px-4 bg-card text-muted-foreground'>
-                    Or register with email
+                    {t('auth.registerEmailDivider')}
                   </span>
                 </div>
               </div>
@@ -171,12 +172,12 @@ export const Register = () => {
                 <div className='grid grid-cols-2 gap-4'>
                   <div>
                     <label className='block mb-2 text-sm font-medium text-foreground'>
-                      First Name
+                      {t('auth.firstName')}
                     </label>
                     <input
                       type='text'
                       name='firstName'
-                      placeholder='John'
+                      placeholder={t('auth.firstNamePlaceholder')}
                       value={formData.firstName}
                       onChange={handleChange}
                       required
@@ -186,12 +187,12 @@ export const Register = () => {
 
                   <div>
                     <label className='block mb-2 text-sm font-medium text-foreground'>
-                      Last Name
+                      {t('auth.lastName')}
                     </label>
                     <input
                       type='text'
                       name='lastName'
-                      placeholder='Doe'
+                      placeholder={t('auth.lastNamePlaceholder')}
                       value={formData.lastName}
                       onChange={handleChange}
                       required
@@ -202,7 +203,7 @@ export const Register = () => {
 
                 <div>
                   <label className='block mb-2 text-sm font-medium text-foreground'>
-                    Email Address
+                    {t('auth.emailAddress')}
                   </label>
                   <input
                     type='email'
@@ -218,13 +219,13 @@ export const Register = () => {
                 <div className='grid gap-4 lg:grid-cols-2'>
                   <div>
                     <label className='block mb-2 text-sm font-medium text-foreground'>
-                      Password
+                      {t('auth.password')}
                     </label>
                     <div className='relative'>
                       <input
                         type={showPassword ? 'text' : 'password'}
                         name='password'
-                        placeholder='Create a password'
+                        placeholder={t('auth.password')}
                         value={formData.password}
                         onChange={handleChange}
                         required
@@ -247,13 +248,13 @@ export const Register = () => {
 
                   <div>
                     <label className='block mb-2 text-sm font-medium text-foreground'>
-                      Confirm Password
+                      {t('auth.password')}
                     </label>
                     <div className='relative'>
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
                         name='confirmPassword'
-                        placeholder='Confirm your password'
+                        placeholder={t('auth.password')}
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         required
@@ -280,20 +281,20 @@ export const Register = () => {
                   disabled={isSubmitting}
                   className='w-full px-4 py-3 font-medium text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
                 >
-                  {isSubmitting ? 'Creating account...' : 'Create account'}
+                    {isSubmitting ? t('auth.creatingAccount') : t('auth.createAccount')}
                 </button>
               </form>
 
               {/* Login Link */}
               <div className='mt-6 text-sm text-center'>
                 <span className='text-muted-foreground'>
-                  Already have an account?{' '}
+                  {t('auth.alreadyHaveAccount')} {' '}
                 </span>
                 <Link
                   to='/login'
                   className='font-medium text-blue-500 transition-colors hover:text-blue-600'
                 >
-                  Sign in
+                  {t('auth.signIn')}
                 </Link>
               </div>
             </div>

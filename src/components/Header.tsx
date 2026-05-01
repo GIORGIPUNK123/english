@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Menu, X, Moon, Sun } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Header = () => {
   const [user, setUser] = useState<null | { email: string } | 'loading'>(
@@ -9,6 +10,7 @@ export const Header = () => {
   );
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Check fake auth status
@@ -50,31 +52,31 @@ export const Header = () => {
                 onClick={() => scrollToSection('home')}
                 className='transition-colors text-muted-foreground hover:text-foreground'
               >
-                Home
+                {t('header.home')}
               </button>
               <button
                 onClick={() => scrollToSection('features')}
                 className='transition-colors text-muted-foreground hover:text-foreground'
               >
-                Features
+                {t('header.features')}
               </button>
               <button
                 onClick={() => scrollToSection('pricing')}
                 className='transition-colors text-muted-foreground hover:text-foreground'
               >
-                Pricing
+                {t('header.pricing')}
               </button>
               <button
                 onClick={() => scrollToSection('about')}
                 className='transition-colors text-muted-foreground hover:text-foreground'
               >
-                About
+                {t('header.about')}
               </button>
               <Link
                 to='/become-teacher'
                 className='transition-colors text-muted-foreground hover:text-foreground'
               >
-                Teach
+                {t('header.teach')}
               </Link>
             </nav>
 
@@ -84,7 +86,7 @@ export const Header = () => {
               <button
                 onClick={toggleTheme}
                 className='p-2 transition-colors rounded-lg hover:bg-accent'
-                aria-label='Toggle theme'
+                aria-label={t('header.toggleTheme')}
               >
                 {isDarkMode ? (
                   <Sun className='w-5 h-5 text-foreground' />
@@ -97,7 +99,7 @@ export const Header = () => {
               {user && user !== 'loading' ? (
                 <Link to='/dashboard'>
                   <button className='hidden lg:block px-6 py-2.5 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
-                    Dashboard
+                    {t('header.dashboard')}
                   </button>
                 </Link>
               ) : user === 'loading' ? (
@@ -106,12 +108,12 @@ export const Header = () => {
                 <div className='items-center hidden space-x-3 lg:flex'>
                   <Link to='/login'>
                     <button className='px-6 py-2.5 text-foreground hover:bg-accent rounded-lg transition-all duration-300'>
-                      Login
+                      {t('header.login')}
                     </button>
                   </Link>
                   <Link to='/register'>
                     <button className='px-6 py-2.5 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
-                      Sign Up
+                      {t('header.signup')}
                     </button>
                   </Link>
                 </div>
@@ -141,38 +143,38 @@ export const Header = () => {
                 onClick={() => scrollToSection('home')}
                 className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
               >
-                Home
+                {t('header.home')}
               </button>
               <button
                 onClick={() => scrollToSection('features')}
                 className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
               >
-                Features
+                {t('header.features')}
               </button>
               <button
                 onClick={() => scrollToSection('pricing')}
                 className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
               >
-                Pricing
+                {t('header.pricing')}
               </button>
               <button
                 onClick={() => scrollToSection('about')}
                 className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
               >
-                About
+                {t('header.about')}
               </button>
               <Link
                 to='/become-teacher'
                 className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
               >
-                Teach
+                {t('header.teach')}
               </Link>
 
               <div className='pt-4 space-y-3'>
                 {user && user !== 'loading' ? (
                   <Link to='/dashboard' onClick={() => setIsMenuOpen(false)}>
                     <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
-                      Dashboard
+                      {t('header.dashboard')}
                     </button>
                   </Link>
                 ) : (
@@ -180,12 +182,12 @@ export const Header = () => {
                     <>
                       <Link to='/login' onClick={() => setIsMenuOpen(false)}>
                         <button className='w-full px-6 py-3 transition-all duration-300 border rounded-lg text-foreground border-border hover:bg-accent'>
-                          Login
+                          {t('header.login')}
                         </button>
                       </Link>
                       <Link to='/register' onClick={() => setIsMenuOpen(false)}>
                         <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
-                          Sign Up
+                          {t('header.signup')}
                         </button>
                       </Link>
                     </>

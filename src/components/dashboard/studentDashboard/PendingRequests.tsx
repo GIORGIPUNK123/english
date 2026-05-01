@@ -1,5 +1,6 @@
 import { AlertCircle, Calendar, Clock, UserIcon } from 'lucide-react';
 import { TipWidget } from '../shared/atoms/TipWidget';
+import { useLanguage } from '../../../context/LanguageContext';
 import { LessonT } from '../../../types';
 
 export const PendingRequests = (props: {
@@ -7,10 +8,11 @@ export const PendingRequests = (props: {
   setSelectedLesson: (lesson: LessonT) => void;
 }) => {
   const { pendingRequests, setSelectedLesson } = props;
+  const { t } = useLanguage();
   return (
     <div className='p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
       <h2 className='mb-4 text-lg text-gray-900 dark:text-white sm:text-xl'>
-        Pending Requests
+        {t('dashboard.pendingRequests')}
       </h2>
       <div className='mb-4 space-y-3'>
         {pendingRequests.map((lesson) => {
@@ -37,7 +39,7 @@ export const PendingRequests = (props: {
                   <h4 className='mb-1 text-sm text-gray-900 dark:text-white sm:text-base'>
                     {lesson.teacher
                       ? `${lesson.teacher.first_name.charAt(0).toUpperCase()}${lesson.teacher.first_name.slice(1)} ${lesson.teacher.last_name.charAt(0).toUpperCase()}${lesson.teacher.last_name.slice(1)}`
-                      : 'Any Available Teacher'}
+                        : t('dashboard.pendingAnyAvailableTeacher')}
                   </h4>
                   <p className='mb-2 text-xs text-gray-600 sm:text-sm dark:text-gray-400'>
                     {lesson.topic?.heading}
@@ -66,8 +68,8 @@ export const PendingRequests = (props: {
               <div className='flex items-center justify-between pt-3 mt-3 border-t border-gray-200 dark:border-gray-700'>
                 <p className='text-xs text-gray-500 dark:text-gray-500'>
                   {lesson.teacher
-                    ? 'Waiting for teacher confirmation...'
-                    : 'Waiting for any teacher to accept...'}
+                    ? t('dashboard.waitingForTeacherConfirmation')
+                    : t('dashboard.waitingForAnyTeacher')}
                 </p>
                 <button
                   onClick={() => setSelectedLesson(lesson)}
@@ -80,9 +82,7 @@ export const PendingRequests = (props: {
           );
         })}
       </div>
-      <TipWidget
-        tip={`💡 Tip: Teachers usually respond within 24 hours. You'll receive a notification once they accept!`}
-      />
+      <TipWidget tip={t('dashboard.teacherTip')} />
     </div>
   );
 };

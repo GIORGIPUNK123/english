@@ -6,53 +6,54 @@ import {
   Video,
   Clock,
 } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 const features = [
   {
     icon: Calendar,
-    title: 'Easy Scheduling',
-    description:
-      'Book 1-on-1 lessons or group classes with just a few clicks. Our smart calendar system makes scheduling effortless.',
+    titleKey: 'landing.featureEasySchedulingTitle',
+    descriptionKey: 'landing.featureEasySchedulingDescription',
     gradient: 'from-blue-500 to-cyan-500',
   },
   {
     icon: Users,
-    title: 'Group Classes',
-    description:
-      'Join small group classes (4 students max) for collaborative learning experiences and peer interaction.',
+    titleKey: 'landing.featureGroupClassesTitle',
+    descriptionKey: 'landing.featureGroupClassesDescription',
     gradient: 'from-purple-500 to-pink-500',
   },
   {
     icon: BookOpen,
-    title: 'CEFR-Aligned Courses',
-    description:
-      'Structured courses from A1 to C2 levels, perfectly aligned with international language standards.',
+    titleKey: 'landing.featureCefrTitle',
+    descriptionKey: 'landing.featureCefrDescription',
     gradient: 'from-green-500 to-emerald-500',
   },
   {
     icon: TrendingUp,
-    title: 'Progress Tracking',
-    description:
-      'Monitor your improvement with detailed feedback, lesson history, and skill assessments.',
+    titleKey: 'landing.featureProgressTitle',
+    descriptionKey: 'landing.featureProgressDescription',
     gradient: 'from-orange-500 to-red-500',
   },
   {
     icon: Video,
-    title: 'Live Video Lessons',
-    description:
-      'High-quality video conferencing built-in. Learn face-to-face with teachers from anywhere.',
+    titleKey: 'landing.featureVideoTitle',
+    descriptionKey: 'landing.featureVideoDescription',
     gradient: 'from-indigo-500 to-blue-500',
   },
   {
     icon: Clock,
-    title: 'Flexible Schedule',
-    description:
-      'Learn at your own pace with 24/7 availability. Choose times that work best for your lifestyle.',
+    titleKey: 'landing.featureFlexibleTitle',
+    descriptionKey: 'landing.featureFlexibleDescription',
     gradient: 'from-yellow-500 to-orange-500',
   },
 ];
 
-const FeatureCard = ({ feature }: { feature: (typeof features)[0] }) => {
+const FeatureCard = ({
+  feature,
+  t,
+}: {
+  feature: (typeof features)[0];
+  t: (key: string) => string;
+}) => {
   const Icon = feature.icon;
 
   return (
@@ -72,10 +73,10 @@ const FeatureCard = ({ feature }: { feature: (typeof features)[0] }) => {
 
         {/* Content */}
         <h3 className='mb-3 text-xl font-semibold text-foreground'>
-          {feature.title}
+          {t(feature.titleKey)}
         </h3>
         <p className='leading-relaxed text-muted-foreground'>
-          {feature.description}
+          {t(feature.descriptionKey)}
         </p>
       </div>
     </div>
@@ -83,6 +84,8 @@ const FeatureCard = ({ feature }: { feature: (typeof features)[0] }) => {
 };
 
 export const FeaturesSection = () => {
+  const { t } = useLanguage();
+
   return (
     <section id='features' className='py-20 sm:py-32 bg-muted/30'>
       <div className='px-4 mx-auto max-w-7xl sm:px-6 lg:px-8'>
@@ -90,37 +93,36 @@ export const FeaturesSection = () => {
         <div className='max-w-3xl mx-auto mb-16 text-center'>
           <div className='inline-flex items-center px-4 py-2 mb-6 space-x-2 rounded-full bg-accent'>
             <span className='text-sm font-medium text-muted-foreground'>
-              Features
+              {t('landing.featuresBadge')}
             </span>
           </div>
           <h2 className='mb-6 text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
-            Everything you need to
+            {t('landing.featuresTitlePre')}
             <span className='text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
               {' '}
-              master English
+              {t('landing.featuresTitleEmphasis')}
             </span>
           </h2>
           <p className='text-lg text-muted-foreground'>
-            Our platform combines cutting-edge technology with proven teaching
-            methods to deliver an unmatched learning experience.
+            {t('landing.featuresSubtitle')}
           </p>
         </div>
 
         {/* Features Grid */}
         <div className='grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
           {features.map((feature, index) => (
-            <FeatureCard key={index} feature={feature} />
+            <FeatureCard key={index} feature={feature} t={t} />
           ))}
         </div>
 
         {/* CTA */}
         <div className='mt-16 text-center'>
           <p className='mb-6 text-muted-foreground'>
-            Ready to start your learning journey?
+            {t('landing.featuresCta')}
           </p>
           <a href='#pricing'>
             <button className='px-8 py-4 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-xl hover:scale-105'>
-              View Pricing Plans
+              {t('landing.featuresViewPricing')}
             </button>
           </a>
         </div>

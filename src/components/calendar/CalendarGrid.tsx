@@ -261,6 +261,11 @@ export function CalendarGrid({
                             <div className='mb-1 font-medium'>
                               {event.topic?.heading}
                             </div>
+                            {event.level && (
+                              <div className='mb-1 text-[10px] font-semibold text-white/90'>
+                                Level {event.level}
+                              </div>
+                            )}
                             <div className='flex items-center gap-1 text-white/80'>
                               <Clock className='w-3 h-3' />
                               <span>

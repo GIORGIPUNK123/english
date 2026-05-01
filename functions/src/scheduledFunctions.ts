@@ -9,6 +9,7 @@ type ClassDoc = {
   status?: string;
   teacher_id?: string;
   student_id?: string;
+  level?: string;
   lesson_type?: '1on1' | 'group';
   max_students?: number;
   participant_ids?: string[];

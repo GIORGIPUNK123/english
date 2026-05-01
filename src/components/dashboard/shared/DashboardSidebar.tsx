@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { NotificationT } from '../../../types';
 import { db } from '../../../firebase/firebase-config';
 import { collection, onSnapshot, query } from 'firebase/firestore';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface SidebarProps {
   user: User;
@@ -26,13 +27,13 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'courses', label: 'Courses', icon: BookOpen },
-  { id: 'history', label: 'History', icon: History },
-  { id: 'calendar', label: 'Calendar', icon: Calendar },
-  { id: 'assignments', label: 'Assignments', icon: FileText },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'dashboard', key: 'sidebar.dashboard', icon: LayoutDashboard },
+  { id: 'courses', key: 'sidebar.courses', icon: BookOpen },
+  { id: 'history', key: 'sidebar.history', icon: History },
+  { id: 'calendar', key: 'sidebar.calendar', icon: Calendar },
+  { id: 'assignments', key: 'sidebar.assignments', icon: FileText },
+  { id: 'notifications', key: 'sidebar.notifications', icon: Bell },
+  { id: 'settings', key: 'sidebar.settings', icon: Settings },
 ];
 
 export const DashboardSidebar = ({
@@ -45,6 +46,7 @@ export const DashboardSidebar = ({
   userMode,
 }: SidebarProps) => {
   const [unreadCount, setUnreadCount] = useState(0);
+  const { t } = useLanguage();
   const handleTabChange = (tab: string) => {
     onTabChange(tab);
     // Close sidebar on mobile after selection
@@ -111,7 +113,7 @@ export const DashboardSidebar = ({
                 {userName}
               </h3>
               <p className='text-sm text-gray-600 dark:text-gray-400'>
-                {userMode === 'teacher' ? 'Teacher' : 'Student'}
+                {userMode === 'teacher' ? t('sidebar.teacher') : t('sidebar.student')}
               </p>
             </div>
           </div>
@@ -134,7 +136,7 @@ export const DashboardSidebar = ({
                 }`}
               >
                 <Icon className='shrink-0 w-5 h-5' />
-                <span className='flex-1 text-left'>{item.label}</span>
+                <span className='flex-1 text-left'>{t(item.key)}</span>
                 {showBadge && (
                   <span className='bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-5 text-center'>
                     {unreadCount}
@@ -148,7 +150,7 @@ export const DashboardSidebar = ({
         {/* Footer */}
         <div className='p-4 border-t border-gray-200 dark:border-gray-800'>
           <p className='text-xs text-center text-gray-400 dark:text-gray-500'>
-            © 2026 Student Portal
+            © 2026 {t('sidebar.portal')}
           </p>
         </div>
       </aside>

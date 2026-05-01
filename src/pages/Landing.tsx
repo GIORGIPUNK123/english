@@ -9,10 +9,12 @@ import { FeaturesSection } from '../components/landing/FeaturesSection';
 import { PricingSection } from '../components/landing/PricingSection';
 import { HeroSection } from '../components/landing/HeroSection';
 import { AboutSection } from '../components/landing/AboutSection';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Landing = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<null | User | 'loading'>('loading');
+  const { t } = useLanguage();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -36,7 +38,7 @@ export const Landing = () => {
           <div className='absolute inset-0 border-4 rounded-full border-muted'></div>
           <div className='absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin'></div>
         </div>
-        <p className='mt-4 text-muted-foreground'>Loading...</p>
+        <p className='mt-4 text-muted-foreground'>{t('auth.loading')}</p>
       </div>
     );
   }

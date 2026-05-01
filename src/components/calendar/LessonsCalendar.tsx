@@ -56,11 +56,13 @@ export const LessonsCalendar = (props: {
     showScheduleModal,
     scheduleTime,
     selectedTopicId,
+    selectedLevel,
     lessonType,
     selectedDate,
     currentWeek,
     setScheduleTime,
     setSelectedTopicId,
+    setSelectedLevel,
     setLessonType,
     setSelectedDate,
     setCurrentWeek,
@@ -206,6 +208,8 @@ export const LessonsCalendar = (props: {
           onScheduleTimeChange={setScheduleTime}
           selectedTopicId={selectedTopicId}
           onTopicChange={setSelectedTopicId}
+          selectedLevel={selectedLevel}
+          onLevelChange={setSelectedLevel}
           topicsArr={topicsArr}
           // selectedTeacher={selectedTeacher}
           // onTeacherChange={setSelectedTeacher}

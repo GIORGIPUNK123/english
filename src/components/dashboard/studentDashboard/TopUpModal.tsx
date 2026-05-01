@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../../firebase/firebase-config';
 import { useToast } from '../../../context/ToastContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import {
   TokenBalancesT,
   TokenPurchaseType,
@@ -41,6 +42,7 @@ export function TopUpModal({
   onClose,
   tokenBalances,
 }: TopUpModalProps) {
+  const { t } = useLanguage();
   const [selectedTokenType, setSelectedTokenType] =
     useState<TokenPurchaseType>('group');
   const [selectedBundle, setSelectedBundle] = useState<string>(
@@ -124,14 +126,13 @@ export function TopUpModal({
             <X className='w-4 h-4 text-white sm:w-5 sm:h-5' />
           </button>
           <h2 className='mb-1 text-xl font-bold text-white sm:text-2xl sm:mb-2'>
-            Buy Tokens
+            {t('dashboard.topUp')}
           </h2>
           <p className='text-xs text-white/90 sm:text-sm'>
-            Total Balance: <span className='font-semibold'>{tokenBalances.total} tokens</span>
+            {t('dashboard.availableTokens')}: <span className='font-semibold'>{tokenBalances.total} tokens</span>
           </p>
           <p className='text-[11px] text-white/85 sm:text-xs mt-1'>
-            1-on-1: {tokenBalances.oneOnOne} | Group: {tokenBalances.group} |
-            Flexible: {tokenBalances.legacy}
+            {t('dashboard.tokenDetailsOneOnOne')}: {tokenBalances.oneOnOne} | {t('dashboard.tokenDetailsGroup')}: {tokenBalances.group} | {t('dashboard.tokenDetailsFlexible')}: {tokenBalances.legacy}
           </p>
         </div>
 
@@ -149,7 +150,7 @@ export function TopUpModal({
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-blue-400 dark:hover:border-blue-500'
                 }`}
               >
-                Group Tokens
+                {t('dashboard.tokenDetailsGroup')} Tokens
               </button>
               <button
                 onClick={() => setSelectedTokenType('1on1')}
@@ -159,7 +160,7 @@ export function TopUpModal({
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-blue-400 dark:hover:border-blue-500'
                 }`}
               >
-                1-on-1 Tokens
+                {t('dashboard.tokenDetailsOneOnOne')} Tokens
               </button>
             </div>
           </div>

@@ -16,6 +16,7 @@ import { TipWidget } from '../shared/atoms/TipWidget';
 import { getStudentRatingAverage } from '../../../firebase/firebaseUserUtils';
 import { useToast } from '../../../context/ToastContext';
 import { getTokenBalances } from '../../../utils/tokenUtils';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface StudentDashboardViewProps {
   user: User;
@@ -43,16 +44,19 @@ export const StudentDashboardView = ({
     string | null
   >(null);
   const { addToast } = useToast();
+  const { t } = useLanguage();
 
   // Custom hooks
   const {
     showScheduleModal,
     scheduleTime,
     selectedTopicId,
+    selectedLevel,
     lessonType,
     selectedDate,
     setScheduleTime,
     setSelectedTopicId,
+    setSelectedLevel,
     setLessonType,
     setSelectedDate,
     openScheduleModalWithDefaultTime,
@@ -106,26 +110,25 @@ export const StudentDashboardView = ({
 
       addToast({
         title: payload.alreadyJoined
-          ? 'Already Joined'
-          : 'Joined Group Class',
+          ? t('calendar.alreadyJoinedTitle')
+          : t('calendar.joinedGroupTitle'),
         message: payload.alreadyJoined
-          ? 'You are already in this group class.'
-          : `Joined successfully (${payload.participantCount}/${payload.maxParticipants} students).`,
+          ? t('calendar.alreadyJoinedMessage')
+          : `${t('calendar.joinedSuccessMessage')} (${payload.participantCount}/${payload.maxParticipants} students).`,
         type: 'success',
       });
 
       onRefresh?.();
     } catch (error: any) {
-      let message = 'Could not join this group class.';
+      let message = t('calendar.joinFailedMessage');
       if (error?.code === 'functions/failed-precondition') {
-        message =
-          'This class is full, unavailable, or no longer open for joining.';
+        message = t('calendar.classFullMessage');
       } else if (error?.code === 'functions/unauthenticated') {
-        message = 'Please log in again and retry.';
+        message = t('auth.loginFailed');
       }
 
       addToast({
-        title: 'Join Failed',
+        title: t('calendar.joinFailedTitle'),
         message,
         type: 'error',
       });
@@ -164,6 +167,8 @@ export const StudentDashboardView = ({
           onScheduleTimeChange={setScheduleTime}
           selectedTopicId={selectedTopicId}
           onTopicChange={setSelectedTopicId}
+          selectedLevel={selectedLevel}
+          onLevelChange={setSelectedLevel}
           topicsArr={topicsArr}
           lessonType={lessonType}
           onLessonTypeChange={setLessonType}
@@ -193,7 +198,7 @@ export const StudentDashboardView = ({
       <div className='mb-8'>
         <div className='flex items-center justify-between gap-3 mb-2'>
           <h1 className='text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
-            Welcome back, {capitalNames[0]}! 👋
+            {t('dashboard.welcomeStudent')}, {capitalNames[0]}! 👋
           </h1>
           <button
             onClick={onRefresh}
@@ -204,13 +209,12 @@ export const StudentDashboardView = ({
               className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
             />
             <span className='hidden sm:inline'>
-              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+              {isRefreshing ? t('dashboard.refreshing') : t('dashboard.refresh')}
             </span>
           </button>
         </div>
         <TipWidget
-          tip={`Welcome back! 1-on-1 tokens: ${tokenBalances.oneOnOne}, group tokens: ${tokenBalances.group}, flexible tokens: ${tokenBalances.legacy}.`}
-          // min={true}
+          tip={`${t('dashboard.welcomeStudent')}! ${t('dashboard.tokenDetailsOneOnOne')}: ${tokenBalances.oneOnOne}, ${t('dashboard.tokenDetailsGroup')}: ${tokenBalances.group}, ${t('dashboard.tokenDetailsFlexible')}: ${tokenBalances.legacy}.`}
         />
       </div>
 
@@ -252,10 +256,10 @@ export const StudentDashboardView = ({
         <div className='p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
           <div className='flex items-center justify-between mb-4'>
             <h2 className='text-lg text-gray-900 dark:text-white sm:text-xl'>
-              Upcoming Lessons
+              {t('dashboard.upcomingLessons')}
             </h2>
             <button className='text-xs text-blue-500 transition-all sm:text-sm dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300'>
-              View All
+              {t('dashboard.viewAll')}
             </button>
           </div>
           <div className='space-y-3'>
@@ -329,7 +333,7 @@ export const StudentDashboardView = ({
             onClick={openScheduleModalWithDefaultTime}
             className='w-full mt-4 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm sm:text-base'
           >
-            + Schedule New Lesson
+            {t('dashboard.scheduleNewLesson')}
           </button>
         </div>
 
@@ -343,16 +347,16 @@ export const StudentDashboardView = ({
       <div className='mb-6 p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
         <div className='flex items-center justify-between mb-4'>
           <h2 className='text-lg text-gray-900 dark:text-white sm:text-xl'>
-            Open Group Classes
+            {t('dashboard.openGroupClasses')}
           </h2>
           <span className='text-xs text-gray-500 dark:text-gray-400'>
-            {discoverableGroupLessons.length} available
+            {discoverableGroupLessons.length} {t('dashboard.available')}
           </span>
         </div>
 
         {discoverableGroupLessons.length === 0 ? (
           <p className='text-sm text-gray-600 dark:text-gray-400'>
-            No open group classes right now. Check back soon.
+            {t('dashboard.noOpenGroupClasses')}
           </p>
         ) : (
           <div className='space-y-3'>
@@ -366,7 +370,7 @@ export const StudentDashboardView = ({
                   <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
                     <div>
                       <p className='text-sm text-gray-900 dark:text-white sm:text-base'>
-                        {lesson.topic?.heading || 'Group Class'}
+                        {lesson.topic?.heading || t('calendar.groupClass')}
                       </p>
                       <p className='text-xs text-gray-600 dark:text-gray-400 mt-1'>
                         {lessonDate.toLocaleDateString()} at{' '}
@@ -377,7 +381,7 @@ export const StudentDashboardView = ({
                       </p>
                       <p className='text-xs text-gray-500 dark:text-gray-500 mt-1'>
                         {lesson.participantCount}/{lesson.maxParticipants}{' '}
-                        joined
+                        {t('calendar.joined')}
                       </p>
                     </div>
                     <button
@@ -386,8 +390,8 @@ export const StudentDashboardView = ({
                       className='px-3 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed'
                     >
                       {joiningGroupLessonId === lesson.id
-                        ? 'Joining...'
-                        : 'Join Group'}
+                        ? t('dashboard.joining')
+                        : t('dashboard.joinGroup')}
                     </button>
                   </div>
                 </div>

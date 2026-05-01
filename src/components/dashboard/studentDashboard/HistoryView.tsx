@@ -7,6 +7,7 @@ import { ScheduleLessonModal } from '../../calendar/ScheduleLessonModal';
 import { User } from 'firebase/auth';
 import { useUserMode } from '../../../context/UserModeContext';
 import { getTokenBalances } from '../../../utils/tokenUtils';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface HistoryViewProps {
   user: User;
@@ -29,6 +30,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
 }) => {
   const [selectedLesson, setSelectedLesson] = useState<LessonT | null>(null);
   const { userMode } = useUserMode();
+  const { t } = useLanguage();
   const teachingClassIds = new Set(userData.teaching_classes || []);
   const tokenBalances = getTokenBalances(userData);
 
@@ -63,42 +65,42 @@ const HistoryView: React.FC<HistoryViewProps> = ({
       finished: {
         bgColor: 'bg-green-500/10',
         textColor: 'text-green-700 dark:text-green-400',
-        label: 'Completed',
+        label: t('calendar.finished'),
       },
       cancelled_student: {
         bgColor: 'bg-red-500/10',
         textColor: 'text-red-700 dark:text-red-400',
-        label: 'Canceled by Student',
+        label: t('calendar.cancelledByStudent'),
       },
       cancelled_teacher: {
         bgColor: 'bg-red-500/10',
         textColor: 'text-red-700 dark:text-red-400',
-        label: 'Canceled by Teacher',
+        label: t('calendar.cancelledByTeacher'),
       },
       cancelled_system: {
         bgColor: 'bg-red-500/10',
         textColor: 'text-red-700 dark:text-red-400',
-        label: 'Canceled by System',
+        label: t('calendar.cancelledBySystem'),
       },
       scheduled: {
         bgColor: 'bg-blue-500/10',
         textColor: 'text-blue-700 dark:text-blue-400',
-        label: 'Scheduled',
+        label: t('calendar.scheduledLesson'),
       },
       'in-progress': {
         bgColor: 'bg-orange-500/10',
         textColor: 'text-orange-700 dark:text-orange-400',
-        label: 'In Progress',
+        label: t('calendar.inProgress'),
       },
       missed_student: {
         bgColor: 'bg-red-500/10',
         textColor: 'text-red-700 dark:text-red-400',
-        label: 'Missed by Student',
+        label: t('calendar.missedByStudent'),
       },
       missed_teacher: {
         bgColor: 'bg-red-500/10',
         textColor: 'text-red-700 dark:text-red-400',
-        label: 'Missed by Teacher',
+        label: t('calendar.missedByTeacher'),
       },
     };
     return statusConfig[status];
@@ -108,10 +110,12 @@ const HistoryView: React.FC<HistoryViewProps> = ({
     showScheduleModal,
     scheduleTime,
     selectedTopicId,
+    selectedLevel,
     lessonType,
     selectedDate,
     setScheduleTime,
     setSelectedTopicId,
+    setSelectedLevel,
     setLessonType,
     setSelectedDate,
     // openScheduleModalWithDefaultTime,
@@ -128,7 +132,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
         <div className='mb-6'>
           <div className='flex items-center justify-between gap-3'>
             <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
-              Lesson History
+              {t('dashboard.lessonHistory')}
             </h2>
             <button
               onClick={onRefresh}
@@ -139,12 +143,12 @@ const HistoryView: React.FC<HistoryViewProps> = ({
                 className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
               />
               <span className='hidden sm:inline'>
-                {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                {isRefreshing ? t('dashboard.refreshing') : t('dashboard.refresh')}
               </span>
             </button>
           </div>
           <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
-            {lessons.length} lesson{lessons.length !== 1 ? 's' : ''} found
+            {lessons.length} {t('dashboard.lessonsFound')}
           </p>
         </div>
         {showScheduleModal && scheduleTime && (
@@ -153,6 +157,8 @@ const HistoryView: React.FC<HistoryViewProps> = ({
             onScheduleTimeChange={setScheduleTime}
             selectedTopicId={selectedTopicId}
             onTopicChange={setSelectedTopicId}
+            selectedLevel={selectedLevel}
+            onLevelChange={setSelectedLevel}
             topicsArr={topicsArr}
             // selectedTeacher={selectedTeacher}
             // onTeacherChange={setSelectedTeacher}
@@ -191,7 +197,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
                       <div className='flex-1 min-w-0'>
                         <div className='flex items-center gap-3 mb-2'>
                           <h3 className='font-semibold text-gray-900 dark:text-white truncate'>
-                            {lesson.topic?.heading || 'Untitled Lesson'}
+                            {lesson.topic?.heading || t('calendar.untitledLesson')}
                           </h3>
                           <div
                             className={`${statusConfig.bgColor} px-3 py-1 rounded-full text-xs font-medium ${statusConfig.textColor} whitespace-nowrap`}
@@ -202,23 +208,23 @@ const HistoryView: React.FC<HistoryViewProps> = ({
 
                         <div className='grid grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400'>
                           <div>
-                            <span className='font-medium'>Date: </span>
+                            <span className='font-medium'>{t('calendar.date')}: </span>
                             {formatDate(lesson.date)}
                           </div>
                           <div>
-                            <span className='font-medium'>Time: </span>
+                            <span className='font-medium'>{t('calendar.time')}: </span>
                             {formatTime(lesson.date)} -{' '}
                             {formatTime(lesson.date + 3600)}
                           </div>
                           <div>
-                            <span className='font-medium'>Duration: </span>
+                            <span className='font-medium'>{t('calendar.duration')}: </span>
                             60 minutes
                           </div>
                           <div>
-                            <span className='font-medium'>Teacher: </span>
+                            <span className='font-medium'>{t('calendar.teacher')}: </span>
                             {lesson.teacher
                               ? `${lesson.teacher.first_name} ${lesson.teacher.last_name}`
-                              : 'Not Assigned'}
+                              : t('calendar.notAssigned')}
                           </div>
                         </div>
                       </div>
@@ -233,7 +239,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
                         }}
                       >
                         <Eye className='w-4 h-4' />
-                        <span className=''>View</span>
+                        <span className=''>{t('calendar.view')}</span>
                       </button>
                     </div>
                   </div>
@@ -243,9 +249,9 @@ const HistoryView: React.FC<HistoryViewProps> = ({
           ) : (
             <div className='flex flex-col items-center justify-center h-40 text-gray-500 dark:text-gray-400'>
               <div className='text-center'>
-                <p className='text-lg font-medium'>No lessons found</p>
+                <p className='text-lg font-medium'>{t('dashboard.noLessonsFound')}</p>
                 <p className='text-sm mt-1'>
-                  Your lesson history will appear here
+                  {t('dashboard.historyWillAppearHere')}
                 </p>
               </div>
             </div>

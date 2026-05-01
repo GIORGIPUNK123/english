@@ -1,6 +1,8 @@
 import { Star } from 'lucide-react';
+import { useLanguage } from '../../../context/LanguageContext';
 
 export const FavoriteTeachers = () => {
+  const { t } = useLanguage();
   const favoriteTeachers = [
     {
       name: 'Sarah Johnson',
@@ -30,7 +32,7 @@ export const FavoriteTeachers = () => {
   return (
     <div className='p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
       <h2 className='mb-4 text-lg text-gray-900 dark:text-white sm:text-xl'>
-        Your Favorite Teachers
+        {t('dashboard.favoriteTeachersTitle')}
       </h2>
       <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
         {favoriteTeachers.map((teacher) => (
@@ -59,7 +61,7 @@ export const FavoriteTeachers = () => {
                 </div>
                 <span className='text-xs text-gray-500'>•</span>
                 <span className='text-xs text-gray-500'>
-                  {teacher.lessons} lessons
+                  {teacher.lessons} {t('dashboard.lessonsLabel')}
                 </span>
               </div>
             </div>

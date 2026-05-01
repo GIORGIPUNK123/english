@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LessonT, TopicT } from '../types';
+import { LEVEL_OPTIONS, LessonT, LevelT, TopicT } from '../types';
 import { getWeekDates } from '../components/calendar/utils';
 
 export interface ScheduleModalState {
@@ -19,10 +19,12 @@ export const useScheduleLessonModal = (topicsArr: TopicT[]) => {
     null,
   );
   const [selectedTopicId, setSelectedTopicId] = useState<string>('');
+  const [selectedLevel, setSelectedLevel] = useState<LevelT>(LEVEL_OPTIONS[0]);
   const [lessonType, setLessonType] = useState<'1on1' | 'group'>('1on1');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const openScheduleModalWithDefaultTime = () => {
+    setSelectedLevel(LEVEL_OPTIONS[0]);
     const weekDates = getWeekDates(currentWeek);
     const now = new Date();
 
@@ -68,6 +70,7 @@ export const useScheduleLessonModal = (topicsArr: TopicT[]) => {
   };
 
   const openScheduleModalWithTime = (state: ScheduleModalState) => {
+    setSelectedLevel(LEVEL_OPTIONS[0]);
     setScheduleTime(state);
     setShowScheduleModal(true);
   };
@@ -80,6 +83,9 @@ export const useScheduleLessonModal = (topicsArr: TopicT[]) => {
   useEffect(() => {
     if (!rescheduleLesson) return;
     setLessonType(rescheduleLesson.lessonType || '1on1');
+    if (rescheduleLesson.level) {
+      setSelectedLevel(rescheduleLesson.level);
+    }
   }, [rescheduleLesson]);
 
   return {
@@ -89,12 +95,14 @@ export const useScheduleLessonModal = (topicsArr: TopicT[]) => {
     setShowScheduleModal,
     scheduleTime,
     selectedTopicId,
+    selectedLevel,
     lessonType,
     selectedDate,
     // Setters
     setCurrentWeek,
     setScheduleTime,
     setSelectedTopicId,
+    setSelectedLevel,
     setLessonType,
     setSelectedDate,
     // Actions

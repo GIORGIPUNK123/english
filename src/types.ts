@@ -11,12 +11,28 @@ export type StatusT =
   | 'cancelled_system';
 
 export type LessonTypeT = '1on1' | 'group';
+export const LEVEL_OPTIONS = [
+  'A1.1',
+  'A1.2',
+  'A2.1',
+  'A2.2',
+  'B1.1',
+  'B1.2',
+  'B2.1',
+  'B2.2',
+  'C1.1',
+  'C1.2',
+  'C2.1',
+  'C2.2',
+] as const;
+export type LevelT = (typeof LEVEL_OPTIONS)[number];
 
 export interface LessonT {
   id: string;
   date: number;
   status: StatusT;
   lessonType: LessonTypeT;
+  level?: LevelT;
   participantIds?: string[];
   participantCount: number;
   maxParticipants: number;
@@ -110,6 +126,7 @@ export interface ClassesT {
   date: number;
   status: StatusT;
   topic_id: string;
+  level?: LevelT;
   lesson_type?: LessonTypeT;
   max_students?: number;
   participant_ids?: string[];

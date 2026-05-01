@@ -11,6 +11,7 @@ import {
 import { LoginSchema } from '../schemas/LoginSchema';
 import { ValidationError } from 'yup';
 import { useFirebaseLogins } from '../hooks/useFirebaseLogins';
+import { useLanguage } from '../context/LanguageContext';
 
 type FormData = {
   email: string;
@@ -30,6 +31,7 @@ export const Login = () => {
   const logins = useFirebaseLogins();
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useLanguage();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -79,7 +81,7 @@ export const Login = () => {
       // await fakeAuth.login(formData.email, formData.password);
       // navigate('/dashboard');
     } catch (error: any) {
-      alert(error.message || 'Login failed');
+      alert(error.message || t('auth.loginFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -94,7 +96,7 @@ export const Login = () => {
           className='inline-flex items-center space-x-2 transition-colors text-muted-foreground hover:text-foreground'
         >
           <ArrowLeft className='w-5 h-5' />
-          <span>Back to home</span>
+          <span>{t('auth.backToHome')}</span>
         </Link>
       </div>
 
@@ -112,10 +114,10 @@ export const Login = () => {
               </span>
             </div>
             <h1 className='mb-2 text-3xl font-bold text-foreground'>
-              Welcome back
+              {t('auth.loginWelcome')}
             </h1>
             <p className='text-muted-foreground'>
-              Sign in to continue your learning journey
+              {t('auth.loginSubtitle')}
             </p>
           </div>
 
@@ -132,7 +134,7 @@ export const Login = () => {
                 className='flex items-center justify-center w-full px-4 py-3 space-x-3 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
               >
                 <Chrome className='w-5 h-5' />
-                <span className='text-foreground'>Continue with Google</span>
+                <span className='text-foreground'>{t('auth.continueWithGoogle')}</span>
               </button>
 
               <div className='grid grid-cols-2 gap-3'>
@@ -145,7 +147,7 @@ export const Login = () => {
                   className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                 >
                   <Facebook className='w-5 h-5' />
-                  <span className='text-foreground'>Facebook</span>
+                  <span className='text-foreground'>{t('auth.facebook')}</span>
                 </button>
 
                 <button
@@ -157,7 +159,7 @@ export const Login = () => {
                   className='flex items-center justify-center px-4 py-3 space-x-2 transition-all duration-300 border rounded-lg bg-background border-border hover:bg-accent'
                 >
                   <Twitter className='w-5 h-5' />
-                  <span className='text-foreground'>Twitter</span>
+                  <span className='text-foreground'>{t('auth.twitter')}</span>
                 </button>
               </div>
             </div>
@@ -169,7 +171,7 @@ export const Login = () => {
               </div>
               <div className='relative flex justify-center text-sm'>
                 <span className='px-4 bg-card text-muted-foreground'>
-                  Or continue with email
+                  {t('auth.loginEmailDivider')}
                 </span>
               </div>
             </div>
@@ -178,12 +180,12 @@ export const Login = () => {
             <form onSubmit={handleSubmit} className='space-y-4'>
               <div>
                 <label className='block mb-2 text-sm font-medium text-foreground'>
-                  Email Address
+                  {t('auth.emailAddress')}
                 </label>
                 <input
                   type='email'
                   name='email'
-                  placeholder='Enter your email'
+                  placeholder={t('auth.emailAddress')}
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -200,13 +202,13 @@ export const Login = () => {
 
               <div>
                 <label className='block mb-2 text-sm font-medium text-foreground'>
-                  Password
+                  {t('auth.password')}
                 </label>
                 <div className='relative'>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name='password'
-                    placeholder='Enter your password'
+                    placeholder={t('auth.password')}
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -236,13 +238,13 @@ export const Login = () => {
               <div className='flex items-center justify-between text-sm'>
                 <label className='flex items-center space-x-2 cursor-pointer'>
                   <input type='checkbox' className='rounded border-border' />
-                  <span className='text-muted-foreground'>Remember me</span>
+                  <span className='text-muted-foreground'>{t('auth.rememberMe')}</span>
                 </label>
                 <Link
                   to='#'
                   className='text-blue-500 transition-colors hover:text-blue-600'
                 >
-                  Forgot password?
+                  {t('auth.forgotPassword')}
                 </Link>
               </div>
 
@@ -251,20 +253,20 @@ export const Login = () => {
                 disabled={isSubmitting}
                 className='w-full px-4 py-3 font-medium text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
               >
-                {isSubmitting ? 'Signing in...' : 'Sign in'}
+                {isSubmitting ? t('auth.signingIn') : t('auth.signInButton')}
               </button>
             </form>
 
             {/* Sign Up Link */}
             <div className='mt-6 text-sm text-center'>
               <span className='text-muted-foreground'>
-                Don't have an account?{' '}
+                {t('auth.doNotHaveAccount')} {' '}
               </span>
               <Link
                 to='/register'
                 className='font-medium text-blue-500 transition-colors hover:text-blue-600'
               >
-                Sign up
+                {t('auth.signUp')}
               </Link>
             </div>
           </div>

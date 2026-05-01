@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 export const HeroSection = () => {
+  const { t } = useLanguage();
+
   return (
     <section className='relative px-4 py-20 overflow-hidden sm:px-6 lg:px-8'>
       {/* Background gradient */}
@@ -13,21 +16,19 @@ export const HeroSection = () => {
             <div className='inline-flex items-center px-4 py-2 space-x-2 border rounded-full bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/20'>
               <span className='w-2 h-2 bg-blue-500 rounded-full animate-pulse'></span>
               <span className='text-sm font-medium text-blue-600 dark:text-blue-400'>
-                Now accepting new students
+                {t('landing.heroBadge')}
               </span>
             </div>
 
             <div className='space-y-4'>
               <h1 className='text-5xl font-bold leading-tight sm:text-6xl lg:text-7xl text-foreground'>
-                Master English with{' '}
+                {t('landing.heroTitlePre')}{' '}
                 <span className='text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
-                  Expert Teachers
+                  {t('landing.heroTitleEmphasis')}
                 </span>
               </h1>
               <p className='max-w-2xl text-xl text-muted-foreground'>
-                Join thousands of students learning English through personalized
-                1-on-1 lessons and interactive group classes. Start your journey
-                today.
+                {t('landing.heroSubtitle')}
               </p>
             </div>
 
@@ -36,14 +37,14 @@ export const HeroSection = () => {
                 to='/register'
                 className='inline-flex items-center justify-center px-8 py-4 font-medium text-white transition-all duration-300 rounded-lg shadow-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:shadow-xl group'
               >
-                Get Started Free
+                {t('landing.heroPrimaryCta')}
                 <ArrowRight className='w-5 h-5 ml-2 transition-transform group-hover:translate-x-1' />
               </Link>
               <Link
                 to='/become-teacher'
                 className='inline-flex items-center justify-center px-8 py-4 font-medium transition-all duration-300 border-2 rounded-lg bg-background dark:bg-card border-border text-foreground hover:bg-accent'
               >
-                Become a Teacher
+                {t('header.teach')}
               </Link>
             </div>
 
@@ -52,19 +53,19 @@ export const HeroSection = () => {
               <div>
                 <div className='text-3xl font-bold text-foreground'>10K+</div>
                 <div className='text-sm text-muted-foreground'>
-                  Active Students
+                  {t('landing.heroStatsStudents')}
                 </div>
               </div>
               <div>
                 <div className='text-3xl font-bold text-foreground'>500+</div>
                 <div className='text-sm text-muted-foreground'>
-                  Expert Teachers
+                  {t('landing.heroStatsTeachers')}
                 </div>
               </div>
               <div>
                 <div className='text-3xl font-bold text-foreground'>4.9/5</div>
                 <div className='text-sm text-muted-foreground'>
-                  Average Rating
+                  {t('landing.heroStatsRating')}
                 </div>
               </div>
             </div>
@@ -86,7 +87,7 @@ export const HeroSection = () => {
                   </div>
                   <div className='flex-1'>
                     <div className='text-sm font-medium text-foreground'>
-                      Next lesson starts in
+                      {t('landing.heroNextLesson')}
                     </div>
                     <div className='text-2xl font-bold text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
                       15 minutes

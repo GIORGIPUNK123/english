@@ -19,6 +19,7 @@ import { useFirebaseNotifications } from '../hooks/useFirebaseNotifications';
 import { useFirebaseLessons } from '../hooks/useFirebaseLessons';
 import HistoryView from '../components/dashboard/studentDashboard/HistoryView';
 import { FinishUserSetup } from '../components/dashboard/shared/FinishUserSetup';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -100,6 +101,7 @@ export const Dashboard = () => {
   console.log('Current user mode:', userMode); // Check current mode
   const navigate = useNavigate();
   const { toasts, removeToast } = useToast();
+  const { t } = useLanguage();
 
   useFirebaseNotifications(user?.uid || null);
 
@@ -227,7 +229,7 @@ export const Dashboard = () => {
       case 'courses':
         return (
           <div className='text-3xl text-gray-800 dark:text-white '>
-            Courses Coming Soon!
+            {t('dashboard.coursesComingSoon')}
           </div>
         );
       case 'history':
@@ -259,7 +261,7 @@ export const Dashboard = () => {
       case 'assignments':
         return (
           <div className='text-3xl text-gray-800 dark:text-white '>
-            Assignments Coming Soon!
+            {t('dashboard.assignmentsComingSoon')}
           </div>
         );
       case 'notifications':

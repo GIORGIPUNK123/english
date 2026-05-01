@@ -1,5 +1,6 @@
 import { Plus, RotateCw } from 'lucide-react';
 import { WeekNavigation } from './WeekNavigation';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface CalendarHeaderProps {
   openModal: () => void;
@@ -13,17 +14,16 @@ interface CalendarHeaderProps {
 
 export const CalendarHeader = (props: CalendarHeaderProps) => {
   const isTeacher = props.variant === 'teacher';
+  const { t } = useLanguage();
   return (
     <div className='mb-6'>
       <div className='flex items-center justify-between mb-4'>
         <div>
           <h1 className='mb-2 text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
-            Calendar
+            {t('calendar.calendarTitle')}
           </h1>
           <p className='text-sm text-gray-600 dark:text-gray-400 sm:text-base'>
-            {isTeacher
-              ? 'Open requests from students and lessons you have accepted'
-              : 'Schedule your English lessons'}
+            {isTeacher ? t('calendar.teacherOpenSummary') : t('calendar.studentSummary')}
           </p>
         </div>
         <div className='flex items-center gap-2'>
@@ -36,7 +36,7 @@ export const CalendarHeader = (props: CalendarHeaderProps) => {
               className={`w-4 h-4 ${props.isRefreshing ? 'animate-spin' : ''}`}
             />
             <span className='hidden sm:inline'>
-              {props.isRefreshing ? 'Refreshing...' : 'Refresh'}
+              {props.isRefreshing ? t('calendar.refreshing') : t('calendar.refresh')}
             </span>
           </button>
           {!isTeacher && (
@@ -45,7 +45,7 @@ export const CalendarHeader = (props: CalendarHeaderProps) => {
               onClick={props.openModal}
             >
               <Plus className='w-4 h-4' />
-              <span className='hidden sm:inline'>Book Lesson</span>
+              <span className='hidden sm:inline'>{t('calendar.bookLesson')}</span>
             </button>
           )}
         </div>

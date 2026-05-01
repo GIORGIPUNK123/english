@@ -1,6 +1,9 @@
 import { BookOpen } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export function Loading() {
+  const { t } = useLanguage();
+
   return (
     <div className='fixed inset-0 bg-[#0f0f0f] dark flex items-center justify-center z-50'>
       <div className='flex flex-col items-center justify-center gap-6'>
@@ -18,9 +21,9 @@ export function Loading() {
         {/* Loading Text */}
         <div className='space-y-2 text-center'>
           <h2 className='text-2xl font-semibold text-white'>
-            English Learning Platform
+            British World
           </h2>
-          <p className='text-sm text-gray-400'>Loading your dashboard...</p>
+          <p className='text-sm text-gray-400'>{t('auth.loading')}</p>
         </div>
 
         {/* Animated Dots */}

@@ -5,6 +5,7 @@ import { InfoWidget } from '../shared/atoms/InfoWidget';
 import { TipWidget } from '../shared/atoms/TipWidget';
 import { PerformanceOverview } from './PerformanceOverview';
 import { LessonDetailModal } from '../../calendar/LessonDetailModal';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface TeacherDashboardViewProps {
   userData: UserDataT;
@@ -38,6 +39,7 @@ export const TeacherDashboardView = ({
     (lesson) => lesson.status === 'finished',
   );
   const teachingClassIds = new Set(userData.teaching_classes || []);
+  const { t } = useLanguage();
 
   const totalStudents = new Set(lessons.map((lesson) => lesson.id)).size;
   console.log('lessons: ', lessons);
@@ -47,7 +49,7 @@ export const TeacherDashboardView = ({
       <div className='mb-8'>
         <div className='flex items-center justify-between gap-3 mb-2'>
           <h1 className='text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
-            Welcome back, {capitalNames[0]}! 👨‍🏫
+            {t('dashboard.welcomeTeacher')}, {capitalNames[0]}! 👨‍🏫
           </h1>
           <button
             onClick={onRefresh}
@@ -58,12 +60,12 @@ export const TeacherDashboardView = ({
               className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
             />
             <span className='hidden sm:inline'>
-              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+              {isRefreshing ? t('dashboard.refreshing') : t('dashboard.refresh')}
             </span>
           </button>
         </div>
         <TipWidget
-          tip={`You're in Teacher Mode. You have ${upcomingLessons.length} upcoming lessons and ${completedLessons.length} completed.`}
+          tip={`${t('dashboard.welcomeTeacher')}! You have ${upcomingLessons.length} upcoming lessons and ${completedLessons.length} completed.`}
         />
       </div>
 
@@ -98,10 +100,10 @@ export const TeacherDashboardView = ({
         <div className='p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
           <div className='flex items-center justify-between mb-4'>
             <h2 className='text-lg text-gray-900 dark:text-white sm:text-xl'>
-              Today's Schedule
+              {t('dashboard.todaySchedule')}
             </h2>
             <button className='text-xs text-blue-500 transition-all sm:text-sm dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300'>
-              View All
+              {t('dashboard.viewAll')}
             </button>
           </div>
           <div className='space-y-3'>
@@ -117,7 +119,7 @@ export const TeacherDashboardView = ({
                     <div className='flex items-start gap-3'>
                       <div className='flex-1 min-w-0'>
                         <h4 className='mb-1 text-sm font-medium text-gray-900 dark:text-white sm:text-base'>
-                          {lesson.topic?.heading || 'Untitled Lesson'}
+                          {lesson.topic?.heading || t('calendar.untitledLesson')}
                         </h4>
                         <div className='flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-500'>
                           <Calendar className='w-3 h-3' />
@@ -133,7 +135,7 @@ export const TeacherDashboardView = ({
                         </div>
                       </div>
                       <span className='px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded dark:bg-blue-900/30 dark:text-blue-300'>
-                        Scheduled
+                        {t('calendar.scheduledLesson')}
                       </span>
                     </div>
                   </div>
@@ -142,7 +144,7 @@ export const TeacherDashboardView = ({
             ) : (
               <div className='py-8 text-center text-gray-500 dark:text-gray-400'>
                 <Calendar className='w-12 h-12 mx-auto mb-2 opacity-50' />
-                <p className='text-sm'>No upcoming lessons</p>
+                <p className='text-sm'>{t('dashboard.noUpcomingLessons')}</p>
               </div>
             )}
           </div>
@@ -152,7 +154,7 @@ export const TeacherDashboardView = ({
         <div className='p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
           <div className='flex items-center justify-between mb-4'>
             <h2 className='text-lg text-gray-900 dark:text-white sm:text-xl'>
-              Recent Activity
+              {t('dashboard.recentActivity')}
             </h2>
           </div>
           <div className='space-y-3'>
@@ -167,7 +169,7 @@ export const TeacherDashboardView = ({
                     <div className='flex items-start gap-3'>
                       <div className='flex-1 min-w-0'>
                         <h4 className='mb-1 text-sm font-medium text-gray-900 dark:text-white sm:text-base'>
-                          {lesson.topic?.heading || 'Untitled Lesson'}
+                          {lesson.topic?.heading || t('calendar.untitledLesson')}
                         </h4>
                         <div className='flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-500'>
                           <Calendar className='w-3 h-3' />
@@ -175,7 +177,7 @@ export const TeacherDashboardView = ({
                         </div>
                       </div>
                       <span className='px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded dark:bg-green-900/30 dark:text-green-300'>
-                        Completed
+                        {t('calendar.finished')}
                       </span>
                     </div>
                   </div>
@@ -184,7 +186,7 @@ export const TeacherDashboardView = ({
             ) : (
               <div className='py-8 text-center text-gray-500 dark:text-gray-400'>
                 <TrendingUp className='w-12 h-12 mx-auto mb-2 opacity-50' />
-                <p className='text-sm'>No recent activity</p>
+                <p className='text-sm'>{t('dashboard.noRecentActivity')}</p>
               </div>
             )}
           </div>
