@@ -398,30 +398,28 @@ export const ScheduleLessonModal = ({
             <label className='block mb-3 text-sm text-gray-600 dark:text-gray-400'>
               {t('calendar.selectTime')}
             </label>
-            <div className='grid grid-cols-2 gap-3'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3'>
               {/* Hour Selector */}
               <div>
                 <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
                   {t('calendar.hour')}
                 </div>
-                <div className='grid grid-cols-6 gap-1 max-h-50 overflow-y-auto bg-gray-50 dark:bg-gray-800/60 p-2 rounded-lg'>
+                <select
+                  value={scheduleTime.hour}
+                  onChange={(e) => {
+                    onScheduleTimeChange({
+                      ...scheduleTime,
+                      hour: Number(e.target.value),
+                    });
+                  }}
+                  className='w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-900 transition-all focus:border-blue-600 focus:outline-none dark:border-gray-700 dark:bg-gray-800/60 dark:text-white'
+                >
                   {hours.map((hour) => (
-                    <button
-                      key={hour}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onScheduleTimeChange({ ...scheduleTime, hour });
-                      }}
-                      className={`p-2 rounded text-xs transition-all ${
-                        scheduleTime.hour === hour
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
-                      }`}
-                    >
-                      {hour.toString().padStart(2, '0')}
-                    </button>
+                    <option key={hour} value={hour}>
+                      {hour.toString().padStart(2, '0')}:00
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
 
               {/* Minute Selector */}
@@ -461,7 +459,7 @@ export const ScheduleLessonModal = ({
             </div>
 
             {/* Selected Time Display */}
-              <div className='p-3 mt-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-600/30'>
+            <div className='p-3 mt-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-600/30'>
               <div className='flex items-center gap-2'>
                 <Clock className='w-4 h-4 text-blue-600 dark:text-blue-400' />
                 <span className='text-sm text-gray-900 dark:text-white'>

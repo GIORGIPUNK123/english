@@ -170,7 +170,7 @@ export const Header = () => {
                 {t('header.teach')}
               </Link>
 
-              <div className='pt-4 space-y-3'>
+              <div className='mt-2 border-t border-border/60 pt-5'>
                 {user && user !== 'loading' ? (
                   <Link to='/dashboard' onClick={() => setIsMenuOpen(false)}>
                     <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
@@ -179,7 +179,7 @@ export const Header = () => {
                   </Link>
                 ) : (
                   user !== 'loading' && (
-                    <>
+                    <div className='flex flex-col gap-4'>
                       <Link to='/login' onClick={() => setIsMenuOpen(false)}>
                         <button className='w-full px-6 py-3 transition-all duration-300 border rounded-lg text-foreground border-border hover:bg-accent'>
                           {t('header.login')}
@@ -190,7 +190,7 @@ export const Header = () => {
                           {t('header.signup')}
                         </button>
                       </Link>
-                    </>
+                    </div>
                   )
                 )}
               </div>
