@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+  useMemo,
+} from 'react';
 import { UserDataT } from '../types';
 
 type UserMode = 'student' | 'teacher';
@@ -19,7 +26,7 @@ export const UserModeProvider = ({ children }: { children: ReactNode }) => {
   const [canSwitchToTeacher, setCanSwitchToTeacher] = useState(false);
 
   // Initialize user mode based on userData
-  const initializeUserMode = (userData: UserDataT | null) => {
+  const initializeUserMode = useCallback((userData: UserDataT | null) => {
     if (!userData) {
       setUserModeState('student');
       setCanSwitchToTeacher(false);
@@ -41,25 +48,26 @@ export const UserModeProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setUserModeState('student');
     }
-  };
+  }, []);
 
   // Update localStorage when mode changes
-  const setUserMode = (mode: UserMode) => {
+  const setUserMode = useCallback((mode: UserMode) => {
     setUserModeState(mode);
     localStorage.setItem('userMode', mode);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      userMode,
+      setUserMode,
+      canSwitchToTeacher,
+      initializeUserMode,
+    }),
+    [userMode, setUserMode, canSwitchToTeacher, initializeUserMode],
+  );
 
   return (
-    <UserModeContext.Provider
-      value={{
-        userMode,
-        setUserMode,
-        canSwitchToTeacher,
-        initializeUserMode,
-      }}
-    >
-      {children}
-    </UserModeContext.Provider>
+    <UserModeContext.Provider value={value}>{children}</UserModeContext.Provider>
   );
 };
 

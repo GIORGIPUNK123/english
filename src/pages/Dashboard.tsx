@@ -108,7 +108,10 @@ export const Dashboard = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (!firebaseUser) {
-        navigate('/login');
+        setUser(null);
+        setUserData(null);
+        setLoading(false);
+        navigate('/login', { replace: true });
         return;
       }
       setUser(firebaseUser);
@@ -119,19 +122,25 @@ export const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
 
+    setLoading(true);
     const userDocRef = doc(db, 'users', user.uid);
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as UserDataT;
-        setUserData(data);
-        // Initialize user mode based on userData
-        initializeUserMode(data);
-      } else {
-        setUserData(null);
-        initializeUserMode(null);
-      }
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as UserDataT;
+          setUserData(data);
+          initializeUserMode(data);
+        } else {
+          setUserData(null);
+          initializeUserMode(null);
+        }
+        setLoading(false);
+      },
+      () => {
+        setLoading(false);
+      },
+    );
 
     return () => unsubscribe();
   }, [user, initializeUserMode]);
@@ -195,11 +204,12 @@ export const Dashboard = () => {
   };
 
   // ✅ RETURNS COME LAST
-  if (loading) return <Loading />;
+  if (loading || !user) return <Loading />;
 
+  // Auth is present but profile doc not ready yet (e.g. onCreate trigger lag).
+  // Do NOT bounce to login — that was stranding signed-in users on /login.
   if (!userData) {
-    navigate('/login');
-    return null;
+    return <Loading />;
   }
 
   const needsProfileSetup =

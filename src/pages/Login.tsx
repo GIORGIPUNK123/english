@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Chrome,
@@ -8,10 +8,12 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { LoginSchema } from '../schemas/LoginSchema';
 import { ValidationError } from 'yup';
 import { useFirebaseLogins } from '../hooks/useFirebaseLogins';
 import { useLanguage } from '../context/LanguageContext';
+import { auth } from '../firebase/firebase-config';
 
 type FormData = {
   email: string;
@@ -29,9 +31,19 @@ export const Login = () => {
     password: '',
   });
   const logins = useFirebaseLogins();
+  const navigate = useNavigate();
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useLanguage();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        navigate('/dashboard', { replace: true });
+      }
+    });
+    return () => unsubscribe();
+  }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
