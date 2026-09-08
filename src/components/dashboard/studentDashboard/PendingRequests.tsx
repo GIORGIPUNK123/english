@@ -10,8 +10,8 @@ export const PendingRequests = (props: {
   const { pendingRequests, setSelectedLesson } = props;
   const { t } = useLanguage();
   return (
-    <div className='p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
-      <h2 className='mb-4 text-lg text-gray-900 dark:text-white sm:text-xl'>
+    <div className='p-4 border sm:p-6 bg-card border-border rounded-xl'>
+      <h2 className='mb-4 text-lg font-semibold text-foreground sm:text-xl'>
         {t('dashboard.pendingRequests')}
       </h2>
       <div className='mb-4 space-y-3'>
@@ -20,31 +20,29 @@ export const PendingRequests = (props: {
           return (
             <div
               key={lesson.id}
-              className='p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700'
+              className='p-3 border rounded-lg bg-muted/40 border-border'
             >
               <div className='flex items-start gap-3'>
-                <div
-                  className={`w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center shrink-0 ${lesson.teacher ? 'bg-blue-500' : 'bg-gray-500'} `}
-                >
+                <div className='flex items-center justify-center w-10 h-10 rounded-lg shrink-0 brand-mark'>
                   <span className='text-sm font-semibold text-white'>
                     {lesson.teacher ? (
                       lesson.teacher.first_name.charAt(0).toUpperCase() +
                       lesson.teacher.last_name.charAt(0).toUpperCase()
                     ) : (
-                      <UserIcon />
+                      <UserIcon className='w-4 h-4' />
                     )}
                   </span>
                 </div>
                 <div className='flex-1 min-w-0'>
-                  <h4 className='mb-1 text-sm text-gray-900 dark:text-white sm:text-base'>
+                  <h4 className='mb-1 text-sm font-medium text-foreground sm:text-base'>
                     {lesson.teacher
                       ? `${lesson.teacher.first_name.charAt(0).toUpperCase()}${lesson.teacher.first_name.slice(1)} ${lesson.teacher.last_name.charAt(0).toUpperCase()}${lesson.teacher.last_name.slice(1)}`
-                        : t('dashboard.pendingAnyAvailableTeacher')}
+                      : t('dashboard.pendingAnyAvailableTeacher')}
                   </h4>
-                  <p className='mb-2 text-xs text-gray-600 sm:text-sm dark:text-gray-400'>
+                  <p className='mb-2 text-xs sm:text-sm text-muted-foreground'>
                     {lesson.topic?.heading}
                   </p>
-                  <div className='flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-500'>
+                  <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
                     <Calendar className='w-3 h-3' />
                     <span>{lessonDate.toLocaleDateString()}</span>
                     <span>•</span>
@@ -61,19 +59,19 @@ export const PendingRequests = (props: {
                     </span>
                   </div>
                 </div>
-                <div className='flex items-center shrink-0 gap-1'>
+                <div className='flex items-center gap-1 shrink-0'>
                   <AlertCircle className='w-4 h-4 text-orange-400' />
                 </div>
               </div>
-              <div className='flex items-center justify-between pt-3 mt-3 border-t border-gray-200 dark:border-gray-700'>
-                <p className='text-xs text-gray-500 dark:text-gray-500'>
+              <div className='flex items-center justify-between pt-3 mt-3 border-t border-border'>
+                <p className='text-xs text-muted-foreground'>
                   {lesson.teacher
                     ? t('dashboard.waitingForTeacherConfirmation')
                     : t('dashboard.waitingForAnyTeacher')}
                 </p>
                 <button
                   onClick={() => setSelectedLesson(lesson)}
-                  className='text-xs sm:text-sm px-3 py-1.5 bg-blue-600/20 text-blue-500 dark:text-blue-400 border border-blue-600/30 rounded hover:bg-blue-600/30 transition-all'
+                  className='text-xs sm:text-sm px-3 py-1.5 bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/25 transition-all'
                 >
                   View
                 </button>

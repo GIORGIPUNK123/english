@@ -28,18 +28,18 @@ export const AboutSection = () => {
   const { t } = useLanguage();
 
   return (
-    <section id='about' className='py-20 sm:py-32 bg-muted/30'>
+    <section id='about' className='py-16 sm:py-24 lg:py-32 bg-muted/30'>
       <div className='px-4 mx-auto max-w-7xl sm:px-6 lg:px-8'>
         {/* Section Header */}
-        <div className='max-w-3xl mx-auto mb-16 text-center'>
+        <div className='max-w-3xl mx-auto mb-12 text-center sm:mb-16'>
           <div className='inline-flex items-center px-4 py-2 mb-6 space-x-2 rounded-full bg-accent'>
             <span className='text-sm font-medium text-muted-foreground'>
               {t('landing.aboutBadge')}
             </span>
           </div>
-          <h2 className='mb-6 text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
+          <h2 className='mb-4 text-2xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
             {t('landing.aboutTitlePre')}
-            <span className='text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
+            <span className='text-transparent bg-linear-to-r from-indigo-400 to-violet-400 bg-clip-text'>
               {' '}
               {t('landing.aboutTitleEmphasis')}
             </span>
@@ -92,7 +92,7 @@ export const AboutSection = () => {
             const Icon = value.icon;
             return (
               <div key={index} className='text-center'>
-                <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-2xl bg-linear-to-br from-blue-500 to-purple-600'>
+                <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-2xl brand-mark'>
                   <Icon className='w-8 h-8 text-white' />
                 </div>
                 <h3 className='mb-2 text-lg font-semibold text-foreground'>

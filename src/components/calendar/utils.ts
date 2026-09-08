@@ -61,7 +61,10 @@ export const isTimestampConflicting = (
   const slotEnd = slotStart + 3600; // 1 hour lesson (3600 seconds)
 
   return lessons.some((event) => {
-    // Check if there's any overlap
+    if (event.status.startsWith('cancelled')) {
+      return false;
+    }
+
     return slotStart < event.date + 3600 && slotEnd > event.date;
   });
 };
@@ -75,25 +78,25 @@ export const isTimestampTooSoon = (timestamp: number) => {
 
 // Get color based on lesson status
 export const getLessonColor = (lesson: LessonT) => {
-  if (!lesson.teacher) return 'bg-orange-500'; // Pending - no teacher assigned
+  if (!lesson.teacher) return 'bg-amber-500/80';
 
   switch (lesson.status) {
     case 'scheduled':
-      return 'bg-blue-500';
+      return 'bg-indigo-500/80';
     case 'in-progress':
-      return 'bg-green-500';
+      return 'bg-emerald-500/80';
     case 'finished':
-      return 'bg-gray-500';
+      return 'bg-slate-500/70';
     case 'missed_student':
-      return 'bg-red-500';
+      return 'bg-rose-500/80';
     case 'missed_teacher':
-      return 'bg-red-500';
+      return 'bg-rose-500/80';
     case 'cancelled_student':
-      return 'bg-gray-600';
+      return 'bg-slate-600/70';
     case 'cancelled_teacher':
-      return 'bg-gray-600';
+      return 'bg-slate-600/70';
     default:
-      return 'bg-blue-500';
+      return 'bg-indigo-500/80';
   }
 };
 

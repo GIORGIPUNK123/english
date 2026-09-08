@@ -463,24 +463,24 @@ export const BecomeTeacherModal = ({
 
   return (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/60 dark:bg-black/70 backdrop-blur-sm'
+      className='modal-overlay overflow-y-auto'
       onClick={handleModalClose}
     >
       <div
-        className='w-full max-w-2xl max-h-[min(calc(100dvh-2rem),920px)] my-auto flex flex-col overflow-hidden transition-all transform bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 dark:border-gray-700 rounded-xl'
+        className='w-full max-w-2xl max-h-[min(calc(100dvh-2rem),920px)] my-auto flex flex-col modal-panel'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='relative shrink-0 p-5 bg-linear-to-r from-blue-500 to-purple-600 rounded-t-xl sm:p-6'>
+        <div className='modal-header shrink-0'>
           <button
             onClick={handleModalClose}
-            className='absolute p-2 transition-all rounded-lg top-3 right-3 sm:top-4 sm:right-4 hover:bg-white/10'
+            className='modal-close top-3 right-3 sm:top-4 sm:right-4'
           >
-            <X className='w-5 h-5 text-white' />
+            <X className='w-5 h-5' />
           </button>
-          <h1 className='pr-10 text-xl font-bold text-white sm:text-2xl'>
+          <h1 className='pr-10 text-xl font-bold text-foreground sm:text-2xl'>
             Become a Teacher
           </h1>
-          <p className='mt-1 text-sm text-white/90 sm:text-base'>
+          <p className='mt-1 text-sm text-muted-foreground sm:text-base'>
             Complete your application using your existing account.
           </p>
         </div>
@@ -490,7 +490,7 @@ export const BecomeTeacherModal = ({
             {renderStep()}
           </div>
 
-          <div className='shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 sm:p-6 pt-4'>
+          <div className='shrink-0 border-t border-border bg-card p-5 sm:p-6 pt-4'>
             <div className='flex items-center justify-between mb-3'>
               {[1, 2].map((step) => (
                 <div key={step} className='flex items-center flex-1'>
@@ -527,7 +527,7 @@ export const BecomeTeacherModal = ({
                 type='button'
                 onClick={handlePreviousStep}
                 disabled={currentStep === 1}
-                className='px-4 py-2.5 text-sm font-medium transition-all border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed'
+                className='px-4 py-2.5 text-sm btn-secondary'
               >
                 Previous
               </button>
@@ -536,7 +536,7 @@ export const BecomeTeacherModal = ({
                 <button
                   type='button'
                   onClick={handleNextStep}
-                  className='px-6 py-2.5 text-sm font-medium text-white transition-all rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
+                  className='px-6 py-2.5 text-sm btn-primary'
                 >
                   Next Step
                 </button>
@@ -545,7 +545,7 @@ export const BecomeTeacherModal = ({
                   type='submit'
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className='px-6 py-2.5 text-sm font-medium text-white transition-all rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                  className='px-6 py-2.5 text-sm btn-primary'
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Application'}
                 </button>

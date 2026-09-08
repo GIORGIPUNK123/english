@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { auth, db } from '../firebase/firebase-config';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { LessonT, TopicT, UserDataT } from '../types';
 import { DashboardSidebar } from '../components/dashboard/shared/DashboardSidebar';
@@ -17,11 +17,15 @@ import { useToast } from '../context/ToastContext';
 import { useUserMode } from '../context/UserModeContext';
 import { useFirebaseNotifications } from '../hooks/useFirebaseNotifications';
 import { useFirebaseLessons } from '../hooks/useFirebaseLessons';
+import { useOpenGroupLessons } from '../hooks/useOpenGroupLessons';
+import { useOpenLessonRequests } from '../hooks/useOpenLessonRequests';
 import HistoryView from '../components/dashboard/studentDashboard/HistoryView';
+import FeedbackView from '../components/dashboard/shared/FeedbackView';
 import { FinishUserSetup } from '../components/dashboard/shared/FinishUserSetup';
 import { useLanguage } from '../context/LanguageContext';
 
 export const Dashboard = () => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -35,54 +39,60 @@ export const Dashboard = () => {
 
   // ✅ MOVE THESE UP
   const [topicsArr, setTopicsArr] = useState<TopicT[]>([]);
-  const { lessons, loading: lessonsLoading } = useFirebaseLessons({
-    classes: userMode === 'student' ? userData?.classes : undefined,
-    topicsArr,
-    includeCancelled: true,
-    linkForViewer: userMode === 'teacher' ? 'teacher' : 'student',
-    refetchWhenKey:
-      userMode === 'teacher'
-        ? `${(userData?.teaching_classes || []).join(',')}-${refetchCounter}`
-        : `${(userData?.classes || []).join(',')}-${refetchCounter}`,
-  });
+  const enrolledClassIds =
+    userMode === 'student'
+      ? userData?.classes ?? []
+      : userData?.teaching_classes ?? [];
 
-  const { lessons: globallyVisibleLessons, loading: globalLessonsLoading } =
+  const { lessons: enrolledLessons, loading: lessonsLoading } =
     useFirebaseLessons({
-      classes: userMode === 'student' ? undefined : [],
+      classes: enrolledClassIds,
       topicsArr,
-      includeCancelled: false,
-      linkForViewer: 'student',
-      refetchWhenKey: `global-student-${refetchCounter}-${userMode}`,
+      includeCancelled: true,
+      linkForViewer: userMode === 'teacher' ? 'teacher' : 'student',
+      refetchWhenKey: `${enrolledClassIds.join(',')}-${refetchCounter}`,
     });
+
+  const { lessons: openGroupLessons, loading: openGroupLessonsLoading } =
+    useOpenGroupLessons({
+      enabled: userMode === 'student',
+      refetchWhenKey: `open-group-${refetchCounter}-${userMode}`,
+    });
+
+  const { lessons: openLessonRequests, loading: openLessonRequestsLoading } =
+    useOpenLessonRequests({
+      enabled: userMode === 'teacher',
+      refetchWhenKey: `open-requests-${refetchCounter}-${userMode}`,
+    });
+
+  const lessons = useMemo(() => {
+    if (userMode === 'teacher') {
+      const byId = new Map<string, LessonT>();
+      for (const lesson of enrolledLessons) {
+        byId.set(lesson.id, lesson);
+      }
+      for (const lesson of openLessonRequests) {
+        if (!byId.has(lesson.id)) {
+          byId.set(lesson.id, lesson);
+        }
+      }
+      return Array.from(byId.values());
+    }
+
+    return enrolledLessons;
+  }, [userMode, enrolledLessons, openLessonRequests]);
+
+  const discoverableLessonsLoading =
+    userMode === 'student'
+      ? openGroupLessonsLoading
+      : openLessonRequestsLoading;
 
   const unCancelledLessons = lessons.filter(
     (lesson) => !lesson.status.startsWith('cancelled'),
   );
 
-  const openGroupLessons: LessonT[] =
-    userMode === 'student'
-      ? globallyVisibleLessons.filter((lesson) => {
-          const now = Math.floor(Date.now() / 1000);
-          const inFuture = lesson.date > now;
-          const hasCapacity = lesson.participantCount < lesson.maxParticipants;
-          const isGroup = lesson.lessonType === 'group';
-          const isAlreadyInMyClasses = (userData?.classes || []).includes(
-            lesson.id,
-          );
-          const isAlreadyParticipant = (lesson.participantIds || []).includes(
-            user?.uid || '',
-          );
-
-          return (
-            isGroup &&
-            lesson.status === 'scheduled' &&
-            inFuture &&
-            hasCapacity &&
-            !isAlreadyInMyClasses &&
-            !isAlreadyParticipant
-          );
-        })
-      : [];
+  const openGroupLessonsForStudent: LessonT[] =
+    userMode === 'student' ? openGroupLessons : [];
 
   const acceptedLessonIds = new Set(userData?.teaching_classes || []);
   const calendarLessons =
@@ -97,11 +107,26 @@ export const Dashboard = () => {
     userMode === 'teacher'
       ? lessons.filter((lesson) => acceptedLessonIds.has(lesson.id))
       : lessons;
-  console.log('lessons in dashboard:', lessons);
-  console.log('Current user mode:', userMode); // Check current mode
   const navigate = useNavigate();
   const { toasts, removeToast } = useToast();
   const { t } = useLanguage();
+
+  const validTabs = new Set([
+    'dashboard',
+    'history',
+    'feedback',
+    'calendar',
+    'notifications',
+    'settings',
+  ]);
+  const openTeacherApply = searchParams.get('apply') === 'teacher';
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && validTabs.has(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   useFirebaseNotifications(user?.uid || null);
 
@@ -170,7 +195,7 @@ export const Dashboard = () => {
       return;
     }
 
-    if (lessonsLoading || globalLessonsLoading) {
+    if (lessonsLoading || discoverableLessonsLoading) {
       setHasSeenRefreshLoading(true);
       return;
     }
@@ -183,7 +208,7 @@ export const Dashboard = () => {
     isManualRefreshing,
     hasSeenRefreshLoading,
     lessonsLoading,
-    globalLessonsLoading,
+    discoverableLessonsLoading,
   ]);
 
   useEffect(() => {
@@ -223,13 +248,14 @@ export const Dashboard = () => {
             user={user!}
             userData={userData}
             lessons={unCancelledLessons}
-            openGroupLessons={openGroupLessons}
+            openGroupLessons={openGroupLessonsForStudent}
             topicsArr={topicsArr}
             onRefresh={handleManualRefresh}
             isRefreshing={isManualRefreshing}
           />
         ) : (
           <TeacherDashboardView
+            user={user!}
             userData={userData}
             lessons={unCancelledLessons}
             onRefresh={handleManualRefresh}
@@ -248,8 +274,19 @@ export const Dashboard = () => {
             user={user!}
             userData={userData}
             lessons={historyLessons}
-            loading={loading}
+            loading={lessonsLoading}
             topicsArr={topicsArr}
+            onRefresh={handleManualRefresh}
+            isRefreshing={isManualRefreshing}
+          />
+        );
+      case 'feedback':
+        return (
+          <FeedbackView
+            user={user!}
+            userData={userData}
+            lessons={historyLessons}
+            loading={lessonsLoading}
             onRefresh={handleManualRefresh}
             isRefreshing={isManualRefreshing}
           />
@@ -260,7 +297,7 @@ export const Dashboard = () => {
             user={user!}
             userData={userData}
             lessons={calendarLessons}
-            openGroupLessons={openGroupLessons}
+            openGroupLessons={openGroupLessonsForStudent}
             topicsArr={topicsArr}
             userMode={userMode}
             teachingClassIds={userData.teaching_classes || []}
@@ -270,27 +307,34 @@ export const Dashboard = () => {
         );
       case 'assignments':
         return (
-          <div className='text-3xl text-gray-800 dark:text-white '>
+          <div className='text-3xl font-semibold text-foreground'>
             {t('dashboard.assignmentsComingSoon')}
           </div>
         );
       case 'notifications':
         return <NotificationsView user={user!} />;
       case 'settings':
-        return <SettingsView email={user!.email!} userData={userData} />;
+        return (
+          <SettingsView
+            email={user!.email!}
+            userData={userData}
+            openTeacherApply={openTeacherApply}
+          />
+        );
       default:
         return userMode === 'student' ? (
           <StudentDashboardView
             user={user!}
             userData={userData}
             lessons={unCancelledLessons}
-            openGroupLessons={openGroupLessons}
+            openGroupLessons={openGroupLessonsForStudent}
             topicsArr={topicsArr}
             onRefresh={handleManualRefresh}
             isRefreshing={isManualRefreshing}
           />
         ) : (
           <TeacherDashboardView
+            user={user!}
             userData={userData}
             lessons={unCancelledLessons}
             onRefresh={handleManualRefresh}
@@ -306,7 +350,7 @@ export const Dashboard = () => {
   return (
     <>
       {user && (
-        <div className='min-h-screen dark:bg-[#0f0f0f] flex'>
+        <div className='flex min-h-screen bg-background'>
           <ToastContainer toasts={toasts} onDismiss={removeToast} />
           <FinishUserSetup isOpen={needsProfileSetup} />
           {/* Sidebar */}
@@ -325,7 +369,7 @@ export const Dashboard = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className='fixed z-30 flex items-center justify-center w-10 h-10 text-gray-900 transition-all bg-white border border-gray-300 rounded-lg shadow-sm lg:hidden top-4 left-4 dark:bg-gray-800 dark:border-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+              className='fixed z-30 flex items-center justify-center w-10 h-10 transition-all border rounded-lg shadow-sm lg:hidden top-4 left-4 bg-card border-border text-foreground hover:bg-accent'
             >
               <Menu className='w-5 h-5' />
             </button>

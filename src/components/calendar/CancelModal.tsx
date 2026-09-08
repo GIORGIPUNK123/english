@@ -1,9 +1,10 @@
 import { X, Clock, AlertTriangle } from 'lucide-react';
 import { LessonT } from '../../types';
 import { formatTime } from './utils';
-import { auth, functions } from '../../firebase/firebase-config';
+import { getErrorMessage } from '../../utils/firebaseErrorUtils';
 import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
+import { auth, functions } from '../../firebase/firebase-config';
 import { useToast } from '../../context/ToastContext';
 
 interface LessonDetailModalProps {
@@ -18,6 +19,7 @@ export const CancelModal = ({
   additionalCallback,
 }: LessonDetailModalProps) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const isWithin24Hours = (() => {
     const now = Date.now();
     const lessonTime = lesson.date * 1000;
@@ -35,9 +37,12 @@ export const CancelModal = ({
     return true;
   };
   const handleCancel = async () => {
-    try {
-      if (!canCancel()) return; // Check if cancellation is possible
+    if (isCancelling) return;
 
+    try {
+      if (!canCancel()) return;
+
+      setIsCancelling(true);
       const classId = lesson.id;
 
       if (!classId || !auth.currentUser?.uid) {
@@ -64,33 +69,28 @@ export const CancelModal = ({
       } else {
         setErrorMsg('Failed to cancel class');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error cancelling class: ', error);
-      setErrorMsg(error?.message || 'Error cancelling class');
+      setErrorMsg(getErrorMessage(error, 'Error cancelling class'));
+    } finally {
+      setIsCancelling(false);
     }
   };
 
   return (
-    <div
-      className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/70 backdrop-blur-sm'
-      onClick={onClose}
-    >
+    <div className='modal-overlay z-[60]' onClick={onClose}>
       <div
-        className='w-full max-w-lg transition-all transform bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 dark:border-gray-700 rounded-xl'
+        className='w-full max-w-lg modal-panel'
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
-        <div className='relative p-6 bg-red-500 dark:bg-red-500 rounded-t-xl'>
-          <button
-            onClick={onClose}
-            className='absolute p-2 transition-all rounded-lg top-4 right-4 hover:bg-white/10 dark:hover:bg-black/10'
-          >
-            <X className='w-5 h-5 text-white' />
+        <div className='modal-header'>
+          <button onClick={onClose} className='modal-close'>
+            <X className='w-5 h-5' />
           </button>
-          <h2 className='pr-10 text-2xl font-semibold text-white'>
+          <h2 className='pr-10 text-2xl font-semibold text-foreground'>
             {lesson.topic?.heading}
           </h2>
-          <div className='flex items-center gap-2 mt-2 text-white/90'>
+          <div className='flex items-center gap-2 mt-2 text-muted-foreground'>
             <Clock className='w-4 h-4' />
             <span>
               {formatTime(lesson.date)} - {formatTime(lesson.date + 3600)}
@@ -104,7 +104,7 @@ export const CancelModal = ({
           <div className='flex items-start gap-3 p-4 border border-red-200 rounded-lg bg-orange-50 dark:bg-red-900/20 dark:border-red-800/50'>
             <AlertTriangle className='w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5' />
             <div>
-              <p className='mb-1 font-medium text-gray-900 dark:text-white'>
+              <p className='mb-1 font-medium text-foreground'>
                 Cancel this lesson?
               </p>
               <p className='text-sm text-gray-700 dark:text-gray-300'>
@@ -124,18 +124,20 @@ export const CancelModal = ({
             </div>
           )}
           {/* Action Buttons */}
-          <div className='flex justify-end gap-3 pt-2 border-t border-gray-200 dark:border-gray-700'>
+          <div className='flex justify-end gap-3 pt-2 border-t border-border'>
             <button
               onClick={onClose}
-              className='px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+              disabled={isCancelling}
+              className='px-5 py-2.5 text-sm btn-secondary'
             >
               Keep Lesson
             </button>
             <button
               onClick={handleCancel}
-              className='px-5 py-2.5 text-sm font-medium rounded-lg transition-all bg-red-500 dark:bg-red-500 text-white hover:bg-red-600 dark:hover:bg-red-600'
+              disabled={isCancelling}
+              className='px-5 py-2.5 text-sm btn-danger'
             >
-              Cancel Lesson
+              {isCancelling ? 'Cancelling...' : 'Cancel Lesson'}
             </button>
           </div>
         </div>

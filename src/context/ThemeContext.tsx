@@ -16,25 +16,26 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const THEME_STORAGE_KEY = 'bw-theme';
+
+const getInitialTheme = (): Theme => {
+  if (typeof window === 'undefined') return 'dark';
+
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedTheme === 'light' || savedTheme === 'dark') {
+    return savedTheme;
+  }
+
+  localStorage.removeItem('theme');
+  return 'dark';
+};
+
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
-    // Load theme from localStorage
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Save theme to localStorage and apply to document
-    localStorage.setItem('theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
   const toggleTheme = () => {

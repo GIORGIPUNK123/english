@@ -12,14 +12,14 @@ export function WeekNavigation({
   onNextWeek,
 }: WeekNavigationProps) {
   return (
-    <div className='flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700'>
+    <div className='flex items-center justify-between p-3 border bg-card border-border rounded-xl'>
       <button
         onClick={onPrevWeek}
-        className='p-2 text-gray-600 transition-all rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+        className='p-2 transition-all rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground'
       >
         <ChevronLeft className='w-5 h-5' />
       </button>
-      <div className='flex items-center gap-2 text-sm text-gray-900 dark:text-white sm:text-base'>
+      <div className='flex items-center gap-2 text-sm text-foreground sm:text-base'>
         <Calendar className='w-4 h-4' />
         <span>
           {weekDates[0].toLocaleDateString('en-US', {
@@ -36,7 +36,7 @@ export function WeekNavigation({
       </div>
       <button
         onClick={onNextWeek}
-        className='p-2 text-gray-600 transition-all rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+        className='p-2 transition-all rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground'
       >
         <ChevronRight className='w-5 h-5' />
       </button>

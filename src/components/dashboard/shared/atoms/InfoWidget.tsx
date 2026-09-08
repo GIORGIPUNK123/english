@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { LessonT, UserDataT } from '../../../../types';
 import { getTokenBalances } from '../../../../utils/tokenUtils';
+import { countUniqueLessonStudents } from '../../../../utils/lessonStudentUtils';
 import { useLanguage } from '../../../../context/LanguageContext';
 
 export const InfoWidget = (props: {
@@ -29,6 +30,7 @@ export const InfoWidget = (props: {
   availableLessons?: LessonT[];
   ratingAverage?: number;
   ratingCount?: number;
+  totalStudents?: number;
 }) => {
   const {
     type,
@@ -40,6 +42,7 @@ export const InfoWidget = (props: {
     availableLessons,
     ratingAverage,
     ratingCount,
+    totalStudents,
   } = props;
   const safeRatingAverage =
     typeof ratingAverage === 'number' ? ratingAverage : 0;
@@ -97,7 +100,12 @@ export const InfoWidget = (props: {
     {
       id: 'totalStudents',
       label: t('dashboard.totalStudents'),
-      value: lessons ? new Set(lessons.map((lesson) => lesson.id)).size : 0,
+      value:
+        typeof totalStudents === 'number'
+          ? totalStudents
+          : lessons
+            ? countUniqueLessonStudents(lessons)
+            : 0,
       icon: Users,
       color: 'bg-blue-500',
     },
@@ -115,7 +123,7 @@ export const InfoWidget = (props: {
   return (
     <div
       key={stat.label}
-      className='p-4 transition-all bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-800/60'
+      className='p-4 transition-all border sm:p-6 bg-card border-border rounded-xl hover:bg-accent/40'
     >
       <div className='flex items-center justify-between mb-3'>
         <div
@@ -126,21 +134,21 @@ export const InfoWidget = (props: {
         {stat.id === 'tokens' && (
           <button
             onClick={() => setShowTopUpModal && setShowTopUpModal(true)}
-            className='flex items-center gap-1 text-xs text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300'
+            className='flex items-center gap-1 text-xs text-blue-500 transition-colors dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300'
           >
             <Plus className='w-3 h-3' />
             <span className='hidden sm:inline'>Top up</span>
           </button>
         )}
       </div>
-      <h3 className='mb-1 text-xl text-gray-900 dark:text-white sm:text-2xl'>
+      <h3 className='mb-1 text-xl font-semibold text-foreground sm:text-2xl'>
         {stat.value}
       </h3>
-      <p className='text-xs text-gray-600 sm:text-sm dark:text-gray-400'>
+      <p className='text-xs sm:text-sm text-muted-foreground'>
         {stat.label}
       </p>
       {stat.id === 'tokens' && (
-        <p className='mt-1 text-[11px] text-gray-500 dark:text-gray-400'>
+        <p className='mt-1 text-[11px] text-muted-foreground'>
           {t('dashboard.tokenDetailsOneOnOne')}: {tokenBalances.oneOnOne} | {t('dashboard.tokenDetailsGroup')}: {tokenBalances.group} | {t('dashboard.tokenDetailsFlexible')}: {tokenBalances.legacy}
         </p>
       )}

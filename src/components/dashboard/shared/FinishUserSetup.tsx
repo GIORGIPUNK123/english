@@ -38,8 +38,8 @@ export const FinishUserSetup = ({ isOpen }: FinishUserSetupProps) => {
 	};
 
 	return (
-		<div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4'>
-			<div className='w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl sm:p-8'>
+		<div className='modal-overlay px-4'>
+			<div className='w-full max-w-lg p-6 sm:p-8 modal-panel'>
 				<h2 className='text-2xl font-semibold text-foreground'>
 					Finish setting up your account
 				</h2>
@@ -83,7 +83,7 @@ export const FinishUserSetup = ({ isOpen }: FinishUserSetupProps) => {
 					<button
 						type='submit'
 						disabled={isSubmitting}
-						className='w-full rounded-lg bg-linear-to-r from-blue-500 to-purple-600 px-4 py-3 font-medium text-white transition-all hover:from-blue-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-60'
+						className='w-full px-4 py-3 btn-primary'
 					>
 						{isSubmitting ? 'Saving...' : 'Save name'}
 					</button>

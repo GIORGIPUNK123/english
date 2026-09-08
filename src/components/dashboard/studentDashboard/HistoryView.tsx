@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { LessonT, StatusT, TopicT, UserDataT } from '../../../types';
+import {
+  formatAttendanceSummary,
+  getLessonDisplayStatus,
+} from '../../../utils/lessonStatusUtils';
 import { LessonDetailModal } from '../../calendar/LessonDetailModal';
-import { Eye, RotateCw } from 'lucide-react';
+import { Eye, History, RotateCw } from 'lucide-react';
 import { useScheduleLessonModal } from '../../../hooks/useScheduleLessonModal';
 import { ScheduleLessonModal } from '../../calendar/ScheduleLessonModal';
 import { User } from 'firebase/auth';
@@ -18,6 +22,19 @@ interface HistoryViewProps {
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
+
+const formatLessonDate = (timestamp: number) =>
+  new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+
+const formatLessonTime = (timestamp: number) =>
+  new Date(timestamp * 1000).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 const HistoryView: React.FC<HistoryViewProps> = ({
   user,
@@ -42,64 +59,49 @@ const HistoryView: React.FC<HistoryViewProps> = ({
     setSelectedLesson(null);
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const getStatusConfig = (status: StatusT) => {
     const statusConfig: Record<
       StatusT,
       { bgColor: string; textColor: string; label: string }
     > = {
       finished: {
-        bgColor: 'bg-green-500/10',
-        textColor: 'text-green-700 dark:text-green-400',
+        bgColor: 'bg-green-500/15',
+        textColor: 'text-green-700 dark:text-green-300',
         label: t('calendar.finished'),
       },
       cancelled_student: {
-        bgColor: 'bg-red-500/10',
-        textColor: 'text-red-700 dark:text-red-400',
+        bgColor: 'bg-red-500/15',
+        textColor: 'text-red-700 dark:text-red-300',
         label: t('calendar.cancelledByStudent'),
       },
       cancelled_teacher: {
-        bgColor: 'bg-red-500/10',
-        textColor: 'text-red-700 dark:text-red-400',
+        bgColor: 'bg-red-500/15',
+        textColor: 'text-red-700 dark:text-red-300',
         label: t('calendar.cancelledByTeacher'),
       },
       cancelled_system: {
-        bgColor: 'bg-red-500/10',
-        textColor: 'text-red-700 dark:text-red-400',
+        bgColor: 'bg-red-500/15',
+        textColor: 'text-red-700 dark:text-red-300',
         label: t('calendar.cancelledBySystem'),
       },
       scheduled: {
-        bgColor: 'bg-blue-500/10',
-        textColor: 'text-blue-700 dark:text-blue-400',
+        bgColor: 'bg-blue-500/15',
+        textColor: 'text-blue-700 dark:text-blue-300',
         label: t('calendar.scheduledLesson'),
       },
       'in-progress': {
-        bgColor: 'bg-orange-500/10',
-        textColor: 'text-orange-700 dark:text-orange-400',
+        bgColor: 'bg-orange-500/15',
+        textColor: 'text-orange-700 dark:text-orange-300',
         label: t('calendar.inProgress'),
       },
       missed_student: {
-        bgColor: 'bg-red-500/10',
-        textColor: 'text-red-700 dark:text-red-400',
+        bgColor: 'bg-red-500/15',
+        textColor: 'text-red-700 dark:text-red-300',
         label: t('calendar.missedByStudent'),
       },
       missed_teacher: {
-        bgColor: 'bg-red-500/10',
-        textColor: 'text-red-700 dark:text-red-400',
+        bgColor: 'bg-red-500/15',
+        textColor: 'text-red-700 dark:text-red-300',
         label: t('calendar.missedByTeacher'),
       },
     };
@@ -118,39 +120,97 @@ const HistoryView: React.FC<HistoryViewProps> = ({
     setSelectedLevel,
     setLessonType,
     setSelectedDate,
-    // openScheduleModalWithDefaultTime,
     closeScheduleModal,
     rescheduleLesson,
     setRescheduleLesson,
     setShowScheduleModal,
   } = useScheduleLessonModal(topicsArr);
 
+  const renderLessonCard = (lesson: LessonT) => {
+    const displayStatus = getLessonDisplayStatus(lesson);
+    const statusConfig = getStatusConfig(displayStatus);
+    const attendanceLine = formatAttendanceSummary(lesson.attendanceSummary);
+    const teacherName = lesson.teacher
+      ? `${lesson.teacher.first_name} ${lesson.teacher.last_name}`.trim()
+      : t('calendar.notAssigned');
+
+    return (
+      <button
+        key={lesson.id}
+        type='button'
+        onClick={() => showDetails(lesson)}
+        className='w-full p-4 text-left border rounded-xl bg-card border-border hover:border-brand/40 hover:bg-brand-muted'
+      >
+        <div className='flex items-start justify-between gap-3'>
+          <div className='flex-1 min-w-0'>
+            <div className='flex flex-wrap items-center gap-2 mb-2'>
+              <h3 className='font-semibold truncate text-foreground'>
+                {lesson.topic?.heading || t('calendar.untitledLesson')}
+              </h3>
+              <span
+                className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${statusConfig.bgColor} ${statusConfig.textColor}`}
+              >
+                {statusConfig.label}
+              </span>
+            </div>
+            <div className='grid grid-cols-1 gap-1 text-sm sm:grid-cols-2 text-muted-foreground'>
+              <span>
+                {formatLessonDate(lesson.date)} · {formatLessonTime(lesson.date)}
+              </span>
+              <span>
+                {userMode === 'teacher'
+                  ? `${lesson.participantCount} student${lesson.participantCount === 1 ? '' : 's'}`
+                  : teacherName}
+              </span>
+              {userMode === 'teacher' && attendanceLine && (
+                <span className='sm:col-span-2'>{attendanceLine}</span>
+              )}
+            </div>
+          </div>
+          <span className='flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg text-brand bg-brand-muted'>
+            <Eye className='w-3.5 h-3.5' />
+            {t('calendar.view')}
+          </span>
+        </div>
+      </button>
+    );
+  };
+
   return (
     <>
-      <div className='flex-1 flex flex-col bg-white border border-gray-200 shadow-lg dark:bg-gray-800/40 rounded-xl dark:border-gray-700 p-6'>
-        {/* Header */}
-        <div className='mb-6'>
-          <div className='flex items-center justify-between gap-3'>
-            <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
-              {t('dashboard.lessonHistory')}
-            </h2>
+      <div className='h-full overflow-y-auto'>
+        <div className='mb-8'>
+          <div className='flex items-center justify-between gap-3 mb-2'>
+            <div className='flex items-center gap-3'>
+              <div className='flex items-center justify-center w-10 h-10 rounded-xl bg-brand-muted'>
+                <History className='w-5 h-5 text-brand' />
+              </div>
+              <div>
+                <h1 className='text-xl font-semibold text-foreground sm:text-2xl lg:text-3xl'>
+                  {t('dashboard.lessonHistory')}
+                </h1>
+                <p className='text-sm text-muted-foreground'>
+                  {lessons.length} {t('dashboard.lessonsFound')}
+                </p>
+              </div>
+            </div>
             <button
               onClick={onRefresh}
               disabled={isRefreshing}
-              className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-60 disabled:cursor-not-allowed'
+              className='flex items-center gap-2 px-3 py-2 text-sm transition-all rounded-lg bg-accent text-foreground hover:bg-accent/80 disabled:opacity-60 disabled:cursor-not-allowed'
             >
               <RotateCw
                 className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
               />
               <span className='hidden sm:inline'>
-                {isRefreshing ? t('dashboard.refreshing') : t('dashboard.refresh')}
+                {isRefreshing
+                  ? t('dashboard.refreshing')
+                  : t('dashboard.refresh')}
               </span>
             </button>
           </div>
-          <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
-            {lessons.length} {t('dashboard.lessonsFound')}
-          </p>
         </div>
+
         {showScheduleModal && scheduleTime && (
           <ScheduleLessonModal
             scheduleTime={scheduleTime}
@@ -160,12 +220,9 @@ const HistoryView: React.FC<HistoryViewProps> = ({
             selectedLevel={selectedLevel}
             onLevelChange={setSelectedLevel}
             topicsArr={topicsArr}
-            // selectedTeacher={selectedTeacher}
-            // onTeacherChange={setSelectedTeacher}
             lessonType={lessonType}
             onLessonTypeChange={setLessonType}
             availableTopics={topicsArr}
-            // availableTeachers={availableTeachers}
             lessons={lessons}
             onClose={closeScheduleModal}
             selectedDate={selectedDate}
@@ -176,90 +233,28 @@ const HistoryView: React.FC<HistoryViewProps> = ({
             setRescheduleLesson={setRescheduleLesson}
           />
         )}
-        {/* Content */}
-        <div className='flex-1 overflow-auto'>
-          {loading ? (
-            <div className='flex items-center justify-center h-40'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500'></div>
-            </div>
-          ) : lessons.length > 0 ? (
-            <div className='space-y-3'>
-              {lessons.map((lesson) => {
-                const statusConfig = getStatusConfig(lesson.status);
-                return (
-                  <div
-                    key={lesson.id}
-                    className='border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all cursor-pointer group'
-                    onClick={() => showDetails(lesson)}
-                  >
-                    <div className='flex items-start justify-between gap-4'>
-                      {/* Left Content */}
-                      <div className='flex-1 min-w-0'>
-                        <div className='flex items-center gap-3 mb-2'>
-                          <h3 className='font-semibold text-gray-900 dark:text-white truncate'>
-                            {lesson.topic?.heading || t('calendar.untitledLesson')}
-                          </h3>
-                          <div
-                            className={`${statusConfig.bgColor} px-3 py-1 rounded-full text-xs font-medium ${statusConfig.textColor} whitespace-nowrap`}
-                          >
-                            {statusConfig.label}
-                          </div>
-                        </div>
 
-                        <div className='grid grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400'>
-                          <div>
-                            <span className='font-medium'>{t('calendar.date')}: </span>
-                            {formatDate(lesson.date)}
-                          </div>
-                          <div>
-                            <span className='font-medium'>{t('calendar.time')}: </span>
-                            {formatTime(lesson.date)} -{' '}
-                            {formatTime(lesson.date + 3600)}
-                          </div>
-                          <div>
-                            <span className='font-medium'>{t('calendar.duration')}: </span>
-                            60 minutes
-                          </div>
-                          <div>
-                            <span className='font-medium'>{t('calendar.teacher')}: </span>
-                            {lesson.teacher
-                              ? `${lesson.teacher.first_name} ${lesson.teacher.last_name}`
-                              : t('calendar.notAssigned')}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right Content - Button */}
-
-                      <button
-                        className='flex items-center gap-2 text-xs sm:text-sm px-3 py-1.5 bg-blue-600/20 text-blue-500 dark:text-blue-400 border border-blue-600/30 rounded hover:bg-blue-600/30 transition-all'
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          showDetails(lesson);
-                        }}
-                      >
-                        <Eye className='w-4 h-4' />
-                        <span className=''>{t('calendar.view')}</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className='flex flex-col items-center justify-center h-40 text-gray-500 dark:text-gray-400'>
-              <div className='text-center'>
-                <p className='text-lg font-medium'>{t('dashboard.noLessonsFound')}</p>
-                <p className='text-sm mt-1'>
-                  {t('dashboard.historyWillAppearHere')}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        {loading ? (
+          <div className='flex items-center justify-center h-40'>
+            <div className='w-8 h-8 border-b-2 border-blue-500 rounded-full animate-spin' />
+          </div>
+        ) : lessons.length > 0 ? (
+          <div className='space-y-3'>
+            {lessons.map((lesson) => renderLessonCard(lesson))}
+          </div>
+        ) : (
+          <div className='p-8 text-center border border-dashed rounded-xl border-border'>
+            <History className='w-10 h-10 mx-auto mb-3 opacity-60 text-muted-foreground' />
+            <p className='text-sm font-medium text-foreground'>
+              {t('dashboard.noLessonsFound')}
+            </p>
+            <p className='mt-1 text-xs text-muted-foreground'>
+              {t('dashboard.historyWillAppearHere')}
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Lesson Detail Modal */}
       {selectedLesson && (
         <LessonDetailModal
           lesson={selectedLesson}
@@ -270,6 +265,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
           assignedToMe={
             userMode === 'teacher' && teachingClassIds.has(selectedLesson.id)
           }
+          userId={user.uid}
         />
       )}
     </>

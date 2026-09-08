@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { X, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LEVEL_OPTIONS, LessonT, LevelT, TopicT } from '../../types';
 import {
@@ -13,6 +14,7 @@ import {
   getAvailableTokensForLessonType,
   getLessonTokenLabel,
 } from '../../utils/tokenUtils';
+import { getFirebaseErrorCode, getErrorMessage } from '../../utils/firebaseErrorUtils';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface ScheduleModalState {
@@ -62,7 +64,7 @@ const LessonTypeDisplay = (props: {
       </label>
       <div className='grid grid-cols-2 gap-3'>
         <button
-          className={`p-4 ${lessonType === '1on1' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'} ${rescheduleLesson ? 'opacity-70 cursor-not-allowed' : ''}`}
+          className={`p-4 rounded-lg border ${lessonType === '1on1' ? 'bg-brand-muted border-brand' : 'bg-muted/40 border-border hover:bg-accent'} ${rescheduleLesson ? 'opacity-70 cursor-not-allowed' : ''}`}
           onClick={() => !rescheduleLesson && onLessonTypeChange('1on1')}
           disabled={!!rescheduleLesson}
         >
@@ -74,7 +76,7 @@ const LessonTypeDisplay = (props: {
           </div>
         </button>
         <button
-          className={`p-4 ${lessonType === 'group' ? 'bg-blue-50 dark:bg-blue-600/20 border-2 border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-all' : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all'} ${rescheduleLesson ? 'opacity-70 cursor-not-allowed' : ''}`}
+          className={`p-4 rounded-lg border ${lessonType === 'group' ? 'bg-brand-muted border-brand' : 'bg-muted/40 border-border hover:bg-accent'} ${rescheduleLesson ? 'opacity-70 cursor-not-allowed' : ''}`}
           onClick={() => !rescheduleLesson && onLessonTypeChange('group')}
           disabled={!!rescheduleLesson}
         >
@@ -114,11 +116,22 @@ export const ScheduleLessonModal = ({
 }: ScheduleLessonModalProps) => {
   const { t, language } = useLanguage();
   const modalWeekDates = getWeekDates(scheduleTime.week);
-  selectedDate.setHours(scheduleTime.hour, scheduleTime.minute, 0, 0);
-  selectedDate.setDate(modalWeekDates[scheduleTime.day].getDate());
-  selectedDate.setMonth(modalWeekDates[scheduleTime.day].getMonth());
-  selectedDate.setFullYear(modalWeekDates[scheduleTime.day].getFullYear());
-  const timestamp = Math.floor(selectedDate.getTime() / 1000);
+  const timestamp = useMemo(() => {
+    const weekDates = getWeekDates(scheduleTime.week);
+    const date = new Date(selectedDate);
+    date.setHours(scheduleTime.hour, scheduleTime.minute, 0, 0);
+    const weekDay = weekDates[scheduleTime.day];
+    date.setDate(weekDay.getDate());
+    date.setMonth(weekDay.getMonth());
+    date.setFullYear(weekDay.getFullYear());
+    return Math.floor(date.getTime() / 1000);
+  }, [
+    selectedDate,
+    scheduleTime.day,
+    scheduleTime.hour,
+    scheduleTime.minute,
+    scheduleTime.week,
+  ]);
 
   const filteredLessons = rescheduleLesson
     ? lessons.filter((lesson) => lesson.id !== rescheduleLesson.id)
@@ -158,7 +171,7 @@ export const ScheduleLessonModal = ({
       return;
     }
 
-    const date = Math.floor(selectedDate.getTime() / 1000);
+    const date = timestamp;
 
     const fn = httpsCallable<
       { date: number; topicId: string; level: LevelT; lessonType: '1on1' | 'group' },
@@ -186,20 +199,18 @@ export const ScheduleLessonModal = ({
 
       onClose();
       return res.data;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
 
       let message = t('calendar.failedToScheduleLesson');
+      const code = getFirebaseErrorCode(err);
 
-      if (err.code === 'functions/failed-precondition') {
-        const backendMessage =
-          typeof err?.message === 'string'
-            ? err.message.replace('functions/failed-precondition: ', '')
-            : '';
+      if (code === 'failed-precondition') {
+        const backendMessage = getErrorMessage(err);
         message =
           backendMessage ||
           `${t('calendar.notEnoughTokensPrefix')} ${lessonTokenLabel.toLowerCase()}${t('calendar.notEnoughTokensSuffix')}`;
-      } else if (err.code === 'functions/unauthenticated') {
+      } else if (code === 'unauthenticated') {
         message = t('auth.loginFailed');
       }
 
@@ -219,7 +230,7 @@ export const ScheduleLessonModal = ({
       });
       return;
     }
-    const date = Math.floor(selectedDate.getTime() / 1000);
+    const date = timestamp;
 
     const fn = httpsCallable<
       { lessonId: string; date: number; topicId: string; level: LevelT },
@@ -242,14 +253,15 @@ export const ScheduleLessonModal = ({
 
       onClose();
       return res.data;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
 
       let message = t('calendar.failedToRescheduleLesson');
+      const code = getFirebaseErrorCode(err);
 
-      if (err.code === 'functions/unauthenticated') {
+      if (code === 'unauthenticated') {
         message = t('auth.loginFailed');
-      } else if (err.code === 'functions/permission-denied') {
+      } else if (code === 'permission-denied') {
         message = t('calendar.reschedulePermissionDenied');
       }
 
@@ -262,26 +274,19 @@ export const ScheduleLessonModal = ({
   };
 
   return (
-    <div
-      className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm'
-      onClick={onClose}
-    >
+    <div className='modal-overlay' onClick={onClose}>
       <div
-        className='w-full max-w-lg bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 dark:border-gray-700 rounded-xl'
+        className='flex w-full max-w-lg max-h-[90vh] flex-col modal-panel lg:max-w-4xl'
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
-        <div className='relative p-6 bg-linear-to-r from-blue-600 to-purple-600 rounded-t-xl'>
-          <button
-            onClick={onClose}
-            className='absolute p-2 transition-all rounded-lg top-4 right-4 hover:bg-white/10'
-          >
-            <X className='w-5 h-5 text-white' />
+        <div className='modal-header shrink-0'>
+          <button onClick={onClose} className='modal-close'>
+            <X className='w-5 h-5' />
           </button>
-          <h2 className='pr-10 text-2xl font-semibold text-white'>
+          <h2 className='pr-10 text-2xl font-semibold text-foreground'>
             {rescheduleLesson ? t('calendar.rescheduleLesson') : t('calendar.scheduleNewLesson')}
           </h2>
-          <div className='flex items-center gap-2 mt-2 text-white/90'>
+          <div className='flex items-center gap-2 mt-2 text-muted-foreground'>
             <Clock className='w-4 h-4' />
             <span>
               {modalWeekDates[scheduleTime.day].toLocaleDateString(dateLocale, {
@@ -296,318 +301,320 @@ export const ScheduleLessonModal = ({
         </div>
 
         {/* Modal Body */}
-        <div className='p-6 space-y-5 max-h-[70vh] overflow-y-auto'>
-          {/* Week Selector for Date Picking */}
-          <div>
-            <label className='block mb-3 text-sm text-gray-600 dark:text-gray-400'>
-              {t('calendar.selectDate')}
-            </label>
-
-            {/* Week Navigation */}
-            <div className='flex items-center justify-between p-2 mb-3 rounded-lg bg-gray-50 dark:bg-gray-800/60'>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onScheduleTimeChange({
-                    ...scheduleTime,
-                    week: scheduleTime.week - 1,
-                    day: 0,
-                  });
-                }}
-                className='p-2 text-gray-600 transition-all rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              >
-                <ChevronLeft className='w-4 h-4' />
-              </button>
-              <div className='text-sm font-medium text-gray-900 dark:text-white'>
-                {modalWeekDates[0].toLocaleDateString(dateLocale, {
-                  month: 'short',
-                  day: 'numeric',
-                })}{' '}
-                -{' '}
-                {modalWeekDates[6].toLocaleDateString(dateLocale, {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onScheduleTimeChange({
-                    ...scheduleTime,
-                    week: scheduleTime.week + 1,
-                    day: 0,
-                  });
-                }}
-                className='p-2 text-gray-600 transition-all rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              >
-                <ChevronRight className='w-4 h-4' />
-              </button>
-            </div>
-
-            {/* Day Grid */}
-            <div className='grid grid-cols-7 gap-2'>
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(
-                (dayName, index) => {
-                  const date = modalWeekDates[index];
-                  const isSelected = scheduleTime.day === index;
-                  const isToday =
-                    date.toDateString() === new Date().toDateString();
-                  const isSunday = index === 6;
-
-                  return (
-                    <button
-                      key={index}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onScheduleTimeChange({ ...scheduleTime, day: index });
-                      }}
-                      className={`p-3 rounded-lg transition-all text-center ${
-                        isSelected
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
-                      }`}
-                    >
-                      <div
-                        className={`text-[10px] mb-1 ${
-                          isSelected
-                            ? 'text-blue-200'
-                            : isSunday
-                              ? 'text-red-500 dark:text-red-400'
-                              : 'text-gray-600 dark:text-gray-400'
-                        }`}
-                      >
-                        {dayName}
-                      </div>
-                      <div
-                        className={`text-sm font-medium ${
-                          isToday && !isSelected ? 'text-blue-500' : ''
-                        }`}
-                      >
-                        {date.getDate()}
-                      </div>
-                    </button>
-                  );
-                },
-              )}
-            </div>
-          </div>
-
-          {/* Time Selector */}
-          <div>
-            <label className='block mb-3 text-sm text-gray-600 dark:text-gray-400'>
-              {t('calendar.selectTime')}
-            </label>
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3'>
-              {/* Hour Selector */}
+        <div className='flex-1 p-6 overflow-y-auto'>
+          <div className='grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8'>
+            <div className='space-y-5'>
+              {/* Week Selector for Date Picking */}
               <div>
-                <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
-                  {t('calendar.hour')}
+                <label className='block mb-3 text-sm text-gray-600 dark:text-gray-400'>
+                  {t('calendar.selectDate')}
+                </label>
+
+                {/* Week Navigation */}
+                <div className='flex items-center justify-between p-2 mb-3 rounded-lg bg-gray-50 dark:bg-gray-800/60'>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onScheduleTimeChange({
+                        ...scheduleTime,
+                        week: scheduleTime.week - 1,
+                        day: 0,
+                      });
+                    }}
+                    className='p-2 text-gray-600 transition-all rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  >
+                    <ChevronLeft className='w-4 h-4' />
+                  </button>
+                  <div className='text-sm font-medium text-gray-900 dark:text-white'>
+                    {modalWeekDates[0].toLocaleDateString(dateLocale, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}{' '}
+                    -{' '}
+                    {modalWeekDates[6].toLocaleDateString(dateLocale, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onScheduleTimeChange({
+                        ...scheduleTime,
+                        week: scheduleTime.week + 1,
+                        day: 0,
+                      });
+                    }}
+                    className='p-2 text-gray-600 transition-all rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  >
+                    <ChevronRight className='w-4 h-4' />
+                  </button>
                 </div>
+
+                {/* Day Grid */}
+                <div className='grid grid-cols-7 gap-2'>
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(
+                    (dayName, index) => {
+                      const date = modalWeekDates[index];
+                      const isSelected = scheduleTime.day === index;
+                      const isToday =
+                        date.toDateString() === new Date().toDateString();
+                      const isSunday = index === 6;
+
+                      return (
+                        <button
+                          key={index}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onScheduleTimeChange({ ...scheduleTime, day: index });
+                          }}
+                          className={`p-3 rounded-lg transition-all text-center ${
+                            isSelected
+                              ? 'bg-brand text-brand-foreground'
+                              : 'bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
+                          }`}
+                        >
+                          <div
+                            className={`text-[10px] mb-1 ${
+                              isSelected
+                                ? 'text-blue-200'
+                                : isSunday
+                                  ? 'text-red-500 dark:text-red-400'
+                                  : 'text-gray-600 dark:text-gray-400'
+                            }`}
+                          >
+                            {dayName}
+                          </div>
+                          <div
+                            className={`text-sm font-medium ${
+                              isToday && !isSelected ? 'text-blue-500' : ''
+                            }`}
+                          >
+                            {date.getDate()}
+                          </div>
+                        </button>
+                      );
+                    },
+                  )}
+                </div>
+              </div>
+
+              {/* Time Selector */}
+              <div>
+                <label className='block mb-3 text-sm text-gray-600 dark:text-gray-400'>
+                  {t('calendar.selectTime')}
+                </label>
+                <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3'>
+                  {/* Hour Selector */}
+                  <div>
+                    <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
+                      {t('calendar.hour')}
+                    </div>
+                    <select
+                      value={scheduleTime.hour}
+                      onChange={(e) => {
+                        onScheduleTimeChange({
+                          ...scheduleTime,
+                          hour: Number(e.target.value),
+                        });
+                      }}
+                      className='w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-900 transition-all focus:border-blue-600 focus:outline-none dark:border-gray-700 dark:bg-gray-800/60 dark:text-white'
+                    >
+                      {hours.map((hour) => (
+                        <option key={hour} value={hour}>
+                          {hour.toString().padStart(2, '0')}:00
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Minute Selector */}
+                  <div>
+                    <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
+                      {t('calendar.minute')}
+                    </div>
+                    <div className='grid grid-cols-2 gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/60'>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onScheduleTimeChange({ ...scheduleTime, minute: 0 });
+                        }}
+                        className={`p-3 rounded text-sm transition-all ${
+                          scheduleTime.minute === 0
+                            ? 'bg-brand text-brand-foreground'
+                            : 'bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
+                        }`}
+                      >
+                        :00
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onScheduleTimeChange({ ...scheduleTime, minute: 30 });
+                        }}
+                        className={`p-3 rounded text-sm transition-all ${
+                          scheduleTime.minute === 30
+                            ? 'bg-brand text-brand-foreground'
+                            : 'bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
+                        }`}
+                      >
+                        :30
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selected Time Display */}
+                <div className='p-3 mt-3 border rounded-lg bg-brand-muted border-brand/30'>
+                  <div className='flex items-center gap-2'>
+                    <Clock className='w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400' />
+                    <span className='text-sm text-gray-900 dark:text-white'>
+                      {modalWeekDates[scheduleTime.day].toLocaleDateString(
+                        dateLocale,
+                        {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        },
+                      )}{' '}
+                      {t('calendar.timePrefix')}{' '}
+                      {scheduleTime.hour.toString().padStart(2, '0')}:
+                      {scheduleTime.minute.toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Validation Warning */}
+                {hasBlockingValidation && (
+                  <div className='flex items-start gap-2 p-2 mt-2 text-xs text-red-500 border border-red-200 rounded dark:text-red-400 bg-red-50 dark:bg-red-500/10 dark:border-red-500/30'>
+                    <span className='pt-0.5'>⚠️</span>
+                    <div className='flex flex-col gap-1'>
+                      {validationMessages.map((msg, idx) => (
+                        <span key={idx}>{msg}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className='space-y-5'>
+              {/* Lesson Type Selection */}
+              <LessonTypeDisplay
+                lessonType={lessonType}
+                onLessonTypeChange={onLessonTypeChange}
+                rescheduleLesson={rescheduleLesson || undefined}
+              />
+
+              {/* Teacher Selection */}
+              {/* <div>
+                <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
+                  Select Teacher
+                </label>
                 <select
-                  value={scheduleTime.hour}
-                  onChange={(e) => {
-                    onScheduleTimeChange({
-                      ...scheduleTime,
-                      hour: Number(e.target.value),
-                    });
-                  }}
-                  className='w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-900 transition-all focus:border-blue-600 focus:outline-none dark:border-gray-700 dark:bg-gray-800/60 dark:text-white'
+                  value={selectedTeacher}
+                  onChange={(e) => onTeacherChange(e.target.value)}
+                  className='w-full p-3 text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
                 >
-                  {hours.map((hour) => (
-                    <option key={hour} value={hour}>
-                      {hour.toString().padStart(2, '0')}:00
+                  <option value=''>Any Teacher - First available</option>
+                  {availableTeachers.map((teacher) => (
+                    <option key={teacher.first_name} value={teacher.first_name}>
+                      {teacher.first_name} {teacher.last_name} -{' '}
+                      {teacher.rating.toFixed(1)}★
                     </option>
                   ))}
                 </select>
+              </div> */}
+
+              {/* Topic + Level */}
+              <div className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
+                <div>
+                  <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
+                    {t('calendar.lessonTopic')}
+                  </label>
+                  <select
+                    value={selectedTopicId}
+                    onChange={(e) => onTopicChange(e.target.value)}
+                    className='w-full p-3 text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
+                  >
+                    {availableTopics.map((topic, index) => (
+                      <option key={index} value={topic.id}>
+                        {topic.heading}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
+                    {t('calendar.level')}
+                  </label>
+                  <select
+                    value={selectedLevel}
+                    onChange={(e) => onLevelChange(e.target.value as LevelT)}
+                    className='w-full p-3 text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
+                  >
+                    {LEVEL_OPTIONS.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Minute Selector */}
+              {/* Lesson Focus (Optional) */}
               <div>
-                <div className='mb-2 text-xs text-gray-600 dark:text-gray-400'>
-                  {t('calendar.minute')}
+                <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
+                  {t('calendar.lessonFocus')}
+                </label>
+                <textarea
+                  className='w-full p-3 text-gray-900 placeholder-gray-500 bg-white border border-gray-200 rounded-lg resize-none dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
+                  rows={3}
+                  placeholder={t('calendar.lessonFocusPlaceholder')}
+                />
+              </div>
+
+              {/* Token Cost */}
+              <div>
+                <div className='flex items-center justify-between p-4 border rounded-lg bg-brand-muted border-brand/30'>
+                  <div className='text-sm text-gray-600 dark:text-gray-400'>
+                    {t('calendar.tokenCost')}
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <div className='flex items-center justify-center w-6 h-6 text-xs font-bold bg-yellow-500 rounded-full'>
+                      T
+                    </div>
+                    <span className='font-semibold text-gray-900 dark:text-white'>
+                      1 {lessonTokenLabel}
+                    </span>
+                  </div>
                 </div>
-                <div className='grid grid-cols-2 gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/60'>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onScheduleTimeChange({ ...scheduleTime, minute: 0 });
-                    }}
-                    className={`p-3 rounded text-sm transition-all ${
-                      scheduleTime.minute === 0
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
-                    }`}
-                  >
-                    :00
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onScheduleTimeChange({ ...scheduleTime, minute: 30 });
-                    }}
-                    className={`p-3 rounded text-sm transition-all ${
-                      scheduleTime.minute === 30
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
-                    }`}
-                  >
-                    :30
-                  </button>
-                </div>
+                <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
+                  {t('calendar.availableTokensForThisLessonTypePrefix')}{' '}
+                  {availableTokensForType}{' '}
+                  {t('calendar.availableTokensForThisLessonTypeSuffix')}
+                </p>
               </div>
             </div>
-
-            {/* Selected Time Display */}
-            <div className='p-3 mt-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-600/30'>
-              <div className='flex items-center gap-2'>
-                <Clock className='w-4 h-4 text-blue-600 dark:text-blue-400' />
-                <span className='text-sm text-gray-900 dark:text-white'>
-                  {modalWeekDates[scheduleTime.day].toLocaleDateString(
-                    dateLocale,
-                    {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    },
-                  )}{' '}
-                  {t('calendar.timePrefix')} {scheduleTime.hour.toString().padStart(2, '0')}:
-                  {scheduleTime.minute.toString().padStart(2, '0')}
-                </span>
-              </div>
-            </div>
-
-            {/* Validation Warning */}
-            {hasBlockingValidation && (
-              <div className='flex items-start gap-2 p-2 mt-2 text-xs text-red-500 border border-red-200 rounded dark:text-red-400 bg-red-50 dark:bg-red-500/10 dark:border-red-500/30'>
-                <span className='pt-0.5'>⚠️</span>
-                <div className='flex flex-col gap-1'>
-                  {validationMessages.map((msg, idx) => (
-                    <span key={idx}>{msg}</span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+        </div>
 
-          {/* Lesson Type Selection */}
-          <LessonTypeDisplay
-            lessonType={lessonType}
-            onLessonTypeChange={onLessonTypeChange}
-            rescheduleLesson={rescheduleLesson || undefined}
-          />
-
-          {/* Teacher Selection */}
-          {/* <div>
-            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
-              Select Teacher
-            </label>
-            <select
-              value={selectedTeacher}
-              onChange={(e) => onTeacherChange(e.target.value)}
-              className='w-full p-3 text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
-            >
-              <option value=''>Any Teacher - First available</option>
-              {availableTeachers.map((teacher) => (
-                <option key={teacher.first_name} value={teacher.first_name}>
-                  {teacher.first_name} {teacher.last_name} -{' '}
-                  {teacher.rating.toFixed(1)}★
-                </option>
-              ))}
-            </select>
-          </div> */}
-
-          {/* Topic Selection */}
-          <div>
-            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
-              {t('calendar.lessonTopic')}
-            </label>
-
-            <select
-              value={selectedTopicId}
-              onChange={(e) => onTopicChange(e.target.value)}
-              className='w-full p-3 text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
-            >
-              {availableTopics.map((topic, index) => (
-                <option key={index} value={topic.id}>
-                  {topic.heading}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Level Selection */}
-          <div>
-            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
-              {t('calendar.level')}
-            </label>
-
-            <select
-              value={selectedLevel}
-              onChange={(e) => onLevelChange(e.target.value as LevelT)}
-              className='w-full p-3 text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
-            >
-              {LEVEL_OPTIONS.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Lesson Focus (Optional) */}
-          <div>
-            <label className='block mb-2 text-sm text-gray-600 dark:text-gray-400'>
-              {t('calendar.lessonFocus')}
-            </label>
-            <textarea
-              className='w-full p-3 text-gray-900 placeholder-gray-500 bg-white border border-gray-200 rounded-lg resize-none dark:bg-gray-900 dark:border-gray-700 dark:text-white focus:border-blue-600 focus:outline-none'
-              rows={3}
-              placeholder={t('calendar.lessonFocusPlaceholder')}
-            />
-          </div>
-
-          {/* Token Cost */}
-          <div className='flex items-center justify-between p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-600/10 dark:border-blue-600/30'>
-            <div className='text-sm text-gray-600 dark:text-gray-400'>
-              {t('calendar.tokenCost')}
-            </div>
-            <div className='flex items-center gap-2'>
-              <div className='flex items-center justify-center w-6 h-6 text-xs font-bold bg-yellow-500 rounded-full'>
-                T
-              </div>
-              <span className='font-semibold text-gray-900 dark:text-white'>
-                1 {lessonTokenLabel}
-              </span>
-            </div>
-          </div>
-          <p className='text-xs text-gray-500 dark:text-gray-400 -mt-3'>
-            {t('calendar.availableTokensForThisLessonTypePrefix')} {availableTokensForType} {t('calendar.availableTokensForThisLessonTypeSuffix')}
-          </p>
-
-          {/* Action Buttons */}
-          <div className='flex gap-3 pt-2'>
-            <button
-              onClick={
-                rescheduleLesson ? handleRescheduleLesson : handleScheduleLesson
-              }
-              disabled={hasBlockingValidation}
-              className={`flex-1 px-4 py-3 font-medium text-white transition-all rounded-lg ${
-                hasBlockingValidation
-                  ? 'bg-blue-300 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {rescheduleLesson ? t('calendar.reschedule') : t('calendar.scheduleLesson')}
-            </button>
-            <button
-              onClick={onClose}
-              className='px-4 py-3 text-gray-900 transition-all bg-gray-200 rounded-lg dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
-            >
-              {t('calendar.cancel')}
-            </button>
-          </div>
+        {/* Action Buttons */}
+        <div className='flex shrink-0 gap-3 p-6 pt-4 border-t border-border'>
+          <button
+            onClick={
+              rescheduleLesson ? handleRescheduleLesson : handleScheduleLesson
+            }
+            disabled={hasBlockingValidation}
+            className='flex-1 px-4 py-3 btn-primary'
+          >
+            {rescheduleLesson ? t('calendar.reschedule') : t('calendar.scheduleLesson')}
+          </button>
+          <button onClick={onClose} className='px-4 py-3 btn-secondary'>
+            {t('calendar.cancel')}
+          </button>
         </div>
       </div>
     </div>

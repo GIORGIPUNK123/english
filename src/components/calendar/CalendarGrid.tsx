@@ -63,11 +63,11 @@ export function CalendarGrid({
   };
 
   return (
-    <div className='flex-1 overflow-auto bg-white border border-gray-200 shadow-lg dark:bg-gray-800/40 rounded-xl dark:border-gray-700'>
+    <div className='flex-1 overflow-auto border shadow-lg bg-card border-border rounded-xl'>
       <div className='min-w-[800px]'>
         {/* Days Header */}
-        <div className='grid grid-cols-[80px_repeat(7,1fr)] bg-white dark:bg-gray-800/40 sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700'>
-          <div className='p-3 border-r border-gray-200 dark:border-gray-700'></div>
+        <div className='grid grid-cols-[80px_repeat(7,1fr)] bg-card sticky top-0 z-10 border-b border-border'>
+          <div className='p-3 border-r border-border'></div>
           {days.map((day, index) => {
             const date = weekDates[index];
             const isToday = date.toDateString() === new Date().toDateString();
@@ -75,22 +75,22 @@ export function CalendarGrid({
             return (
               <div
                 key={day}
-                className={`p-3 text-center border-r border-gray-200 dark:border-gray-700 last:border-r-0 ${
-                  isToday ? 'bg-blue-500/10' : ''
+                className={`p-3 text-center border-r border-border last:border-r-0 ${
+                  isToday ? 'bg-brand-muted' : ''
                 }`}
               >
                 <div
-                  className={`text-sm font-medium ${isSunday ? 'text-red-500 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}
+                  className={`text-sm font-medium ${isSunday ? 'text-rose-400' : 'text-foreground'}`}
                 >
                   {day}
                 </div>
                 <div
                   className={`text-xs mt-1 ${
                     isToday
-                      ? 'bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center mx-auto'
+                      ? 'bg-brand text-brand-foreground w-6 h-6 rounded-full flex items-center justify-center mx-auto'
                       : isSunday
-                        ? 'text-red-500 dark:text-red-400'
-                        : 'text-gray-600 dark:text-gray-400'
+                        ? 'text-rose-400'
+                        : 'text-muted-foreground'
                   }`}
                 >
                   {date.getDate()}
@@ -105,10 +105,10 @@ export function CalendarGrid({
           {hours.map((hour) => (
             <div
               key={hour}
-              className='grid grid-cols-[80px_repeat(7,1fr)] border-b border-gray-200 dark:border-gray-700 last:border-b-0'
+              className='grid grid-cols-[80px_repeat(7,1fr)] border-b border-border last:border-b-0'
             >
               {/* Time Label */}
-              <div className='flex items-start p-3 text-xs text-gray-600 border-r border-gray-200 dark:border-gray-700 dark:text-gray-400'>
+              <div className='flex items-start p-3 text-xs border-r text-muted-foreground border-border'>
                 {hour.toString().padStart(2, '0')}:00
               </div>
 
@@ -140,7 +140,7 @@ export function CalendarGrid({
                 return (
                   <div
                     key={dayIndex}
-                    className='min-h-[80px] border-r border-gray-200 dark:border-gray-700 last:border-r-0 transition-all relative'
+                    className='min-h-[80px] border-r border-border last:border-r-0 relative'
                   >
                     {/* Top Half (00 minutes) - Clickable */}
                     <div
@@ -167,7 +167,7 @@ export function CalendarGrid({
                           !enableEmptySlotScheduling
                             ? 'text-transparent'
                             : isSlot00Available
-                              ? 'text-gray-600 dark:text-gray-400'
+                              ? 'text-muted-foreground'
                               : 'text-red-500'
                         }`}
                       >
@@ -204,7 +204,7 @@ export function CalendarGrid({
                           !enableEmptySlotScheduling
                             ? 'text-transparent'
                             : isSlot30Available
-                              ? 'text-gray-600 dark:text-gray-400'
+                              ? 'text-muted-foreground'
                               : 'text-red-500'
                         }`}
                       >

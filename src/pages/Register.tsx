@@ -83,8 +83,8 @@ export const Register = () => {
             {/* Brand Column */}
             <div className='text-center lg:text-left'>
               <div className='inline-flex items-center mb-5 space-x-2'>
-                <div className='flex items-center justify-center w-11 h-11 rounded-lg bg-linear-to-br from-blue-500 to-purple-600'>
-                  <span className='text-xl font-bold text-white'>BW</span>
+                <div className='flex items-center justify-center w-11 h-11 rounded-lg brand-mark'>
+                  <span className='text-xl font-bold'>BW</span>
                 </div>
                 <span className='text-2xl font-semibold text-foreground'>
                   British World
@@ -279,7 +279,7 @@ export const Register = () => {
                 <button
                   type='submit'
                   disabled={isSubmitting}
-                  className='w-full px-4 py-3 font-medium text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                  className='w-full px-4 py-3 btn-primary'
                 >
                     {isSubmitting ? t('auth.creatingAccount') : t('auth.createAccount')}
                 </button>

@@ -98,7 +98,7 @@ export const FeaturesSection = () => {
           </div>
           <h2 className='mb-4 text-2xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
             {t('landing.featuresTitlePre')}
-            <span className='text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
+            <span className='text-transparent bg-linear-to-r from-indigo-400 to-violet-400 bg-clip-text'>
               {' '}
               {t('landing.featuresTitleEmphasis')}
             </span>
@@ -121,7 +121,7 @@ export const FeaturesSection = () => {
             {t('landing.featuresCta')}
           </p>
           <a href='#pricing'>
-            <button className='w-full px-8 py-4 text-white transition-all duration-300 rounded-lg sm:w-auto bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-xl hover:scale-105'>
+            <button className='w-full px-8 py-4 sm:w-auto btn-primary'>
               {t('landing.featuresViewPricing')}
             </button>
           </a>

@@ -1,26 +1,22 @@
 import { Link } from 'react-router-dom';
 import { Menu, X, Moon, Sun } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase/firebase-config';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
 export const Header = () => {
-  const [user, setUser] = useState<null | { email: string } | 'loading'>(
-    'loading',
-  );
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | 'loading'>('loading');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
   const { t } = useLanguage();
 
   useEffect(() => {
-    // Check fake auth status
-    const isAuth = localStorage.getItem('isAuthenticated') === 'true';
-    const email = localStorage.getItem('userEmail');
-    if (isAuth && email) {
-      setUser({ email });
-    } else {
-      setUser(null);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(Boolean(user));
+    });
+    return unsubscribe;
   }, []);
 
   const scrollToSection = (id: string) => {
@@ -31,22 +27,25 @@ export const Header = () => {
     }
   };
 
+  const teachLink =
+    isLoggedIn === true
+      ? '/dashboard?tab=settings&apply=teacher'
+      : '/register';
+
   return (
     <>
       <header className='fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-md border-border'>
         <div className='px-4 mx-auto max-w-7xl sm:px-6 lg:px-8'>
           <div className='flex items-center justify-between h-16 sm:h-20'>
-            {/* Logo */}
             <Link to='/' className='flex items-center space-x-2'>
-              <div className='flex items-center justify-center w-8 h-8 rounded-lg bg-linear-to-br from-blue-500 to-purple-600'>
-                <span className='text-lg font-bold text-white'>BW</span>
+              <div className='flex items-center justify-center w-8 h-8 rounded-lg brand-mark'>
+                <span className='text-lg font-bold'>BW</span>
               </div>
               <span className='text-xl font-semibold text-foreground'>
                 British World
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
             <nav className='items-center hidden space-x-8 lg:flex'>
               <button
                 onClick={() => scrollToSection('home')}
@@ -73,16 +72,14 @@ export const Header = () => {
                 {t('header.about')}
               </button>
               <Link
-                to='/become-teacher'
+                to={teachLink}
                 className='transition-colors text-muted-foreground hover:text-foreground'
               >
                 {t('header.teach')}
               </Link>
             </nav>
 
-            {/* Right Side Actions */}
             <div className='flex items-center space-x-4'>
-              {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
                 className='p-2 transition-colors rounded-lg hover:bg-accent'
@@ -95,14 +92,13 @@ export const Header = () => {
                 )}
               </button>
 
-              {/* Auth Buttons (Desktop) */}
-              {user && user !== 'loading' ? (
+              {isLoggedIn === true ? (
                 <Link to='/dashboard'>
-                  <button className='hidden lg:block px-6 py-2.5 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
+                  <button className='hidden lg:block px-6 py-2.5 btn-primary'>
                     {t('header.dashboard')}
                   </button>
                 </Link>
-              ) : user === 'loading' ? (
+              ) : isLoggedIn === 'loading' ? (
                 <div className='hidden w-24 h-10 rounded-lg lg:block bg-muted animate-pulse' />
               ) : (
                 <div className='items-center hidden space-x-3 lg:flex'>
@@ -112,14 +108,13 @@ export const Header = () => {
                     </button>
                   </Link>
                   <Link to='/register'>
-                    <button className='px-6 py-2.5 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105'>
+                    <button className='px-6 py-2.5 btn-primary'>
                       {t('header.signup')}
                     </button>
                   </Link>
                 </div>
               )}
 
-              {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className='p-2 transition-colors rounded-lg lg:hidden hover:bg-accent'
@@ -135,7 +130,6 @@ export const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {isMenuOpen && (
           <div className='border-t lg:hidden border-border bg-background'>
             <div className='px-4 py-6 space-y-4'>
@@ -164,21 +158,22 @@ export const Header = () => {
                 {t('header.about')}
               </button>
               <Link
-                to='/become-teacher'
+                to={teachLink}
+                onClick={() => setIsMenuOpen(false)}
                 className='block w-full px-4 py-2 text-left transition-colors rounded-lg text-foreground hover:bg-accent'
               >
                 {t('header.teach')}
               </Link>
 
               <div className='mt-2 border-t border-border/60 pt-5'>
-                {user && user !== 'loading' ? (
+                {isLoggedIn === true ? (
                   <Link to='/dashboard' onClick={() => setIsMenuOpen(false)}>
-                    <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
+                    <button className='w-full px-6 py-3 btn-primary'>
                       {t('header.dashboard')}
                     </button>
                   </Link>
                 ) : (
-                  user !== 'loading' && (
+                  isLoggedIn !== 'loading' && (
                     <div className='flex flex-col gap-4'>
                       <Link to='/login' onClick={() => setIsMenuOpen(false)}>
                         <button className='w-full px-6 py-3 transition-all duration-300 border rounded-lg text-foreground border-border hover:bg-accent'>
@@ -186,7 +181,7 @@ export const Header = () => {
                         </button>
                       </Link>
                       <Link to='/register' onClick={() => setIsMenuOpen(false)}>
-                        <button className='w-full px-6 py-3 text-white transition-all duration-300 rounded-lg bg-linear-to-r from-blue-500 to-purple-600 hover:shadow-lg'>
+                        <button className='w-full px-6 py-3 btn-primary'>
                           {t('header.signup')}
                         </button>
                       </Link>
@@ -198,7 +193,7 @@ export const Header = () => {
           </div>
         )}
       </header>
-      <div className='h-16 sm:h-20' /> {/* Spacer for fixed header */}
+      <div className='h-16 sm:h-20' />
     </>
   );
 };

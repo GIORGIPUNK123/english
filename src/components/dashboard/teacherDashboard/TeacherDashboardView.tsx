@@ -1,3 +1,4 @@
+import { User } from 'firebase/auth';
 import { Clock, Calendar, TrendingUp, RotateCw } from 'lucide-react';
 import { useState } from 'react';
 import { LessonT, UserDataT } from '../../../types';
@@ -6,8 +7,11 @@ import { TipWidget } from '../shared/atoms/TipWidget';
 import { PerformanceOverview } from './PerformanceOverview';
 import { LessonDetailModal } from '../../calendar/LessonDetailModal';
 import { useLanguage } from '../../../context/LanguageContext';
+import { countUniqueLessonStudents } from '../../../utils/lessonStudentUtils';
+import { useTeacherRatingAverage } from '../../../hooks/useTeacherRatingAverage';
 
 interface TeacherDashboardViewProps {
+  user: User;
   userData: UserDataT;
   lessons: LessonT[];
   onRefresh?: () => void;
@@ -15,6 +19,7 @@ interface TeacherDashboardViewProps {
 }
 
 export const TeacherDashboardView = ({
+  user,
   userData,
   lessons,
   onRefresh,
@@ -39,22 +44,30 @@ export const TeacherDashboardView = ({
     (lesson) => lesson.status === 'finished',
   );
   const teachingClassIds = new Set(userData.teaching_classes || []);
+  const myTeachingLessons = lessons.filter((lesson) =>
+    teachingClassIds.has(lesson.id),
+  );
   const { t } = useLanguage();
 
-  const totalStudents = new Set(lessons.map((lesson) => lesson.id)).size;
-  console.log('lessons: ', lessons);
+  const totalStudents = countUniqueLessonStudents(myTeachingLessons);
+  const { average: ratingAverage, count: ratingCount } = useTeacherRatingAverage(
+    {
+      enabled: true,
+      refetchWhenKey: `${myTeachingLessons.length}-${isRefreshing ? '1' : '0'}`,
+    },
+  );
   return (
     <div className='h-full overflow-y-auto'>
       {/* Welcome Section */}
       <div className='mb-8'>
         <div className='flex items-center justify-between gap-3 mb-2'>
-          <h1 className='text-xl text-gray-900 dark:text-white sm:text-2xl lg:text-3xl'>
-            {t('dashboard.welcomeTeacher')}, {capitalNames[0]}! 👨‍🏫
+          <h1 className='text-xl font-semibold text-foreground sm:text-2xl lg:text-3xl'>
+            {t('dashboard.welcomeTeacher')}, {capitalNames[0]}
           </h1>
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            className='flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-all bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-60 disabled:cursor-not-allowed'
+            className='flex items-center gap-2 px-3 py-2 text-sm transition-all rounded-lg bg-accent text-foreground hover:bg-accent/80 disabled:opacity-60 disabled:cursor-not-allowed'
           >
             <RotateCw
               className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -74,7 +87,8 @@ export const TeacherDashboardView = ({
         <InfoWidget
           type='totalStudents'
           userData={userData}
-          lessons={lessons}
+          lessons={myTeachingLessons}
+          totalStudents={totalStudents}
         />
         <InfoWidget
           type='upcomingLessons'
@@ -97,9 +111,9 @@ export const TeacherDashboardView = ({
       {/* Two Column Layout */}
       <div className='grid grid-cols-1 gap-4 mb-6 lg:grid-cols-2 sm:gap-6'>
         {/* Upcoming Lessons */}
-        <div className='p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
+        <div className='p-4 border sm:p-6 bg-card border-border rounded-xl'>
           <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-lg text-gray-900 dark:text-white sm:text-xl'>
+            <h2 className='text-lg font-semibold text-foreground sm:text-xl'>
               {t('dashboard.todaySchedule')}
             </h2>
             <button className='text-xs text-blue-500 transition-all sm:text-sm dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300'>
@@ -113,15 +127,15 @@ export const TeacherDashboardView = ({
                 return (
                   <div
                     key={lesson.id}
-                    className='p-3 transition-all border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer'
+                    className='p-3 transition-all border rounded-lg cursor-pointer bg-muted/40 border-border hover:bg-accent/50'
                     onClick={() => setSelectedLesson(lesson)}
                   >
                     <div className='flex items-start gap-3'>
                       <div className='flex-1 min-w-0'>
-                        <h4 className='mb-1 text-sm font-medium text-gray-900 dark:text-white sm:text-base'>
+                        <h4 className='mb-1 text-sm font-medium text-foreground sm:text-base'>
                           {lesson.topic?.heading || t('calendar.untitledLesson')}
                         </h4>
-                        <div className='flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-500'>
+                        <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
                           <Calendar className='w-3 h-3' />
                           <span>{lessonDate.toLocaleDateString()}</span>
                           <span>•</span>
@@ -134,7 +148,7 @@ export const TeacherDashboardView = ({
                           </span>
                         </div>
                       </div>
-                      <span className='px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded dark:bg-blue-900/30 dark:text-blue-300'>
+                      <span className='px-2 py-1 text-xs font-medium text-blue-700 rounded-lg bg-blue-500/15 dark:text-blue-300'>
                         {t('calendar.scheduledLesson')}
                       </span>
                     </div>
@@ -142,7 +156,7 @@ export const TeacherDashboardView = ({
                 );
               })
             ) : (
-              <div className='py-8 text-center text-gray-500 dark:text-gray-400'>
+              <div className='py-8 text-center text-muted-foreground'>
                 <Calendar className='w-12 h-12 mx-auto mb-2 opacity-50' />
                 <p className='text-sm'>{t('dashboard.noUpcomingLessons')}</p>
               </div>
@@ -151,9 +165,9 @@ export const TeacherDashboardView = ({
         </div>
 
         {/* Recent Activity */}
-        <div className='p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800/40 dark:border-gray-700 sm:p-6'>
+        <div className='p-4 border sm:p-6 bg-card border-border rounded-xl'>
           <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-lg text-gray-900 dark:text-white sm:text-xl'>
+            <h2 className='text-lg font-semibold text-foreground sm:text-xl'>
               {t('dashboard.recentActivity')}
             </h2>
           </div>
@@ -164,19 +178,19 @@ export const TeacherDashboardView = ({
                 return (
                   <div
                     key={lesson.id}
-                    className='p-3 transition-all border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700'
+                    className='p-3 transition-all border rounded-lg bg-muted/40 border-border'
                   >
                     <div className='flex items-start gap-3'>
                       <div className='flex-1 min-w-0'>
-                        <h4 className='mb-1 text-sm font-medium text-gray-900 dark:text-white sm:text-base'>
+                        <h4 className='mb-1 text-sm font-medium text-foreground sm:text-base'>
                           {lesson.topic?.heading || t('calendar.untitledLesson')}
                         </h4>
-                        <div className='flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-500'>
+                        <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
                           <Calendar className='w-3 h-3' />
                           <span>{lessonDate.toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <span className='px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded dark:bg-green-900/30 dark:text-green-300'>
+                      <span className='px-2 py-1 text-xs font-medium text-green-700 rounded-lg bg-green-500/15 dark:text-green-300'>
                         {t('calendar.finished')}
                       </span>
                     </div>
@@ -184,7 +198,7 @@ export const TeacherDashboardView = ({
                 );
               })
             ) : (
-              <div className='py-8 text-center text-gray-500 dark:text-gray-400'>
+              <div className='py-8 text-center text-muted-foreground'>
                 <TrendingUp className='w-12 h-12 mx-auto mb-2 opacity-50' />
                 <p className='text-sm'>{t('dashboard.noRecentActivity')}</p>
               </div>
@@ -194,7 +208,12 @@ export const TeacherDashboardView = ({
       </div>
 
       {/* Performance Overview */}
-      <PerformanceOverview lessons={lessons} totalStudents={totalStudents} />
+      <PerformanceOverview
+        lessons={myTeachingLessons}
+        totalStudents={totalStudents}
+        ratingAverage={ratingAverage}
+        ratingCount={ratingCount}
+      />
 
       {selectedLesson && (
         <LessonDetailModal
@@ -204,6 +223,7 @@ export const TeacherDashboardView = ({
           setScheduleModalIsOpen={() => {}}
           setScheduleTime={() => {}}
           assignedToMe={teachingClassIds.has(selectedLesson.id)}
+          userId={user.uid}
         />
       )}
     </div>

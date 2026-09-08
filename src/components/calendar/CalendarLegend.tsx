@@ -7,51 +7,28 @@ export function CalendarLegend({
 }) {
   const { t } = useLanguage();
 
-  if (variant === 'teacher') {
-    return (
-      <div className='flex flex-wrap items-center gap-3 mb-4'>
-        <div className='flex items-center gap-2'>
-          <div className='w-3 h-3 bg-orange-500 rounded'></div>
-          <span className='text-xs text-gray-600 dark:text-gray-400'>
-            {t('calendar.openTeacherAccept')}
-          </span>
-        </div>
-        <div className='flex items-center gap-2'>
-          <div className='w-3 h-3 bg-blue-500 rounded'></div>
-          <span className='text-xs text-gray-600 dark:text-gray-400'>
-            {t('calendar.joined')}
-          </span>
-        </div>
-        <div className='flex items-center gap-2'>
-          <div className='w-3 h-3 bg-indigo-600 rounded'></div>
-          <span className='text-xs text-gray-600 dark:text-gray-400'>
-            {t('calendar.openGroupAccept')}
-          </span>
-        </div>
-      </div>
-    );
-  }
+  const items =
+    variant === 'teacher'
+      ? [
+          { color: 'bg-orange-500', label: t('calendar.openTeacherAccept') },
+          { color: 'bg-blue-500', label: t('calendar.joined') },
+          { color: 'bg-indigo-600', label: t('calendar.openGroupAccept') },
+        ]
+      : [
+          { color: 'bg-blue-500', label: t('calendar.oneOnOneLesson') },
+          { color: 'bg-green-500', label: t('calendar.groupClass') },
+          { color: 'bg-orange-500', label: t('dashboard.pendingRequests') },
+          { color: 'bg-indigo-600', label: t('calendar.openGroupAccept') },
+        ];
 
   return (
     <div className='flex flex-wrap items-center gap-3 mb-4'>
-      <div className='flex items-center gap-2'>
-        <div className='w-3 h-3 bg-blue-500 rounded'></div>
-        <span className='text-xs text-gray-400'>{t('calendar.oneOnOneLesson')}</span>
-      </div>
-      <div className='flex items-center gap-2'>
-        <div className='w-3 h-3 bg-green-500 rounded'></div>
-        <span className='text-xs text-gray-400'>{t('calendar.groupClass')}</span>
-      </div>
-      <div className='flex items-center gap-2'>
-        <div className='w-3 h-3 bg-orange-500 rounded'></div>
-        <span className='text-xs text-gray-400'>{t('dashboard.pendingRequests')}</span>
-      </div>
-      <div className='flex items-center gap-2'>
-        <div className='w-3 h-3 bg-indigo-600 rounded'></div>
-        <span className='text-xs text-gray-400'>
-          {t('calendar.openGroupAccept')}
-        </span>
-      </div>
+      {items.map((item) => (
+        <div key={item.label} className='flex items-center gap-2'>
+          <div className={`w-3 h-3 rounded ${item.color}`} />
+          <span className='text-xs text-muted-foreground'>{item.label}</span>
+        </div>
+      ))}
     </div>
   );
 }

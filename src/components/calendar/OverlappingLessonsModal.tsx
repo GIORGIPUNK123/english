@@ -21,28 +21,22 @@ export function OverlappingLessonsModal({
   const slotStartTimestamp = Math.floor(slotDate.getTime() / 1000);
 
   return (
-    <div
-      className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm'
-      onClick={onClose}
-    >
+    <div className='modal-overlay' onClick={onClose}>
       <div
-        className='w-full max-w-2xl bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 dark:border-gray-700 rounded-xl'
+        className='w-full max-w-2xl modal-panel'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='relative p-6 bg-indigo-600 rounded-t-xl'>
-          <button
-            onClick={onClose}
-            className='absolute p-2 transition-all rounded-lg top-4 right-4 hover:bg-white/10'
-          >
-            <X className='w-5 h-5 text-white' />
+        <div className='modal-header'>
+          <button onClick={onClose} className='modal-close'>
+            <X className='w-5 h-5' />
           </button>
-          <h2 className='pr-10 text-2xl font-semibold text-white'>
+          <h2 className='pr-10 text-2xl font-semibold text-foreground'>
             {sortedLessons.length} classes in this slot
           </h2>
-          <div className='mt-2 text-sm text-white/90'>
+          <div className='mt-2 text-sm text-muted-foreground'>
             {formatDate(slotStartTimestamp)}
           </div>
-          <div className='text-sm text-white/90'>
+          <div className='text-sm text-muted-foreground'>
             {formatTime(slotStartTimestamp)} -{' '}
             {formatTime(slotStartTimestamp + 3600)}
           </div>
@@ -53,11 +47,11 @@ export function OverlappingLessonsModal({
             <button
               key={lesson.id}
               onClick={() => onLessonClick(lesson)}
-              className='w-full p-4 text-left transition-all border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700 hover:border-indigo-400 hover:bg-indigo-50/70 dark:hover:bg-indigo-900/20'
+              className='w-full p-4 text-left border rounded-lg bg-muted/40 border-border hover:border-brand/40 hover:bg-brand-muted'
             >
               <div className='flex items-start justify-between gap-3'>
                 <div>
-                  <div className='font-medium text-gray-900 dark:text-white'>
+                  <div className='font-medium text-foreground'>
                     {lesson.topic?.heading || 'Untitled lesson'}
                   </div>
                   <div className='flex items-center gap-1 mt-1 text-xs text-gray-600 dark:text-gray-400'>

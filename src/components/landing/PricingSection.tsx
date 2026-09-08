@@ -74,12 +74,12 @@ const PricingCard = ({ plan }: { plan: PricingPlan }) => {
 
   return (
     <div
-      className={`relative bg-card border ${plan.popular ? 'border-blue-500 shadow-xl scale-105' : 'border-border'} rounded-2xl p-8 hover:shadow-xl transition-all duration-300`}
+      className={`relative bg-card border ${plan.popular ? 'border-brand shadow-xl scale-105' : 'border-border'} rounded-2xl p-8 hover:shadow-xl transition-all duration-300`}
     >
       {/* Popular Badge */}
       {plan.popular && (
         <div className='absolute -translate-x-1/2 -top-4 left-1/2'>
-          <div className='px-4 py-1.5 bg-linear-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold rounded-full flex items-center space-x-1'>
+          <div className='px-4 py-1.5 bg-brand text-brand-foreground text-sm font-semibold rounded-full flex items-center space-x-1'>
             <Sparkles className='w-4 h-4' />
             <span>{t('pricing.mostPopular')}</span>
           </div>
@@ -123,7 +123,7 @@ const PricingCard = ({ plan }: { plan: PricingPlan }) => {
         <button
           className={`w-full py-3.5 rounded-lg font-semibold transition-all duration-300 ${
             plan.popular
-              ? 'bg-linear-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg hover:scale-105'
+              ? 'btn-primary'
               : 'bg-accent text-foreground hover:bg-accent/80'
           }`}
         >
@@ -138,23 +138,23 @@ export const PricingSection = () => {
   const { t } = useLanguage();
 
   return (
-    <section id='pricing' className='py-20 sm:py-32'>
+    <section id='pricing' className='py-16 sm:py-24 lg:py-32'>
       <div className='px-4 mx-auto max-w-7xl sm:px-6 lg:px-8'>
         {/* Section Header */}
-        <div className='max-w-3xl mx-auto mb-16 text-center'>
+        <div className='max-w-3xl mx-auto mb-12 text-center sm:mb-16'>
           <div className='inline-flex items-center px-4 py-2 mb-6 space-x-2 rounded-full bg-accent'>
             <span className='text-sm font-medium text-muted-foreground'>
               {t('landing.pricingBadge')}
             </span>
           </div>
-          <h2 className='mb-6 text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
+          <h2 className='mb-4 text-2xl font-bold sm:text-4xl lg:text-5xl text-foreground'>
             {t('landing.pricingTitlePre')}
-            <span className='text-transparent bg-linear-to-r from-blue-500 to-purple-600 bg-clip-text'>
+            <span className='text-transparent bg-linear-to-r from-indigo-400 to-violet-400 bg-clip-text'>
               {' '}
               {t('landing.pricingTitleEmphasis')}
             </span>
           </h2>
-          <p className='text-lg text-muted-foreground'>
+          <p className='text-base sm:text-lg text-muted-foreground'>
             {t('landing.pricingSubtitle')}
           </p>
         </div>

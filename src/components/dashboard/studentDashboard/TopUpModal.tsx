@@ -110,35 +110,38 @@ export function TopUpModal({
 
   return (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 dark:bg-black/70 backdrop-blur-sm'
+      className='modal-overlay p-2 sm:p-4'
       onClick={onClose}
     >
       <div
-        className='w-full max-w-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-xl shadow-2xl max-h-[95vh] overflow-y-auto'
+        className='w-full max-w-3xl max-h-[95vh] overflow-y-auto modal-panel'
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className='sticky top-0 z-10 p-4 rounded-t-lg bg-linear-to-r from-blue-600 to-purple-600 sm:p-6 sm:rounded-t-xl'>
+        <div className='sticky top-0 z-10 modal-header'>
           <button
             onClick={onClose}
-            className='absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all'
+            className='modal-close top-3 right-3 sm:top-4 sm:right-4'
           >
-            <X className='w-4 h-4 text-white sm:w-5 sm:h-5' />
+            <X className='w-4 h-4 sm:w-5 sm:h-5' />
           </button>
-          <h2 className='mb-1 text-xl font-bold text-white sm:text-2xl sm:mb-2'>
+          <h2 className='mb-1 text-xl font-bold text-foreground sm:text-2xl sm:mb-2'>
             {t('dashboard.topUp')}
           </h2>
-          <p className='text-xs text-white/90 sm:text-sm'>
+          <p className='text-xs sm:text-sm text-muted-foreground'>
             {t('dashboard.availableTokens')}: <span className='font-semibold'>{tokenBalances.total} tokens</span>
           </p>
-          <p className='text-[11px] text-white/85 sm:text-xs mt-1'>
+          <p className='text-[11px] sm:text-xs mt-1 text-muted-foreground'>
             {t('dashboard.tokenDetailsOneOnOne')}: {tokenBalances.oneOnOne} | {t('dashboard.tokenDetailsGroup')}: {tokenBalances.group} | {t('dashboard.tokenDetailsFlexible')}: {tokenBalances.legacy}
           </p>
         </div>
 
         <div className='p-4 space-y-4 sm:p-6 sm:space-y-6'>
+          <div className='p-3 text-sm border border-amber-300 rounded-lg bg-amber-50 text-amber-900 dark:bg-amber-500/10 dark:border-amber-500/40 dark:text-amber-200'>
+            Demo mode — no real payment is processed. Tokens are added instantly
+            for testing.
+          </div>
           <div>
-            <h3 className='mb-3 text-base font-semibold text-gray-900 sm:text-lg dark:text-white sm:mb-4'>
+            <h3 className='mb-3 text-base font-semibold text-foreground sm:mb-4'>
               Token Type
             </h3>
             <div className='grid grid-cols-2 gap-3'>
@@ -146,7 +149,7 @@ export function TopUpModal({
                 onClick={() => setSelectedTokenType('group')}
                 className={`p-3 rounded-lg border-2 transition-all text-sm sm:text-base ${
                   selectedTokenType === 'group'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/20'
+                    ? 'border-brand bg-brand-muted'
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-blue-400 dark:hover:border-blue-500'
                 }`}
               >
@@ -156,7 +159,7 @@ export function TopUpModal({
                 onClick={() => setSelectedTokenType('1on1')}
                 className={`p-3 rounded-lg border-2 transition-all text-sm sm:text-base ${
                   selectedTokenType === '1on1'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/20'
+                    ? 'border-brand bg-brand-muted'
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-blue-400 dark:hover:border-blue-500'
                 }`}
               >
@@ -167,7 +170,7 @@ export function TopUpModal({
 
           {/* Custom Token Amounts */}
           <div>
-            <h3 className='mb-3 text-base font-semibold text-gray-900 sm:text-lg dark:text-white sm:mb-4'>
+            <h3 className='mb-3 text-base font-semibold text-foreground sm:mb-4'>
               Buy Custom Amount (1-3 tokens)
             </h3>
             <div className='grid grid-cols-3 gap-2 sm:gap-3'>
@@ -179,13 +182,13 @@ export function TopUpModal({
                     onClick={() => setSelectedBundle(bundle.id)}
                     className={`relative p-2.5 sm:p-4 rounded-lg border-2 transition-all text-center ${
                       selectedBundle === bundle.id
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/20 shadow-lg'
+                        ? 'border-brand bg-brand-muted shadow-lg'
                         : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-blue-400 dark:hover:border-blue-500'
                     }`}
                   >
                     {selectedBundle === bundle.id && (
                       <div className='absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2'>
-                        <div className='flex items-center justify-center w-4 h-4 bg-blue-600 rounded-full sm:w-5 sm:h-5'>
+                        <div className='flex items-center justify-center w-4 h-4 rounded-full sm:w-5 sm:h-5 bg-brand'>
                           <Check className='w-2.5 h-2.5 sm:w-3 sm:h-3 text-white' />
                         </div>
                       </div>
@@ -206,7 +209,7 @@ export function TopUpModal({
 
           {/* Discounted Bundles */}
           <div>
-            <h3 className='mb-3 text-base font-semibold text-gray-900 sm:text-lg dark:text-white sm:mb-4'>
+            <h3 className='mb-3 text-base font-semibold text-foreground sm:mb-4'>
               Save with Bundles
             </h3>
             <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 sm:gap-4'>
@@ -218,7 +221,7 @@ export function TopUpModal({
                     onClick={() => setSelectedBundle(bundle.id)}
                     className={`relative p-4 sm:p-6 rounded-xl border-2 transition-all text-left ${
                       selectedBundle === bundle.id
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/20'
+                        ? 'border-brand bg-brand-muted'
                         : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-gray-300 dark:hover:border-gray-600'
                     } ${bundle.popular ? 'pt-7 sm:pt-8' : ''}`}
                   >
@@ -243,7 +246,7 @@ export function TopUpModal({
                     {/* Check Mark */}
                     {selectedBundle === bundle.id && !bundle.discount && (
                       <div className='absolute top-3 right-3 sm:top-4 sm:right-4'>
-                        <div className='flex items-center justify-center w-5 h-5 bg-blue-600 rounded-full sm:w-6 sm:h-6'>
+                        <div className='flex items-center justify-center w-5 h-5 rounded-full sm:w-6 sm:h-6 bg-brand'>
                           <Check className='w-3 h-3 text-white sm:w-4 sm:h-4' />
                         </div>
                       </div>
@@ -292,7 +295,7 @@ export function TopUpModal({
 
           {/* Payment Methods */}
           <div>
-            <h3 className='mb-3 text-base font-semibold text-gray-900 sm:text-lg dark:text-white sm:mb-4'>
+            <h3 className='mb-3 text-base font-semibold text-foreground sm:mb-4'>
               Payment Method
             </h3>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4'>
@@ -304,14 +307,14 @@ export function TopUpModal({
                     onClick={() => setSelectedPayment(method.id)}
                     className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border-2 transition-all ${
                       selectedPayment === method.id
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/20'
+                        ? 'border-brand bg-brand-muted'
                         : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >
                     <div
                       className={`p-2 sm:p-3 rounded-lg ${
                         selectedPayment === method.id
-                          ? 'bg-blue-600'
+                          ? 'bg-brand'
                           : 'bg-gray-100 dark:bg-gray-700'
                       }`}
                     >
@@ -418,18 +421,18 @@ export function TopUpModal({
           </div>
 
           {/* Action Buttons */}
-          <div className='flex gap-2.5 sm:gap-3 pt-2 border-t border-gray-200 dark:border-gray-700'>
+          <div className='flex gap-2.5 sm:gap-3 pt-2 border-t border-border'>
             <button
               onClick={onClose}
               disabled={isProcessing}
-              className='flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+              className='flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm btn-secondary'
             >
               Cancel
             </button>
             <button
               onClick={handlePurchase}
               disabled={isProcessing}
-              className='flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-white bg-linear-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg'
+              className='flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm btn-primary'
             >
               {isProcessing
                 ? 'Processing...'
