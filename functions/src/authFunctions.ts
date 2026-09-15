@@ -35,8 +35,12 @@ export const createFirestoreUser = functions.auth
   .user()
   .onCreate(async (user) => {
     const userRef = admin.firestore().collection('users').doc(user.uid);
-    await userRef
-      .set({
+    const existing = await userRef.get();
+    if (existing.exists) {
+      return;
+    }
+
+    await userRef.set({
         email: user.email,
         created_at: Math.floor(Date.now() / 1000),
         first_name: '',
@@ -53,14 +57,9 @@ export const createFirestoreUser = functions.auth
         one_on_one_tokens: 0,
         used_one_on_one_tokens: 0,
         teaching_classes: [],
-      })
-      .then(() => {
-        console.log(
-          'New user document created in Firestore for UID:',
-          user.uid,
-        );
-      });
-    const notificationId = db.collection('users').doc().id; // Generate ID
+    });
+
+    const notificationId = db.collection('users').doc().id;
     await db
       .collection('users')
       .doc(user.uid)
@@ -517,15 +516,19 @@ export const upgradeToTeacher = onCall<UpgradeTeacherData>(
 
     try {
       await db.collection('users').doc(auth.uid).update({
-        'roles.teacher': true,
-        teacher_bio: bio,
-        teacher_ratings: {},
-        teaching_classes: [],
+        teacher_bio: bio.trim(),
+        teacher_status: 'pending',
+        last_applied_teacher: Math.floor(Date.now() / 1000),
       });
 
-      return { success: true, message: 'Upgraded to teacher successfully' };
-    } catch (error: any) {
-      throw new HttpsError('internal', 'Upgrade failed: ' + error.message);
+      return {
+        success: true,
+        message: 'Teacher application submitted for review',
+      };
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new HttpsError('internal', 'Upgrade failed: ' + message);
     }
   },
 );

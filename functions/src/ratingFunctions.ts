@@ -1,4 +1,4 @@
-import { HttpsError, onCall } from 'firebase-functions/https';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { db } from './firebaseAdmin';
 
 type StudentRatingDoc = {
@@ -6,7 +6,7 @@ type StudentRatingDoc = {
   comment?: string;
 };
 
-const computeAverageFor = async (
+export const computeAverageFor = async (
   userId: string,
   collectionName: 'student_ratings' | 'teacher_ratings',
 ) => {
@@ -32,14 +32,6 @@ const computeAverageFor = async (
     count,
   };
 };
-
-export const getStudentRatingAverage = onCall(async ({ auth }) => {
-  if (!auth) {
-    throw new HttpsError('unauthenticated', 'Login required');
-  }
-
-  return await computeAverageFor(auth.uid, 'student_ratings');
-});
 
 export const getTeacherRatingAverage = onCall(async ({ auth }) => {
   if (!auth) {

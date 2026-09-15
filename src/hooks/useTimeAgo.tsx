@@ -1,4 +1,6 @@
-export const useTimeAgo = (timestamp: number): string => {
+import { useEffect, useState } from 'react';
+
+export const formatTimeAgo = (timestamp: number): string => {
   const now = Math.floor(Date.now() / 1000);
   const diff = now - timestamp;
 
@@ -15,4 +17,19 @@ export const useTimeAgo = (timestamp: number): string => {
   if (diff < 31536000) return `${Math.floor(diff / 2592000)} months ago`;
   if (diff < 63072000) return '1 year ago';
   return `${Math.floor(diff / 31536000)} years ago`;
+};
+
+/** Returns a relative time string that refreshes about once a minute. */
+export const useTimeAgo = (timestamp: number): string => {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setTick((value) => value + 1);
+    }, 60_000);
+
+    return () => window.clearInterval(intervalId);
+  }, [timestamp]);
+
+  return formatTimeAgo(timestamp);
 };

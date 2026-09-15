@@ -118,7 +118,7 @@ export const LessonDetailModal = ({
           : t('calendar.joinedGroupTitle'),
         message: payload.alreadyJoined
           ? t('calendar.alreadyJoinedMessage')
-          : `${t('calendar.joinedSuccessMessage')} (${payload.participantCount}/${payload.maxParticipants} students).`,
+          : `${t('calendar.joinedSuccessMessage')} (${payload.participantCount}/${payload.maxParticipants} ${t('calendar.studentsCountSuffix')}).`,
         type: 'success',
       });
 

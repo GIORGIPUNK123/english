@@ -78,7 +78,9 @@ export const TeacherDashboardView = ({
           </button>
         </div>
         <TipWidget
-          tip={`${t('dashboard.welcomeTeacher')}! You have ${upcomingLessons.length} upcoming lessons and ${completedLessons.length} completed.`}
+          tip={`${t('dashboard.welcomeTeacher')}! ${t('dashboard.teacherSummary')
+            .replace('{upcoming}', String(upcomingLessons.length))
+            .replace('{completed}', String(completedLessons.length))}`}
         />
       </div>
 

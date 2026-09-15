@@ -12,7 +12,6 @@ import { httpsCallable } from 'firebase/functions';
 import {
   TokenBalancesT,
   getAvailableTokensForLessonType,
-  getLessonTokenLabel,
 } from '../../utils/tokenUtils';
 import { getFirebaseErrorCode, getErrorMessage } from '../../utils/firebaseErrorUtils';
 import { useLanguage } from '../../context/LanguageContext';
@@ -138,7 +137,10 @@ export const ScheduleLessonModal = ({
     : lessons;
   const isConflicting = isTimestampConflicting(timestamp, filteredLessons);
   const isTooSoon = isTimestampTooSoon(timestamp);
-  const lessonTokenLabel = getLessonTokenLabel(lessonType);
+  const lessonTokenLabel =
+    lessonType === 'group'
+      ? t('calendar.tokenLabelGroup')
+      : t('calendar.tokenLabelOneOnOne');
   const availableTokensForType = getAvailableTokensForLessonType(
     tokenBalances,
     lessonType,

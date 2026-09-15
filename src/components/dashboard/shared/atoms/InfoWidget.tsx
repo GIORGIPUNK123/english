@@ -137,7 +137,7 @@ export const InfoWidget = (props: {
             className='flex items-center gap-1 text-xs text-blue-500 transition-colors dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300'
           >
             <Plus className='w-3 h-3' />
-            <span className='hidden sm:inline'>Top up</span>
+            <span className='hidden sm:inline'>{t('dashboard.topUpShort')}</span>
           </button>
         )}
       </div>

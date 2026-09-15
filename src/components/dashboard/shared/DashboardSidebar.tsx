@@ -1,4 +1,4 @@
-import { User } from 'firebase/auth';
+import { User, signOut } from 'firebase/auth';
 import {
   LayoutDashboard,
   BookOpen,
@@ -10,10 +10,12 @@ import {
   X,
   History,
   MessageSquare,
+  LogOut,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NotificationT } from '../../../types';
-import { db } from '../../../firebase/firebase-config';
+import { auth, db } from '../../../firebase/firebase-config';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { useLanguage } from '../../../context/LanguageContext';
 
@@ -49,6 +51,15 @@ export const DashboardSidebar = ({
 }: SidebarProps) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
   const handleTabChange = (tab: string) => {
     onTabChange(tab);
     // Close sidebar on mobile after selection
@@ -91,7 +102,7 @@ export const DashboardSidebar = ({
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col w-64 min-h-screen border-r bg-sidebar border-sidebar-border transform transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col w-64 h-full border-r bg-sidebar border-sidebar-border transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -120,7 +131,7 @@ export const DashboardSidebar = ({
           </div>
         </div>
         {/* Navigation */}
-        <nav className='flex-1 py-4'>
+        <nav className='flex-1 py-4 overflow-y-auto'>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -149,7 +160,14 @@ export const DashboardSidebar = ({
         </nav>
 
         {/* Footer */}
-        <div className='p-4 border-t border-sidebar-border'>
+        <div className='p-4 space-y-3 border-t border-sidebar-border'>
+          <button
+            onClick={handleLogout}
+            className='flex items-center w-full gap-3 px-2 py-2.5 transition-all rounded-lg text-muted-foreground hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400'
+          >
+            <LogOut className='w-5 h-5 shrink-0' />
+            <span className='flex-1 text-left'>{t('sidebar.logout')}</span>
+          </button>
           <p className='text-xs text-center text-muted-foreground'>
             © 2026 {t('sidebar.portal')}
           </p>

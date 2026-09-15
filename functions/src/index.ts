@@ -10,6 +10,8 @@ export {
   cancelLesson,
   acceptLesson,
   getUsersPublicNames,
+  listOpenGroupLessons,
+  listOpenLessonRequests,
 } from './lessonFunctions';
 export {
   markNotificationAsRead,
@@ -23,8 +25,10 @@ export {
   upgradeToTeacher,
   createFirestoreUser,
 } from './authFunctions';
-export {
-  getStudentRatingAverage,
-  getTeacherRatingAverage,
-} from './ratingFunctions';
+export { getTeacherRatingAverage } from './ratingFunctions';
 export { purchaseTokens } from './tokenFunctions';
+export {
+  submitLessonFeedback,
+  markLessonFeedbackRead,
+  submitTeacherRating,
+} from './feedbackFunctions';

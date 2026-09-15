@@ -350,7 +350,7 @@ export const Dashboard = () => {
   return (
     <>
       {user && (
-        <div className='flex min-h-screen bg-background'>
+        <div className='flex overflow-hidden h-dvh bg-background'>
           <ToastContainer toasts={toasts} onDismiss={removeToast} />
           <FinishUserSetup isOpen={needsProfileSetup} />
           {/* Sidebar */}
@@ -365,7 +365,7 @@ export const Dashboard = () => {
           />
 
           {/* Main Content */}
-          <main className='flex-1 p-4 overflow-hidden sm:p-6 lg:p-8'>
+          <main className='flex-1 min-w-0 p-4 overflow-hidden sm:p-6 lg:px-8 lg:py-6'>
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -374,7 +374,7 @@ export const Dashboard = () => {
               <Menu className='w-5 h-5' />
             </button>
 
-            <div className='h-full mx-auto max-w-7xl lg:mt-0 mt-14'>
+            <div className='h-full mx-auto max-w-7xl pt-14 lg:pt-0'>
               {renderContent()}
             </div>
           </main>

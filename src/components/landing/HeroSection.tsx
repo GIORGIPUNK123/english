@@ -90,7 +90,7 @@ export const HeroSection = () => {
                       {t('landing.heroNextLesson')}
                     </div>
                     <div className='text-xl font-bold text-transparent sm:text-2xl bg-linear-to-r from-indigo-400 to-violet-400 bg-clip-text'>
-                      15 minutes
+                      {t('landing.heroNextLessonCountdown')}
                     </div>
                   </div>
                 </div>

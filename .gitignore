@@ -16,6 +16,14 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
+
+# Secrets / credentials
+**/serviceAccount*.json
+*.pem
+credentials.json
+
 
 # Editor directories and files
 .vscode/*

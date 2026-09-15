@@ -53,16 +53,6 @@ export const getAvailableTokensForLessonType = (
   return tokenBalances.oneOnOne + tokenBalances.legacy;
 };
 
-export const getLessonTokenLabel = (lessonType: LessonTypeT): string => {
-  return lessonType === 'group' ? 'Group Token' : '1-on-1 Token';
-};
-
-export const getPurchaseTokenTypeLabel = (
-  tokenType: TokenPurchaseType,
-): string => {
-  return tokenType === 'group' ? 'Group Tokens' : '1-on-1 Tokens';
-};
-
 export const TOKEN_BUNDLES_BY_TYPE: Record<TokenPurchaseType, TokenBundleT[]> =
   {
     group: [

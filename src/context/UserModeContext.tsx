@@ -33,8 +33,10 @@ export const UserModeProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Check if user can be a teacher
-    const isTeacher = userData.roles?.teacher === true;
+    // Teacher mode when role is granted or english-backend marked application approved
+    const isTeacher =
+      userData.roles?.teacher === true ||
+      userData.teacher_status === 'approved';
     setCanSwitchToTeacher(isTeacher);
 
     // Get saved preference from localStorage

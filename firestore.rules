@@ -12,6 +12,15 @@ service cloud.firestore {
       return isLoggedIn() && request.auth.uid == uid;
     }
 
+    function canReadClass(classData) {
+      return isLoggedIn() && (
+        request.auth.uid == classData.teacher_id
+        || request.auth.uid == classData.student_id
+        || request.auth.uid == classData.created_by
+        || request.auth.uid in classData.get('participant_ids', [])
+      );
+    }
+
     /* ========== USER DATA ========== */
     match /users/{userId} {
       allow read: if isOwner(userId);
@@ -75,20 +84,17 @@ service cloud.firestore {
 
     /* ========== CLASSES ========== */
     match /classes/{classId} {
-      allow read: if isLoggedIn();
+      allow read: if canReadClass(resource.data);
       allow write: if false;
-    }
 
-    /* ========== TEACHERS ========== */
-    match /teachers/{teacherId} {
-      allow read: if isLoggedIn();
-
-      // Teacher profile only
-      allow update: if isOwner(teacherId)
-        && request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['first_name', 'last_name', 'img']);
-
-      allow create, delete: if false;
+      match /feedback/{studentId} {
+        allow read: if isLoggedIn()
+          && (
+            request.auth.uid == studentId
+            || get(/databases/$(database)/documents/classes/$(classId)).data.teacher_id == request.auth.uid
+          );
+        allow write: if false;
+      }
     }
 
     /* ========== TOPICS ========== */

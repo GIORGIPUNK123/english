@@ -1,28 +1,22 @@
 import { httpsCallable } from 'firebase/functions';
 import { useToast } from '../context/ToastContext';
 import { functions } from '../firebase/firebase-config';
+import { getFirebaseErrorMessage } from '../utils/firebaseErrorUtils';
 
-// Returns a function that marks a notification as read by ID
+// Returns a function that marks a notification as read by ID.
+// Resolves to true on success, false on failure (after showing an error toast).
 export const useMarkAsRead = () => {
   const { addToast } = useToast();
 
-  return async (notificationId: string) => {
+  return async (notificationId: string): Promise<boolean> => {
     try {
       const markNotificationAsReadFn = httpsCallable(
         functions,
         'markNotificationAsRead',
       );
-      const result = await markNotificationAsReadFn({ notificationId });
-      console.log('Mark as read result:', result);
-      addToast({
-        title: 'Success',
-        message: 'Notification marked as read',
-        type: 'success',
-        duration: 3000,
-      });
+      await markNotificationAsReadFn({ notificationId });
+      return true;
     } catch (err) {
-      const error = err as { message?: string; code?: string };
-      const code = error?.code || '';
       const friendlyMessages: Record<string, string> = {
         unauthenticated: 'Please log in and try again.',
         'permission-denied': "You don't have permission to do that.",
@@ -30,11 +24,11 @@ export const useMarkAsRead = () => {
         'failed-precondition': 'Please refresh and try again.',
         internal: 'Something went wrong. Please try again later.',
       };
-      const errorMessage =
-        (code && friendlyMessages[code]) ||
-        (error?.message
-          ? `Failed to mark as read (${error.message})`
-          : 'Failed to mark as read');
+      const errorMessage = getFirebaseErrorMessage(
+        err,
+        friendlyMessages,
+        'Failed to mark as read',
+      );
       console.error('Error marking notification as read:', err);
       addToast({
         title: 'Error',
@@ -42,6 +36,7 @@ export const useMarkAsRead = () => {
         type: 'error',
         duration: 4000,
       });
+      return false;
     }
   };
 };

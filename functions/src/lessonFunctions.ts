@@ -8,9 +8,12 @@ import {
 } from './zoomFunctions';
 import { FieldValue } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
+import { computeAverageFor } from './ratingFunctions';
 
 const GROUP_MAX_PARTICIPANTS = 5;
 const GROUP_MIN_VALID_PARTICIPANTS = 2;
+const LESSON_DURATION_SECONDS = 3600;
+const MIN_SCHEDULE_LEAD_SECONDS = 24 * 3600;
 
 type LessonType = '1on1' | 'group';
 type TokenSource = 'group' | '1on1' | 'legacy';
@@ -75,6 +78,70 @@ const isCancelledStatus = (status?: string): boolean => {
     status === 'cancelled_teacher' ||
     status === 'cancelled_system'
   );
+};
+
+const isClosedStatus = (status?: string): boolean => {
+  return (
+    status === 'finished' ||
+    status === 'missed_teacher' ||
+    status === 'missed_student' ||
+    status === 'in-progress'
+  );
+};
+
+const timestampsOverlap = (slotA: number, slotB: number): boolean => {
+  return (
+    slotA < slotB + LESSON_DURATION_SECONDS &&
+    slotA + LESSON_DURATION_SECONDS > slotB
+  );
+};
+
+const assertScheduleTimeValid = (date: number, now: number) => {
+  if (date < now + MIN_SCHEDULE_LEAD_SECONDS) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Lesson must be at least 24 hours from now',
+    );
+  }
+};
+
+const assertNoScheduleConflict = async (
+  userId: string,
+  date: number,
+  excludeClassId?: string,
+) => {
+  const userSnap = await db.collection('users').doc(userId).get();
+  if (!userSnap.exists) return;
+
+  const classIds = Array.isArray(userSnap.data()?.classes)
+    ? (userSnap.data()?.classes as string[])
+    : [];
+
+  if (!classIds.length) return;
+
+  const classSnaps = await Promise.all(
+    classIds.map((classId) => db.collection('classes').doc(classId).get()),
+  );
+
+  for (const classSnap of classSnaps) {
+    if (!classSnap.exists) continue;
+    if (excludeClassId && classSnap.id === excludeClassId) continue;
+
+    const lesson = (classSnap.data() || {}) as FirestoreClassDoc;
+    if (isCancelledStatus(lesson.status) || isClosedStatus(lesson.status)) {
+      continue;
+    }
+
+    if (
+      typeof lesson.date === 'number' &&
+      timestampsOverlap(date, lesson.date)
+    ) {
+      throw new HttpsError(
+        'failed-precondition',
+        'This time conflicts with one of your existing lessons',
+      );
+    }
+  }
 };
 
 const getLessonType = (lesson: FirestoreClassDoc): LessonType => {
@@ -219,6 +286,29 @@ const getParticipantTokenSourceForUser = (
   return participantTokenSources[userId] || 'legacy';
 };
 
+const getDisplayName = (user?: UserDoc, fallback = 'A student'): string => {
+  const fullName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
+  return fullName || fallback;
+};
+
+const getTopicHeading = async (
+  topicId?: string,
+  fallback = 'this class',
+): Promise<string> => {
+  if (!topicId) return fallback;
+
+  try {
+    const topicSnap = await db.collection('topics').doc(topicId).get();
+    if (topicSnap.exists) {
+      return topicSnap.data()?.heading || fallback;
+    }
+  } catch (error) {
+    console.error(`[getTopicHeading] Failed to load topic ${topicId}`, error);
+  }
+
+  return fallback;
+};
+
 /* =====================================================
    HELPER: Convert Storage path to download URL
    ===================================================== */
@@ -267,6 +357,15 @@ export const scheduleLesson = onCall<ScheduleLessonData>(
     const normalizedLessonType: LessonType = lessonType || '1on1';
     const maxParticipants =
       normalizedLessonType === 'group' ? GROUP_MAX_PARTICIPANTS : 1;
+
+    const now = Math.floor(Date.now() / 1000);
+    assertScheduleTimeValid(date, now);
+    await assertNoScheduleConflict(userId, date);
+
+    const topicSnap = await db.collection('topics').doc(topicId).get();
+    if (!topicSnap.exists) {
+      throw new HttpsError('not-found', 'Topic not found');
+    }
 
     const userRef = db.collection('users').doc(userId);
     const classRef = db.collection('classes').doc();
@@ -317,6 +416,25 @@ export const scheduleLesson = onCall<ScheduleLessonData>(
       });
     });
 
+    try {
+      const topicName = await getTopicHeading(topicId, 'your class');
+      const isGroup = normalizedLessonType === 'group';
+
+      await addNotificationToUser(
+        userId,
+        isGroup ? 'Group Class Created' : 'Class Created',
+        isGroup
+          ? `Your group class "${topicName}" was created successfully. Other students can now join, and a teacher can accept it.`
+          : `Your 1-on-1 class "${topicName}" was created successfully. Waiting for a teacher to accept.`,
+        isGroup ? 'group' : 'calendar',
+      );
+    } catch (error) {
+      console.error(
+        `[scheduleLesson] Created class ${classRef.id} but failed to notify creator ${userId}`,
+        error,
+      );
+    }
+
     return {
       classId: classRef.id,
       lessonType: normalizedLessonType,
@@ -349,6 +467,9 @@ export const joinGroupLesson = onCall<JoinGroupLessonData>(
     let participantCount = 0;
     let maxParticipants = GROUP_MAX_PARTICIPANTS;
     let teacherId = '';
+    let existingParticipantIds: string[] = [];
+    let joinerName = 'A student';
+    let topicId = '';
 
     await db.runTransaction(async (tx) => {
       const [classSnap, userSnap] = await Promise.all([
@@ -401,6 +522,9 @@ export const joinGroupLesson = onCall<JoinGroupLessonData>(
       const participantTokenSources = getParticipantTokenSources(lesson);
       maxParticipants = getMaxParticipants(lesson);
       teacherId = lesson.teacher_id || '';
+      existingParticipantIds = participantIds;
+      joinerName = getDisplayName(user);
+      topicId = lesson.topic_id || '';
 
       if (participantIds.includes(userId)) {
         alreadyJoined = true;
@@ -446,17 +570,42 @@ export const joinGroupLesson = onCall<JoinGroupLessonData>(
       });
     });
 
-    if (!alreadyJoined && teacherId) {
+    if (!alreadyJoined) {
       try {
-        await addNotificationToUser(
-          teacherId,
-          'New Student Joined Group Class',
-          `A student joined your upcoming group class (${participantCount}/${maxParticipants}).`,
-          'group',
+        const topicName = await getTopicHeading(topicId, 'the group class');
+        const otherMemberIds = existingParticipantIds.filter(
+          (participantId) => participantId !== userId,
         );
+
+        await Promise.allSettled([
+          addNotificationToUser(
+            userId,
+            'Joined Group Class',
+            `You successfully joined "${topicName}".`,
+            'success',
+          ),
+          ...otherMemberIds.map((participantId) =>
+            addNotificationToUser(
+              participantId,
+              'New Classmate Joined',
+              `${joinerName} joined the group class you are in ("${topicName}").`,
+              'group',
+            ),
+          ),
+          ...(teacherId
+            ? [
+                addNotificationToUser(
+                  teacherId,
+                  'New Student Joined Group Class',
+                  `${joinerName} joined your upcoming group class "${topicName}" (${participantCount}/${maxParticipants}).`,
+                  'group',
+                ),
+              ]
+            : []),
+        ]);
       } catch (error) {
         console.error(
-          `[joinGroupLesson] Failed to notify teacher ${teacherId} about class ${classId}`,
+          `[joinGroupLesson] Failed to send join notifications for class ${classId}`,
           error,
         );
       }
@@ -503,6 +652,8 @@ export const rescheduleLesson = onCall<RescheduleLessonData>(
       );
     }
 
+    await assertNoScheduleConflict(userId, date, lessonId);
+
     const userRef = db.collection('users').doc(userId);
     const classRef = db.collection('classes').doc(lessonId);
 
@@ -527,6 +678,13 @@ export const rescheduleLesson = onCall<RescheduleLessonData>(
         throw new HttpsError(
           'failed-precondition',
           'Cannot reschedule a cancelled lesson',
+        );
+      }
+
+      if (isClosedStatus(lesson.status)) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Cannot reschedule a lesson that has already ended',
         );
       }
 
@@ -814,6 +972,11 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
     teacherImageURL = await getDownloadURLFromPath(userData.pfp_file_path);
   }
 
+  const { average: teacherRatingAverage } = await computeAverageFor(
+    userId,
+    'teacher_ratings',
+  );
+
   await db.runTransaction(async (tx) => {
     const classSnap = await tx.get(classRef);
 
@@ -823,10 +986,7 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
     participantIdsForNotification = getParticipantIds(lesson);
     participantCountForNotification = participantIdsForNotification.length;
 
-    teacherNameForNotification =
-      userData.first_name && userData.last_name
-        ? `${userData.first_name} ${userData.last_name}`
-        : 'A teacher';
+    teacherNameForNotification = getDisplayName(userData, 'A teacher');
 
     if (participantCountForNotification <= 0) {
       throw new HttpsError(
@@ -893,7 +1053,7 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
       teacher_first_name: userData.first_name || 'Teacher',
       teacher_last_name: userData.last_name || '',
       teacher_img: teacherImageURL || '',
-      teacher_rating: typeof userData.rating === 'number' ? userData.rating : 0,
+      teacher_rating: teacherRatingAverage,
       participant_count: participantCountForNotification,
     });
 
@@ -963,25 +1123,38 @@ export const acceptLesson = onCall<AcceptLessonData>(async ({ auth, data }) => {
   try {
     const participantNotificationMessage =
       lessonTypeForNotification === 'group'
-        ? `${teacherNameForNotification} accepted your group class (${participantCountForNotification} students joined).`
-        : `${teacherNameForNotification} accepted your lesson request.`;
+        ? `${teacherNameForNotification} accepted your group class "${topicNameForNotification}" (${participantCountForNotification} students joined).`
+        : `${teacherNameForNotification} accepted your 1-on-1 class "${topicNameForNotification}".`;
 
-    await Promise.all([
+    const notificationResults = await Promise.allSettled([
       addNotificationToUser(
         userId,
         'Lesson Accepted',
-        `You accepted lesson: ${topicNameForNotification}.`,
+        `You accepted "${topicNameForNotification}".`,
         'calendar',
       ),
       ...participantIdsForNotification.map((participantId) =>
         addNotificationToUser(
           participantId,
-          'Teacher Accepted Your Lesson',
+          'Teacher Accepted Your Class',
           participantNotificationMessage,
           'calendar',
         ),
       ),
     ]);
+
+    notificationsSent = notificationResults.every(
+      (result) => result.status === 'fulfilled',
+    );
+
+    notificationResults.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(
+          `[acceptLesson] Failed to send notification ${index} for class ${classId}`,
+          result.reason,
+        );
+      }
+    });
   } catch (error) {
     notificationsSent = false;
     console.error(
@@ -1024,7 +1197,7 @@ export const getUsersPublicNames = onCall<GetUsersPublicNamesData>(
       throw new HttpsError('not-found', 'User not found');
     }
 
-    const caller = callerSnap.data()!;
+    const caller = callerSnap.data() as UserDoc & { teaching_classes?: string[] };
     if (caller?.roles?.teacher !== true) {
       throw new HttpsError(
         'permission-denied',
@@ -1033,6 +1206,33 @@ export const getUsersPublicNames = onCall<GetUsersPublicNamesData>(
     }
 
     const uniqueIds = [...new Set(userIds)].filter(Boolean).slice(0, 100);
+    const teachingClassIds = Array.isArray(caller.teaching_classes)
+      ? caller.teaching_classes
+      : [];
+
+    const allowedStudentIds = new Set<string>();
+    await Promise.all(
+      teachingClassIds.map(async (classId) => {
+        const classSnap = await db.collection('classes').doc(classId).get();
+        if (!classSnap.exists) return;
+
+        const classData = (classSnap.data() || {}) as FirestoreClassDoc;
+        if (classData.teacher_id !== auth.uid) return;
+
+        getParticipantIds(classData).forEach((participantId) => {
+          allowedStudentIds.add(participantId);
+        });
+      }),
+    );
+
+    for (const uid of uniqueIds) {
+      if (!allowedStudentIds.has(uid)) {
+        throw new HttpsError(
+          'permission-denied',
+          'You can only request names for students in your lessons',
+        );
+      }
+    }
 
     const users: Record<string, { first_name: string; last_name: string }> = {};
 
@@ -1052,3 +1252,211 @@ export const getUsersPublicNames = onCall<GetUsersPublicNamesData>(
     return { users };
   },
 );
+
+/* =====================================================
+   DISCOVERABLE LESSONS (sanitized — no meeting links)
+   ===================================================== */
+
+export type DiscoverableLessonDto = {
+  id: string;
+  date: number;
+  status: ClassStatusT | string;
+  lessonType: LessonType;
+  level?: string;
+  participantIds: string[];
+  participantCount: number;
+  maxParticipants: number;
+  topic: { id: string; heading: string } | null;
+  teacher: {
+    first_name: string;
+    last_name: string;
+    img: string;
+    rating: number;
+  } | null;
+  student: { first_name: string; last_name: string } | null;
+  studentId: string;
+  createdBy: string;
+};
+
+const loadTopicHeadings = async (
+  topicIds: string[],
+): Promise<Map<string, string>> => {
+  const map = new Map<string, string>();
+  await Promise.all(
+    topicIds.map(async (topicId) => {
+      const heading = await getTopicHeading(topicId);
+      map.set(topicId, heading);
+    }),
+  );
+  return map;
+};
+
+const toDiscoverableLesson = (
+  id: string,
+  data: FirestoreClassDoc,
+  topicHeadings: Map<string, string>,
+): DiscoverableLessonDto => {
+  const lessonType = getLessonType(data);
+  const participantIds = getParticipantIds(data);
+  const participantCount =
+    typeof data.participant_count === 'number'
+      ? data.participant_count
+      : participantIds.length;
+  const maxParticipants = getMaxParticipants(data);
+  const topicId = data.topic_id || '';
+
+  let teacher: DiscoverableLessonDto['teacher'] = null;
+  if (data.teacher_id) {
+    teacher = {
+      first_name: data.teacher_first_name || 'Teacher',
+      last_name: data.teacher_last_name || '',
+      img: data.teacher_img || '',
+      rating: data.teacher_rating || 0,
+    };
+  }
+
+  let student: DiscoverableLessonDto['student'] = null;
+  if (data.student_first_name || data.student_last_name) {
+    student = {
+      first_name: data.student_first_name || 'Student',
+      last_name: data.student_last_name || '',
+    };
+  }
+
+  return {
+    id,
+    date: data.date || 0,
+    status: data.status || 'scheduled',
+    lessonType,
+    level: data.level,
+    participantIds,
+    participantCount,
+    maxParticipants,
+    topic: topicId
+      ? {
+          id: topicId,
+          heading: topicHeadings.get(topicId) || topicId,
+        }
+      : null,
+    teacher,
+    student,
+    studentId: data.student_id || participantIds[0] || '',
+    createdBy: getCreatorId(data),
+  };
+};
+
+export const listOpenGroupLessons = onCall(async ({ auth }) => {
+  if (!auth) throw new HttpsError('unauthenticated', 'Login required');
+
+  const userId = auth.uid;
+  const now = Math.floor(Date.now() / 1000);
+
+  const userSnap = await db.collection('users').doc(userId).get();
+  if (!userSnap.exists) {
+    throw new HttpsError('not-found', 'User not found');
+  }
+
+  const enrolledClassIds = new Set<string>(
+    Array.isArray(userSnap.data()?.classes)
+      ? (userSnap.data()?.classes as string[])
+      : [],
+  );
+
+  const snapshot = await db
+    .collection('classes')
+    .where('lesson_type', '==', 'group')
+    .where('status', '==', 'scheduled')
+    .where('date', '>', now)
+    .get();
+
+  const candidates = snapshot.docs.filter((doc) => {
+    const data = doc.data() as FirestoreClassDoc;
+    if (isCancelledStatus(data.status)) return false;
+
+    const participantIds = getParticipantIds(data);
+    const participantCount =
+      typeof data.participant_count === 'number'
+        ? data.participant_count
+        : participantIds.length;
+
+    if (participantCount >= getMaxParticipants(data)) return false;
+    if (participantIds.includes(userId)) return false;
+    if (enrolledClassIds.has(doc.id)) return false;
+
+    return true;
+  });
+
+  const topicIds = [
+    ...new Set(
+      candidates
+        .map((doc) => (doc.data() as FirestoreClassDoc).topic_id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0),
+    ),
+  ];
+  const topicHeadings = await loadTopicHeadings(topicIds);
+
+  const lessons = candidates.map((doc) =>
+    toDiscoverableLesson(
+      doc.id,
+      doc.data() as FirestoreClassDoc,
+      topicHeadings,
+    ),
+  );
+
+  return { lessons };
+});
+
+export const listOpenLessonRequests = onCall(async ({ auth }) => {
+  if (!auth) throw new HttpsError('unauthenticated', 'Login required');
+
+  const userSnap = await db.collection('users').doc(auth.uid).get();
+  if (!userSnap.exists) {
+    throw new HttpsError('not-found', 'User not found');
+  }
+
+  const userData = (userSnap.data() || {}) as UserDoc;
+  if (userData.roles?.teacher !== true) {
+    throw new HttpsError(
+      'permission-denied',
+      'Only teachers can list open lesson requests',
+    );
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  const snapshot = await db
+    .collection('classes')
+    .where('status', '==', 'scheduled')
+    .where('teacher_id', '==', '')
+    .where('date', '>', now)
+    .get();
+
+  const candidates = snapshot.docs.filter((doc) => {
+    const data = doc.data() as FirestoreClassDoc;
+    if (isCancelledStatus(data.status)) return false;
+
+    const participantIds = getParticipantIds(data);
+    if (participantIds.includes(auth.uid)) return false;
+
+    return true;
+  });
+
+  const topicIds = [
+    ...new Set(
+      candidates
+        .map((doc) => (doc.data() as FirestoreClassDoc).topic_id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0),
+    ),
+  ];
+  const topicHeadings = await loadTopicHeadings(topicIds);
+
+  const lessons = candidates.map((doc) =>
+    toDiscoverableLesson(
+      doc.id,
+      doc.data() as FirestoreClassDoc,
+      topicHeadings,
+    ),
+  );
+
+  return { lessons };
+});

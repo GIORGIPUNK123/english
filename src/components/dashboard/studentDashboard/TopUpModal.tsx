@@ -9,7 +9,6 @@ import {
   TokenPurchaseType,
   TOKEN_BUNDLES_BY_TYPE,
   getDefaultBundleId,
-  getPurchaseTokenTypeLabel,
 } from '../../../utils/tokenUtils';
 
 interface TopUpModalProps {
@@ -32,9 +31,9 @@ interface PurchaseTokensResponse {
 }
 
 const paymentMethods = [
-  { id: 'card', name: 'Credit / Debit Card', icon: CreditCard },
-  { id: 'applepay', name: 'Apple Pay', icon: Smartphone },
-  { id: 'paypal', name: 'PayPal', icon: Wallet },
+  { id: 'card', nameKey: 'topUpModal.methodCard', icon: CreditCard },
+  { id: 'applepay', nameKey: 'topUpModal.methodApplePay', icon: Smartphone },
+  { id: 'paypal', nameKey: 'topUpModal.methodPaypal', icon: Wallet },
 ];
 
 export function TopUpModal({
@@ -61,6 +60,10 @@ export function TopUpModal({
   }, [selectedTokenType]);
 
   const formatEur = (amount: number) => `EUR ${amount.toFixed(2)}`;
+  const tokenTypeLabel = (tokenType: TokenPurchaseType) =>
+    tokenType === 'group'
+      ? t('topUpModal.groupTokens')
+      : t('topUpModal.oneOnOneTokens');
 
   const handlePurchase = async () => {
     if (!selectedBundleData) {
@@ -81,23 +84,25 @@ export function TopUpModal({
       });
 
       addToast({
-        title: 'Purchase Successful',
-        message: `Added ${result.data.tokensAdded} ${getPurchaseTokenTypeLabel(result.data.tokenType).toLowerCase()}.`,
+        title: t('topUpModal.successTitle'),
+        message: t('topUpModal.successMessage')
+          .replace('{count}', String(result.data.tokensAdded))
+          .replace('{type}', tokenTypeLabel(result.data.tokenType)),
         type: 'success',
       });
 
       onClose();
     } catch (error: any) {
-      let message = 'Could not complete token purchase.';
+      let message = t('topUpModal.failedGeneric');
 
       if (error?.code === 'functions/unauthenticated') {
-        message = 'Please log in again and retry.';
+        message = t('topUpModal.failedAuth');
       } else if (error?.code === 'functions/invalid-argument') {
-        message = 'Invalid token bundle selected. Please retry.';
+        message = t('topUpModal.failedBundle');
       }
 
       addToast({
-        title: 'Purchase Failed',
+        title: t('topUpModal.failedTitle'),
         message,
         type: 'error',
       });
@@ -128,7 +133,7 @@ export function TopUpModal({
             {t('dashboard.topUp')}
           </h2>
           <p className='text-xs sm:text-sm text-muted-foreground'>
-            {t('dashboard.availableTokens')}: <span className='font-semibold'>{tokenBalances.total} tokens</span>
+            {t('dashboard.availableTokens')}: <span className='font-semibold'>{tokenBalances.total} {t('topUpModal.balanceSuffix')}</span>
           </p>
           <p className='text-[11px] sm:text-xs mt-1 text-muted-foreground'>
             {t('dashboard.tokenDetailsOneOnOne')}: {tokenBalances.oneOnOne} | {t('dashboard.tokenDetailsGroup')}: {tokenBalances.group} | {t('dashboard.tokenDetailsFlexible')}: {tokenBalances.legacy}
@@ -137,12 +142,11 @@ export function TopUpModal({
 
         <div className='p-4 space-y-4 sm:p-6 sm:space-y-6'>
           <div className='p-3 text-sm border border-amber-300 rounded-lg bg-amber-50 text-amber-900 dark:bg-amber-500/10 dark:border-amber-500/40 dark:text-amber-200'>
-            Demo mode — no real payment is processed. Tokens are added instantly
-            for testing.
+            {t('topUpModal.demoNotice')}
           </div>
           <div>
             <h3 className='mb-3 text-base font-semibold text-foreground sm:mb-4'>
-              Token Type
+              {t('topUpModal.tokenType')}
             </h3>
             <div className='grid grid-cols-2 gap-3'>
               <button
@@ -153,7 +157,7 @@ export function TopUpModal({
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-blue-400 dark:hover:border-blue-500'
                 }`}
               >
-                {t('dashboard.tokenDetailsGroup')} Tokens
+                {t('topUpModal.groupTokens')}
               </button>
               <button
                 onClick={() => setSelectedTokenType('1on1')}
@@ -163,7 +167,7 @@ export function TopUpModal({
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 hover:border-blue-400 dark:hover:border-blue-500'
                 }`}
               >
-                {t('dashboard.tokenDetailsOneOnOne')} Tokens
+                {t('topUpModal.oneOnOneTokens')}
               </button>
             </div>
           </div>
@@ -171,7 +175,7 @@ export function TopUpModal({
           {/* Custom Token Amounts */}
           <div>
             <h3 className='mb-3 text-base font-semibold text-foreground sm:mb-4'>
-              Buy Custom Amount (1-3 tokens)
+              {t('topUpModal.customAmount')}
             </h3>
             <div className='grid grid-cols-3 gap-2 sm:gap-3'>
               {tokenBundles
@@ -197,7 +201,9 @@ export function TopUpModal({
                       {bundle.tokens}
                     </div>
                     <div className='text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mb-1 sm:mb-2'>
-                      {bundle.tokens === 1 ? 'Token' : 'Tokens'}
+                      {bundle.tokens === 1
+                        ? t('topUpModal.tokenSingular')
+                        : t('topUpModal.tokenPlural')}
                     </div>
                     <div className='text-xs font-semibold text-gray-900 sm:text-sm dark:text-white'>
                       {formatEur(bundle.price)}
@@ -210,7 +216,7 @@ export function TopUpModal({
           {/* Discounted Bundles */}
           <div>
             <h3 className='mb-3 text-base font-semibold text-foreground sm:mb-4'>
-              Save with Bundles
+              {t('topUpModal.saveWithBundles')}
             </h3>
             <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 sm:gap-4'>
               {tokenBundles
@@ -229,7 +235,7 @@ export function TopUpModal({
                     {bundle.popular && (
                       <div className='absolute left-0 right-0 flex justify-center top-0'>
                         <span className='px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-white bg-linear-to-r from-orange-500 to-pink-500 rounded-t-lg'>
-                          MOST POPULAR
+                          {t('topUpModal.mostPopular')}
                         </span>
                       </div>
                     )}
@@ -258,7 +264,7 @@ export function TopUpModal({
                         {bundle.tokens}
                       </div>
                       <div className='text-xs text-gray-600 sm:text-sm dark:text-gray-400'>
-                        Tokens
+                        {t('topUpModal.tokenPlural')}
                       </div>
                     </div>
 
@@ -279,13 +285,15 @@ export function TopUpModal({
 
                     {/* Per Token Price */}
                     <div className='text-[10px] sm:text-xs text-gray-600 dark:text-gray-400'>
-                      {formatEur(bundle.price / bundle.tokens)} per token
+                      {formatEur(bundle.price / bundle.tokens)}{' '}
+                      {t('topUpModal.perToken')}
                     </div>
 
                     {/* Savings Info */}
                     {bundle.discount && bundle.originalPrice && (
                       <div className='mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium text-green-600 dark:text-green-400'>
-                        Save {formatEur(bundle.originalPrice - bundle.price)}
+                        {t('topUpModal.save')}{' '}
+                        {formatEur(bundle.originalPrice - bundle.price)}
                       </div>
                     )}
                   </button>
@@ -296,7 +304,7 @@ export function TopUpModal({
           {/* Payment Methods */}
           <div>
             <h3 className='mb-3 text-base font-semibold text-foreground sm:mb-4'>
-              Payment Method
+              {t('topUpModal.paymentMethod')}
             </h3>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4'>
               {paymentMethods.map((method) => {
@@ -328,7 +336,7 @@ export function TopUpModal({
                     </div>
                     <div className='flex-1 text-left'>
                       <div className='text-sm font-medium text-gray-900 sm:text-base dark:text-white'>
-                        {method.name}
+                        {t(method.nameKey)}
                       </div>
                     </div>
                     {selectedPayment === method.id && (
@@ -344,12 +352,12 @@ export function TopUpModal({
           {selectedPayment === 'card' && (
             <div className='p-3 border border-gray-200 rounded-lg sm:p-4 bg-gray-50 dark:bg-gray-800/60 dark:border-gray-700'>
               <h4 className='mb-3 text-xs font-semibold text-gray-900 sm:text-sm dark:text-white sm:mb-4'>
-                Card Details
+                {t('topUpModal.cardDetails')}
               </h4>
               <div className='space-y-2.5 sm:space-y-3'>
                 <div>
                   <label className='block mb-1 text-xs font-medium text-gray-700 sm:text-sm dark:text-gray-300'>
-                    Card Number
+                    {t('topUpModal.cardNumber')}
                   </label>
                   <input
                     type='text'
@@ -360,7 +368,7 @@ export function TopUpModal({
                 <div className='grid grid-cols-2 gap-2.5 sm:gap-3'>
                   <div>
                     <label className='block mb-1 text-xs font-medium text-gray-700 sm:text-sm dark:text-gray-300'>
-                      Expiry Date
+                      {t('topUpModal.expiryDate')}
                     </label>
                     <input
                       type='text'
@@ -370,7 +378,7 @@ export function TopUpModal({
                   </div>
                   <div>
                     <label className='block mb-1 text-xs font-medium text-gray-700 sm:text-sm dark:text-gray-300'>
-                      CVV
+                      {t('topUpModal.cvv')}
                     </label>
                     <input
                       type='text'
@@ -389,16 +397,16 @@ export function TopUpModal({
             <div className='space-y-1.5 sm:space-y-2'>
               <div className='flex justify-between text-xs sm:text-sm'>
                 <span className='text-gray-700 dark:text-gray-300'>
-                  Selected Bundle:
+                  {t('topUpModal.selectedBundle')}
                 </span>
                 <span className='font-medium text-gray-900 dark:text-white'>
-                  {selectedBundleData?.tokens} {getPurchaseTokenTypeLabel(selectedTokenType)}
+                  {selectedBundleData?.tokens} {tokenTypeLabel(selectedTokenType)}
                 </span>
               </div>
               {selectedBundleData?.discount && (
                 <div className='flex justify-between text-xs sm:text-sm'>
                   <span className='text-gray-700 dark:text-gray-300'>
-                    Discount:
+                    {t('topUpModal.discount')}
                   </span>
                   <span className='font-medium text-green-600 dark:text-green-400'>
                     {selectedBundleData.discount}
@@ -408,7 +416,7 @@ export function TopUpModal({
               <div className='border-t border-blue-200 dark:border-blue-800 pt-1.5 sm:pt-2 mt-1.5 sm:mt-2'>
                 <div className='flex justify-between'>
                   <span className='text-sm font-semibold text-gray-900 sm:text-base dark:text-white'>
-                    Total:
+                    {t('topUpModal.total')}
                   </span>
                   <span className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white'>
                     {selectedBundleData
@@ -427,7 +435,7 @@ export function TopUpModal({
               disabled={isProcessing}
               className='flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm btn-secondary'
             >
-              Cancel
+              {t('topUpModal.cancel')}
             </button>
             <button
               onClick={handlePurchase}
@@ -435,14 +443,14 @@ export function TopUpModal({
               className='flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm btn-primary'
             >
               {isProcessing
-                ? 'Processing...'
-                : `Pay ${selectedBundleData ? formatEur(selectedBundleData.price) : 'EUR 0.00'}`}
+                ? t('topUpModal.processing')
+                : `${t('topUpModal.pay')} ${selectedBundleData ? formatEur(selectedBundleData.price) : 'EUR 0.00'}`}
             </button>
           </div>
 
           {/* Security Note */}
           <p className='text-[10px] sm:text-xs text-center text-gray-500 dark:text-gray-400'>
-            🔒 Your payment information is secure and encrypted
+            {t('topUpModal.securityNote')}
           </p>
         </div>
       </div>

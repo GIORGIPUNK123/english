@@ -69,11 +69,13 @@ export const notifyTeacherApplication = onCall<NotifyTeacherApplicationData>(
       );
 
       return { success: true, message: 'Application notification sent' };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[TEACHER APP] Error:', error);
+      const message =
+        error instanceof Error ? error.message : 'Unknown error occurred';
       throw new HttpsError(
         'internal',
-        'Failed to process application: ' + error.message,
+        'Failed to process application: ' + message,
       );
     }
   },
@@ -119,7 +121,10 @@ export const markNotificationAsRead = onCall<MarkNotificationAsReadData>(
           return;
         }
         console.warn('[MARK READ] Notification not found in users collection');
+        throw new HttpsError('not-found', 'Notification not found');
       }
+
+      throw new HttpsError('not-found', 'User not found');
     });
 
     console.log('[MARK READ] Transaction complete');

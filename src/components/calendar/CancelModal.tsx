@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '../../firebase/firebase-config';
 import { useToast } from '../../context/ToastContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface LessonDetailModalProps {
   lesson: LessonT;
@@ -18,6 +19,7 @@ export const CancelModal = ({
   onClose,
   additionalCallback,
 }: LessonDetailModalProps) => {
+  const { t } = useLanguage();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const isWithin24Hours = (() => {
@@ -30,7 +32,7 @@ export const CancelModal = ({
   const canCancel = () => {
     const classId = lesson.id;
     if (!classId || !auth.currentUser?.uid) {
-      setErrorMsg('Missing class id or user Id, cannot delete');
+      setErrorMsg(t('cancelLesson.missingIds'));
       return false;
     }
     setErrorMsg(null); // Clear error message if cancellation is possible
@@ -46,7 +48,7 @@ export const CancelModal = ({
       const classId = lesson.id;
 
       if (!classId || !auth.currentUser?.uid) {
-        setErrorMsg('Missing class id or user Id, cannot cancel');
+        setErrorMsg(t('cancelLesson.missingIds'));
         return;
       }
 
@@ -60,18 +62,18 @@ export const CancelModal = ({
 
       if (res.data.success) {
         addToast({
-          title: 'Class Cancelled',
-          message: 'The class has been successfully cancelled.',
+          title: t('cancelLesson.successTitle'),
+          message: t('cancelLesson.successMessage'),
           type: 'success',
         });
         onClose();
         if (additionalCallback) additionalCallback();
       } else {
-        setErrorMsg('Failed to cancel class');
+        setErrorMsg(t('cancelLesson.failed'));
       }
     } catch (error: unknown) {
       console.error('Error cancelling class: ', error);
-      setErrorMsg(getErrorMessage(error, 'Error cancelling class'));
+      setErrorMsg(getErrorMessage(error, t('cancelLesson.errorGeneric')));
     } finally {
       setIsCancelling(false);
     }
@@ -105,12 +107,12 @@ export const CancelModal = ({
             <AlertTriangle className='w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5' />
             <div>
               <p className='mb-1 font-medium text-foreground'>
-                Cancel this lesson?
+                {t('cancelLesson.confirmTitle')}
               </p>
               <p className='text-sm text-gray-700 dark:text-gray-300'>
                 {isWithin24Hours
-                  ? 'You can cancel this lesson, but your lesson token will not be refunded because it is within 24 hours of the scheduled time.'
-                  : 'You can cancel this lesson and your lesson token will be refunded.'}
+                  ? t('cancelLesson.refundWarning')
+                  : t('cancelLesson.refundOk')}
               </p>
             </div>
           </div>
@@ -130,14 +132,16 @@ export const CancelModal = ({
               disabled={isCancelling}
               className='px-5 py-2.5 text-sm btn-secondary'
             >
-              Keep Lesson
+              {t('cancelLesson.keepLesson')}
             </button>
             <button
               onClick={handleCancel}
               disabled={isCancelling}
               className='px-5 py-2.5 text-sm btn-danger'
             >
-              {isCancelling ? 'Cancelling...' : 'Cancel Lesson'}
+              {isCancelling
+                ? t('cancelLesson.cancelling')
+                : t('cancelLesson.confirmButton')}
             </button>
           </div>
         </div>

@@ -4,6 +4,7 @@ export type StatusT =
   | 'finished'
   | 'scheduled'
   | 'in-progress'
+  /** @deprecated Class-level student absence — use feedback.student_attended per student. */
   | 'missed_student'
   | 'missed_teacher'
   | 'cancelled_student'
@@ -27,6 +28,12 @@ export const LEVEL_OPTIONS = [
 ] as const;
 export type LevelT = (typeof LEVEL_OPTIONS)[number];
 
+export interface LessonAttendanceSummaryT {
+  total: number;
+  attended: number;
+  absent: number;
+}
+
 export interface LessonT {
   id: string;
   date: number;
@@ -42,27 +49,42 @@ export interface LessonT {
   studentId?: string;
   createdBy?: string;
   link: string | null;
+  /** Set when teacher closes the lesson via feedback. */
+  teacherAttended?: boolean | null;
+  finishedAt?: number;
+  attendanceSummary?: LessonAttendanceSummaryT;
 }
 
-export interface FormInputT {
-  onChange: any;
-  onBlur: any;
-  value: string | number;
-  placeholder: string;
-  name: string;
-  error?: string;
-}
 export interface TopicT {
   id: string;
   heading: string;
 }
+export interface LessonFeedbackT {
+  teacher_attended: boolean;
+  student_attended: boolean | null;
+  rating: number | null;
+  comment: string | null;
+  materials_link: string | null;
+  created_at: number;
+  read_at: number | null;
+  teacher_id: string;
+  student_teacher_attended?: boolean | null;
+  student_teacher_rating?: number | null;
+  student_teacher_comment?: string | null;
+  student_teacher_rated_at?: number | null;
+}
+
+export interface LessonFeedbackEntryT {
+  studentId: string;
+  studentAttended: boolean;
+  rating: number;
+  comment: string;
+  materialsLink?: string;
+}
+
 export interface OptionT {
   label: string;
   id: number | string;
-}
-export interface SelectSmallObjectT {
-  defaultId: number;
-  options: OptionT[];
 }
 export interface NotificationT {
   created_at: number;
@@ -148,6 +170,12 @@ export interface ClassesT {
   cancelled_by?: 'student' | 'teacher' | 'system';
   cancelled_at?: Timestamp;
   cancelled_reason?: string;
+  /** True when teacher attended and closed the lesson; false when missed_teacher. */
+  teacher_attended?: boolean | null;
+  finished_at?: number;
+  finished_by?: string;
+  /** Aggregate attendance — per-student detail is in classes/{id}/feedback/{studentId}. */
+  attendance_summary?: LessonAttendanceSummaryT;
 }
 export interface TeacherT {
   first_name: string;

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { LessonT, TopicT, UserDataT } from '../../types';
 import { getWeekDates } from './utils';
-// import { availableTeachers } from './mockData';
 import { CalendarLegend } from './CalendarLegend';
 import { CalendarGrid } from './CalendarGrid';
 import { LessonDetailModal } from './LessonDetailModal';
@@ -33,6 +32,7 @@ export const LessonsCalendar = (props: {
   isRefreshing?: boolean;
 }) => {
   const {
+    user,
     lessons,
     openGroupLessons = [],
     topicsArr,
@@ -198,6 +198,7 @@ export const LessonsCalendar = (props: {
           }}
           onClose={() => setSelectedLesson(null)}
           assignedToMe={teachingSet.has(selectedLesson.id)}
+          userId={user.uid}
         />
       )}
 

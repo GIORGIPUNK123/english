@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Filter,
   AlertCircle,
@@ -237,7 +237,9 @@ export const NotificationsView = (props: { user: User }) => {
   const [notifications, setNotifications] = useState<NotificationT[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const markAsRead = useMarkAsRead();
+  const markAsReadRemote = useMarkAsRead();
+  // Keep optimistic reads through snapshot races until Firestore confirms
+  const pendingReadIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
     // Listen to notifications subcollection
@@ -249,16 +251,49 @@ export const NotificationsView = (props: { user: User }) => {
     );
     const q = query(userNotificationsColRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const notifications: NotificationT[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as NotificationT[];
-      console.log('Notifications:', notifications);
-      setNotifications(notifications);
+      const next: NotificationT[] = snapshot.docs.map((docSnap) => {
+        const notification = {
+          id: docSnap.id,
+          ...docSnap.data(),
+        } as NotificationT;
+
+        if (pendingReadIdsRef.current.has(docSnap.id)) {
+          if (notification.read) {
+            pendingReadIdsRef.current.delete(docSnap.id);
+          } else {
+            notification.read = true;
+          }
+        }
+
+        return notification;
+      });
+      setNotifications(next);
     });
 
     return () => unsubscribe();
   }, [user.uid]);
+
+  const markAsRead = async (notificationId: string) => {
+    const target = notifications.find((n) => n.id === notificationId);
+    if (!target || target.read) return;
+
+    pendingReadIdsRef.current.add(notificationId);
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n.id === notificationId ? { ...n, read: true } : n,
+      ),
+    );
+
+    const success = await markAsReadRemote(notificationId);
+    if (!success) {
+      pendingReadIdsRef.current.delete(notificationId);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, read: false } : n,
+        ),
+      );
+    }
+  };
   const filteredNotifications = notifications.filter((notification) => {
     if (filter === 'unread') return !notification.read;
     if (filter === 'read') return notification.read;

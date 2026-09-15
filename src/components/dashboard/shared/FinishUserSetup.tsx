@@ -1,11 +1,13 @@
 import { FormEvent, useState } from 'react';
 import { updateUserNames } from '../../../firebase/firebaseUserUtils';
+import { useLanguage } from '../../../context/LanguageContext';
 
 type FinishUserSetupProps = {
 	isOpen: boolean;
 };
 
 export const FinishUserSetup = ({ isOpen }: FinishUserSetupProps) => {
+	const { t } = useLanguage();
 	const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,7 +23,7 @@ export const FinishUserSetup = ({ isOpen }: FinishUserSetupProps) => {
 		const trimmedLast = lastName.trim();
 
 		if (trimmedFirst.length < 2 || trimmedLast.length < 2) {
-			setError('First and last name must be at least 2 characters.');
+			setError(t('setup.nameTooShort'));
 			return;
 		}
 
@@ -31,7 +33,7 @@ export const FinishUserSetup = ({ isOpen }: FinishUserSetupProps) => {
 			setFirstName('');
 			setLastName('');
 		} catch (err: any) {
-			setError(err?.message || 'Failed to update your name.');
+			setError(err?.message || t('setup.updateFailed'));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -41,16 +43,16 @@ export const FinishUserSetup = ({ isOpen }: FinishUserSetupProps) => {
 		<div className='modal-overlay px-4'>
 			<div className='w-full max-w-lg p-6 sm:p-8 modal-panel'>
 				<h2 className='text-2xl font-semibold text-foreground'>
-					Finish setting up your account
+					{t('setup.title')}
 				</h2>
 				<p className='mt-2 text-sm text-muted-foreground'>
-					Please add your first and last name. This is a one-time update.
+					{t('setup.subtitle')}
 				</p>
 
 				<form onSubmit={handleSubmit} className='mt-6 space-y-4'>
 					<div>
 						<label className='block text-sm font-medium text-foreground'>
-							First name
+							{t('setup.firstName')}
 						</label>
 						<input
 							value={firstName}
@@ -58,14 +60,14 @@ export const FinishUserSetup = ({ isOpen }: FinishUserSetupProps) => {
 							type='text'
 							autoComplete='given-name'
 							className='mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500'
-							placeholder='Enter your first name'
+							placeholder={t('setup.firstNamePlaceholder')}
 							required
 						/>
 					</div>
 
 					<div>
 						<label className='block text-sm font-medium text-foreground'>
-							Last name
+							{t('setup.lastName')}
 						</label>
 						<input
 							value={lastName}
@@ -73,7 +75,7 @@ export const FinishUserSetup = ({ isOpen }: FinishUserSetupProps) => {
 							type='text'
 							autoComplete='family-name'
 							className='mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500'
-							placeholder='Enter your last name'
+							placeholder={t('setup.lastNamePlaceholder')}
 							required
 						/>
 					</div>
@@ -85,7 +87,7 @@ export const FinishUserSetup = ({ isOpen }: FinishUserSetupProps) => {
 						disabled={isSubmitting}
 						className='w-full px-4 py-3 btn-primary'
 					>
-						{isSubmitting ? 'Saving...' : 'Save name'}
+						{isSubmitting ? t('setup.saving') : t('setup.save')}
 					</button>
 				</form>
 			</div>
