@@ -23,6 +23,7 @@ dist-ssr
 **/serviceAccount*.json
 *.pem
 credentials.json
+firebase-export-*/
 
 
 # Editor directories and files
